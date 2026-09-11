@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,10 +17,16 @@ export default function FamilyLogin() {
   const insets = useSafeAreaInsets();
   const styles = useStyles();
   const { colors } = useTheme();
-  const { unlockFamily } = useCaregiverAuth();
+  const { unlockFamily, unlocked } = useCaregiverAuth();
 
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
+
+  // Navigate only once the auth state is committed, avoiding a redirect race
+  // with ProtectedRoute (which would otherwise bounce back to this screen).
+  useEffect(() => {
+    if (unlocked.family) router.replace("/caregiver/family");
+  }, [unlocked.family, router]);
 
   const press = (k: string) => {
     if (pin.length >= PIN_LENGTH) return;
@@ -42,7 +48,7 @@ export default function FamilyLogin() {
     const ok = unlockFamily(pin);
     if (ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      router.replace("/caregiver/family");
+      // Navigation handled by the effect watching `unlocked.family`.
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError("That PIN doesn't seem right. Please try again.");

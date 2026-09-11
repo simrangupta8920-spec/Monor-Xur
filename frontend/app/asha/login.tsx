@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,11 +16,15 @@ export default function AshaLogin() {
   const insets = useSafeAreaInsets();
   const styles = useStyles();
   const { colors } = useTheme();
-  const { loginAsha } = useCaregiverAuth();
+  const { loginAsha, unlocked } = useCaregiverAuth();
 
   const [ashaId, setAshaId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (unlocked.asha) router.replace("/caregiver/asha");
+  }, [unlocked.asha, router]);
 
   const submit = () => {
     if (!ashaId.trim() || !password) {
@@ -30,7 +34,7 @@ export default function AshaLogin() {
     const ok = loginAsha(ashaId, password);
     if (ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      router.replace("/caregiver/asha");
+      // Navigation handled by the effect watching `unlocked.asha`.
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError("Incorrect ASHA ID or password.");

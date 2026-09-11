@@ -1,0 +1,25 @@
+{
+  "summary": "Frontend-only regression of Monor Xur caregiver auth after the router.replace race-condition fix. All 7 requested scenarios PASS. Primary bug is FIXED: entering PIN 1234 on /family/login now navigates to /caregiver/family (dashboard shows 'Family Caregiver', 'Anita', 'Care sections', bottom tabs Home/Calendar/Alerts/Profile). Wrong PIN 9999 shows exact error 'That PIN doesn't seem right. Please try again.' and stays on login. ASHA login with ASHA001/asha123 navigates to /caregiver/asha (shows 'ASHA Worker', 'Anita', 'Major care issue', tabs Home/Report/Tasks/Alerts); wrong creds show 'Incorrect ASHA ID or password.'. RBAC verified: direct visits to /caregiver/family and /caregiver/asha with locked in-memory auth redirect to /family/login (with 'Enter your PIN to continue') and /asha/login (with 'ASHA ID' label) respectively. Caregiver select flow works: role-caregiver -> /caregiver-select -> select-family-caregiver -> /family/login. All 9 family dashboard sections (profile, personal, medical, memories, games, reports, calendar, emergency, alerts) render with correct testIDs and navigate to their screens; calendar-add opens the Add Event bottom sheet. Memory Match game shows difficulty-badge ('Medium · 4 pairs'), hint-button, 8 cards, and helper-prompt surfaces after mismatched taps.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "Playwright automated flows executed via mcp_browser_automation (family PIN, ASHA login, RBAC, sections, memory-match)"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "family/login.tsx and asha/login.tsx correctly gate navigation on a useEffect watching unlocked.family/unlocked.asha, eliminating the race with ProtectedRoute. Fix is clean and idiomatic.",
+    "CaregiverAuthProvider keeps state in-memory only (not persisted), which matches the RBAC contract that direct-URL access to dashboards must always be re-authenticated. Verified empirically."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100% (7/7 scenarios)"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Caregiver in-memory auth resets on any full page reload (page.goto reloads app), so tests that must stay authenticated across screens should use page.go_back() / in-app navigation rather than page.goto. TextField testIDs on the ASHA form are on the wrapper; the actual TextInput is a nested <input>, so use '[data-testid=\"asha-id-input\"] input' selector when filling.",
+  "rca_of_issue": "Original bug: PIN 1234 did not advance from /family/login. RCA: unlockFamily set React state and router.replace was called in the same tick; ProtectedRoute observed the pre-update unlocked.family=false and redirected back to /family/login. Fix (verified): move router.replace('/caregiver/family') into a useEffect keyed on unlocked.family, so navigation happens only after the state commit is observable to ProtectedRoute. Same pattern applied to ASHA login. Verified end-to-end via Playwright: correct PIN reliably lands on the Family Caregiver dashboard on every attempt."
+}
