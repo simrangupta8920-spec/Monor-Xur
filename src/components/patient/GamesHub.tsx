@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Trophy, Play, CheckCircle2, Puzzle, Brain, Sparkles, ArrowRight } from 'lucide-react';
 import { PatientSubView, DDAMetric } from '../../types';
 import { soundController } from '../../utils/audio';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface GamesHubProps {
   onSelectGame: (game: PatientSubView) => void;
@@ -10,6 +11,8 @@ interface GamesHubProps {
 }
 
 export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, ddaLogs = [] }) => {
+  const { t, isHindi } = useLanguage();
+
   const gamesStats = useMemo(() => {
     const isToday = (timestamp: number) => {
       const d = new Date(timestamp);
@@ -35,12 +38,16 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
     const latestMemory = memoryLogs.sort((a, b) => b.timestamp - a.timestamp)[0];
 
     const puzzleScore = latestPuzzle 
-      ? `Level ${latestPuzzle.difficultyLevel} • ${puzzleLogs.length} Rounds Logged`
-      : 'Gentle, Medium & Challenge';
+      ? isHindi 
+        ? `स्तर ${latestPuzzle.difficultyLevel} • ${puzzleLogs.length} सत्र` 
+        : `Level ${latestPuzzle.difficultyLevel} • ${puzzleLogs.length} Rounds Logged`
+      : isHindi ? 'सरल, मध्यम और चुनौतीपूर्ण' : 'Gentle, Medium & Challenge';
 
     const memoryScore = latestMemory
-      ? `Level ${latestMemory.difficultyLevel} • ${memoryLogs.length} Rounds Logged`
-      : 'Personalized Speed Baseline';
+      ? isHindi 
+        ? `स्तर ${latestMemory.difficultyLevel} • ${memoryLogs.length} सत्र` 
+        : `Level ${latestMemory.difficultyLevel} • ${memoryLogs.length} Rounds Logged`
+      : isHindi ? 'व्यक्तिगत गति अनुकूलन' : 'Personalized Speed Baseline';
 
     return {
       puzzlePlayedToday,
@@ -50,14 +57,14 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
       puzzleCount: puzzleLogs.length,
       memoryCount: memoryLogs.length,
     };
-  }, [ddaLogs]);
+  }, [ddaLogs, isHindi]);
 
   const games = [
     {
       id: 'puzzle' as PatientSubView,
-      title: 'Photo Puzzle',
-      desc: 'Assemble 4, 9, or 16 piece puzzles using personalized family memories and everyday treasures with AI difficulty adaptation.',
-      badge: 'AI Adaptive • 2×2 to 4×4',
+      title: t('photoPuzzleTitle'),
+      desc: t('photoPuzzleDesc'),
+      badge: isHindi ? 'स्मृति पहेली • 2×2 से 4×4' : 'AI Adaptive • 2×2 to 4×4',
       playedToday: gamesStats.puzzlePlayedToday,
       score: gamesStats.puzzleScore,
       accent: '#FDF0D5',
@@ -68,9 +75,9 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
     },
     {
       id: 'memory_match' as PatientSubView,
-      title: 'Memory Match',
-      desc: 'Flip and match pairs of familiar botanical, nature, and animal symbols with real-time AI cognitive difficulty scaling.',
-      badge: 'AI Adaptive • Card Recall',
+      title: t('memoryMatchTitle'),
+      desc: t('memoryMatchDesc'),
+      badge: isHindi ? 'स्मृति अभ्यास • जोड़े मिलाना' : 'AI Adaptive • Card Recall',
       playedToday: gamesStats.memoryPlayedToday,
       score: gamesStats.memoryScore,
       accent: '#EAF1E8',
@@ -88,15 +95,17 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 text-[#5B825B]">
             <Trophy className="w-5 h-5" />
-            <span className="font-extrabold text-sm uppercase tracking-wide">Player Zone</span>
+            <span className="font-extrabold text-sm uppercase tracking-wide">
+              {isHindi ? 'प्लेयर ज़ोन' : 'Player Zone'}
+            </span>
           </div>
           <span className="px-3 py-1 rounded-full bg-[#EAF1E8] text-[#5B825B] font-extrabold text-xs">
-            Explorer Level {currentLevel}
+            {t('mindExplorerLevel', { level: currentLevel })}
           </span>
         </div>
-        <h2 className="text-2xl font-black text-[#2D3A2F]">Mind Games & Quests</h2>
+        <h2 className="text-2xl font-black text-[#2D3A2F]">{t('gamesHubTitle')}</h2>
         <p className="text-sm text-[#5A6E5D] mt-1">
-          Two thoughtfully crafted memory games with Gemini AI difficulty adaptation to support relaxed recall and joyful mental agility.
+          {t('gamesHubSub')}
         </p>
       </div>
 
@@ -127,7 +136,7 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
                     </span>
                     {game.playedToday && (
                       <span className="flex items-center gap-1 text-[11px] font-bold text-[#5B825B]">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Played Today
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {isHindi ? 'आज खेला गया' : 'Played Today'}
                       </span>
                     )}
                   </div>
@@ -147,7 +156,7 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
                   className="px-5 py-2.5 rounded-2xl bg-[#5B825B] text-white font-extrabold text-sm flex items-center gap-2 shadow-xs hover:bg-[#4c704c] active:scale-95 transition-all"
                 >
                   <Play className="w-4 h-4 fill-current" />
-                  <span>Play {game.title}</span>
+                  <span>{t('playNow')}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

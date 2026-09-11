@@ -1,8 +1,8 @@
 import React from 'react';
-import { format } from 'date-fns';
 import { Play, Image as ImageIcon, Puzzle, Wind, CalendarCheck, PhoneCall, Sparkles, Flame, Trophy } from 'lucide-react';
 import { PatientTab, PatientSubView, Reminder } from '../../types';
 import { soundController } from '../../utils/audio';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface PatientHomeProps {
   patientName: string;
@@ -21,7 +21,8 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
   onCallFamily,
   emergencyContactName,
 }) => {
-  const todayStr = format(new Date(), 'EEEE, d MMMM');
+  const { t, formatLocalizedDate } = useLanguage();
+  const todayStr = formatLocalizedDate(new Date());
   const nextReminder = reminders.find((r) => !r.completed);
 
   return (
@@ -34,20 +35,20 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
               src="/logo.jpg" 
               alt="Monor Xur" 
               className="w-full h-full object-cover" 
-              referrerPolicy="no-referrer"
+              referrerPolicy="no-referrer" 
             />
           </div>
           <div>
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[11px] font-black uppercase tracking-wider text-[#5B825B] bg-[#EAF1E8] px-2.5 py-0.5 rounded-full">
-                Player Mode
+                {t('playerMode')}
               </span>
               <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#E8B25C] bg-[#FDF0D5] px-2 py-0.5 rounded-full">
-                <Flame className="w-3 h-3 fill-current" /> Active Session
+                <Flame className="w-3 h-3 fill-current" /> {t('activeSession')}
               </span>
             </div>
             <h2 className="text-2xl font-black text-[#2D3A2F] leading-tight mt-0.5">
-              {patientName ? `Hello, ${patientName}!` : 'Hello, Welcome!'}
+              {patientName ? t('hello', { name: patientName }) : t('helloWelcome')}
             </h2>
             <p className="text-xs font-semibold text-[#5A6E5D]">{todayStr}</p>
           </div>
@@ -62,17 +63,17 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             onSelectTab('play');
           }}
           className="w-full py-8 px-6 rounded-2xl bg-[#5B825B] hover:bg-[#4a6d4a] active:scale-[0.98] text-white shadow-md transition-all flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 group cursor-pointer"
-          aria-label="Play Games"
+          aria-label={t('playButtonText')}
         >
           <div className="w-20 h-20 rounded-full bg-white text-[#5B825B] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform shrink-0">
             <Play className="w-11 h-11 fill-current translate-x-0.5" />
           </div>
           <div className="text-center sm:text-left">
             <span className="block text-3xl sm:text-4xl font-black tracking-wider leading-none">
-              PLAY
+              {t('playButtonText')}
             </span>
             <span className="block text-base font-bold text-white/90 mt-1.5">
-              Press to open games
+              {t('playButtonSub')}
             </span>
           </div>
         </button>
@@ -92,8 +93,8 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             <ImageIcon className="w-7 h-7" />
           </div>
           <div>
-            <h4 className="font-extrabold text-xl leading-tight">Memories</h4>
-            <p className="text-xs font-medium text-[#3D2423]/70 mt-0.5">Family & moments</p>
+            <h4 className="font-extrabold text-xl leading-tight">{t('tileMemories')}</h4>
+            <p className="text-xs font-medium text-[#3D2423]/70 mt-0.5">{t('tileMemoriesSub')}</p>
           </div>
         </button>
 
@@ -109,8 +110,8 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             <Puzzle className="w-7 h-7" />
           </div>
           <div>
-            <h4 className="font-extrabold text-xl leading-tight">Games & Puzzle</h4>
-            <p className="text-xs font-medium text-[#332610]/70 mt-0.5">Photo puzzle & memory quests</p>
+            <h4 className="font-extrabold text-xl leading-tight">{t('tileGames')}</h4>
+            <p className="text-xs font-medium text-[#332610]/70 mt-0.5">{t('tileGamesSub')}</p>
           </div>
         </button>
 
@@ -126,8 +127,8 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             <Wind className="w-7 h-7" />
           </div>
           <div>
-            <h4 className="font-extrabold text-xl leading-tight">Relaxation</h4>
-            <p className="text-xs font-medium text-[#1C2A2D]/70 mt-0.5">Music & breathing</p>
+            <h4 className="font-extrabold text-xl leading-tight">{t('tileRelaxation')}</h4>
+            <p className="text-xs font-medium text-[#1C2A2D]/70 mt-0.5">{t('tileRelaxationSub')}</p>
           </div>
         </button>
 
@@ -143,8 +144,8 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             <CalendarCheck className="w-7 h-7" />
           </div>
           <div>
-            <h4 className="font-extrabold text-xl leading-tight">Daily Life</h4>
-            <p className="text-xs font-medium text-[#28331F]/70 mt-0.5">Routines & tasks</p>
+            <h4 className="font-extrabold text-xl leading-tight">{t('tileDailyLife')}</h4>
+            <p className="text-xs font-medium text-[#28331F]/70 mt-0.5">{t('tileDailyLifeSub')}</p>
           </div>
         </button>
       </div>
@@ -158,7 +159,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             </div>
             <div>
               <span className="text-xs font-extrabold text-[#E8B25C] uppercase tracking-wider block">
-                Up Next • {nextReminder.time_label}
+                {t('upNext')} • {nextReminder.time_label}
               </span>
               <h4 className="font-bold text-base text-[#2D3A2F]">{nextReminder.title}</h4>
               {nextReminder.note && <p className="text-xs text-[#5A6E5D]">{nextReminder.note}</p>}
@@ -168,7 +169,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             onClick={() => onSelectSubView('daily_life')}
             className="px-3 py-1.5 rounded-xl bg-[#EAF1E8] text-[#5B825B] font-bold text-xs hover:bg-[#d6e5d3]"
           >
-            View
+            {t('view')}
           </button>
         </div>
       )}
@@ -184,13 +185,13 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
           </div>
           <div className="text-left">
             <h4 className="font-extrabold text-base text-[#2D3A2F]">
-              {emergencyContactName ? `Call ${emergencyContactName}` : 'Call Family / Emergency'}
+              {emergencyContactName ? t('callFamilyPrompt', { name: emergencyContactName }) : t('callFamilyDefault')}
             </h4>
-            <p className="text-xs text-[#5A6E5D]">One tap to connect with your caregiver</p>
+            <p className="text-xs text-[#5A6E5D]">{t('callFamilySub')}</p>
           </div>
         </div>
         <span className="px-3.5 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black">
-          Call Now
+          {t('callNow')}
         </span>
       </button>
     </div>

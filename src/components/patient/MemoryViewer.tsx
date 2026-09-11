@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Memory } from '../../types';
 import { Volume2, VolumeX, ChevronLeft, ChevronRight, Heart, Video, Image as ImageIcon, Mic, Play, Pause, Radio } from 'lucide-react';
 import { soundController } from '../../utils/audio';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface MemoryViewerProps {
   memories: Memory[];
@@ -10,6 +11,7 @@ interface MemoryViewerProps {
 }
 
 export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMemoryId, onClose }) => {
+  const { t, isHindi } = useLanguage();
   const [index, setIndex] = useState(() => {
     const found = memories.findIndex((m) => m.id === currentMemoryId);
     return found !== -1 ? found : 0;
@@ -82,7 +84,7 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
         setIsPlayingAudio(false);
       }
       setIsReading(true);
-      const speechText = `${current.title}. ${current.person ? 'With ' + current.person + '. ' : ''}${current.description}`;
+      const speechText = `${current.title}. ${current.person ? (isHindi ? current.person + ' के साथ। ' : 'With ' + current.person + '. ') : ''}${current.description}`;
       soundController.speak(speechText, () => {
         setIsReading(false);
       });
@@ -108,12 +110,13 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
             onClose();
           }}
           className="px-4 py-2 rounded-2xl bg-white border border-[#E0DCD3] text-sm font-bold text-[#2D3A2F] hover:bg-[#EAF1E8] shadow-2xs"
+          aria-label={t('goBack')}
         >
-          ← Back to gallery
+          {isHindi ? '← यादों पर वापस' : '← Back to gallery'}
         </button>
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-[#5A6E5D]">
-            {index + 1} of {memories.length}
+            {index + 1} {isHindi ? '/' : 'of'} {memories.length}
           </span>
         </div>
       </div>
@@ -147,12 +150,12 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
             </span>
             {isVideo && (
               <span className="px-3 py-1 rounded-full bg-[#E8B25C] text-white text-xs font-black flex items-center gap-1 shadow-xs">
-                <Video className="w-3.5 h-3.5" /> Video Story
+                <Video className="w-3.5 h-3.5" /> {isHindi ? 'वीडियो संस्मरण' : 'Video Story'}
               </span>
             )}
             {isVoiceDiary && (
               <span className="px-3 py-1 rounded-full bg-[#5B825B] text-white text-xs font-black flex items-center gap-1 shadow-xs">
-                <Mic className="w-3.5 h-3.5" /> Voice Diary
+                <Mic className="w-3.5 h-3.5" /> {isHindi ? 'आवाज़ डायरी' : 'Voice Diary'}
               </span>
             )}
           </div>
@@ -171,7 +174,9 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
             <div>
               <h3 className="text-2xl font-black text-[#2D3A2F] leading-snug">{current.title}</h3>
               {current.person && (
-                <p className="text-sm font-extrabold text-[#5B825B] mt-0.5">Recorded by {current.person}</p>
+                <p className="text-sm font-extrabold text-[#5B825B] mt-0.5">
+                  {isHindi ? `${current.person} द्वारा साझा` : `Recorded by ${current.person}`}
+                </p>
               )}
               {current.date && (
                 <p className="text-xs text-[#5A6E5D] mt-0.5">{current.date}</p>
@@ -190,7 +195,7 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
                   }`}
                 >
                   {isPlayingAudio ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-                  <span>{isPlayingAudio ? 'Pause Voice' : 'Play Voice'}</span>
+                  <span>{isPlayingAudio ? (isHindi ? 'रोकें' : 'Pause Voice') : (isHindi ? 'आवाज़ सुनें' : 'Play Voice')}</span>
                 </button>
               ) : null}
 
@@ -203,7 +208,7 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
                 }`}
               >
                 {isReading ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                <span>{isReading ? 'Stop' : 'Read Aloud'}</span>
+                <span>{isReading ? (isHindi ? 'रोकें' : 'Stop') : (isHindi ? 'बोलकर सुनाएं' : 'Read Aloud')}</span>
               </button>
             </div>
           </div>
@@ -216,8 +221,12 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
                   <Radio className="w-5 h-5 animate-pulse" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-extrabold text-[#2D3A2F]">Patient Voice Journal</h4>
-                  <p className="text-[11px] text-[#5A6E5D]">Spoken memory preserved with browser SpeechRecognition</p>
+                  <h4 className="text-xs font-extrabold text-[#2D3A2F]">
+                    {isHindi ? 'बोलकर रिकॉर्ड की गई डायरी' : 'Patient Voice Journal'}
+                  </h4>
+                  <p className="text-[11px] text-[#5A6E5D]">
+                    {isHindi ? 'ब्राउज़र स्पीच रिकॉग्निशन द्वारा सहेजी गई याद' : 'Spoken memory preserved with browser SpeechRecognition'}
+                  </p>
                 </div>
               </div>
 
@@ -227,7 +236,7 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
                   className="px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-extrabold flex items-center gap-1 shadow-2xs hover:bg-[#4a6b4a]"
                 >
                   {isPlayingAudio ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                  <span>{isPlayingAudio ? 'Pause' : 'Listen'}</span>
+                  <span>{isPlayingAudio ? (isHindi ? 'रोकें' : 'Pause') : (isHindi ? 'सुनें' : 'Listen')}</span>
                 </button>
               )}
             </div>
@@ -246,14 +255,14 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
           className="flex-1 py-3.5 px-4 rounded-2xl bg-white border border-[#E0DCD3] text-[#2D3A2F] font-bold text-base flex items-center justify-center gap-2 hover:bg-[#EAF1E8] active:scale-[0.98] shadow-xs"
         >
           <ChevronLeft className="w-5 h-5" />
-          <span>Previous</span>
+          <span>{t('previous')}</span>
         </button>
 
         <button
           onClick={handleNext}
           className="flex-1 py-3.5 px-4 rounded-2xl bg-[#5B825B] text-white font-bold text-base flex items-center justify-center gap-2 hover:bg-[#4c704c] active:scale-[0.98] shadow-xs"
         >
-          <span>Next Memory</span>
+          <span>{isHindi ? 'अगली याद' : 'Next Memory'}</span>
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>

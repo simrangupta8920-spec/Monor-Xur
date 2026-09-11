@@ -7,6 +7,7 @@ import { soundController } from '../../utils/audio';
 import { DDAMetric, AIAnalysisResult } from '../../types';
 import { analyzePlayerDifficulty } from '../../services/aiDifficultyService';
 import { DifficultyToast, DifficultyToastProps } from '../common/DifficultyToast';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface MemoryMatchGameProps {
   onBack: () => void;
@@ -39,6 +40,8 @@ const LEVEL_CONFIG: Record<number, { label: string; pairs: number; hints: number
 };
 
 export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogDDAMetric, playerName = 'Player' }) => {
+  const { t, isHindi } = useLanguage();
+
   // Store level in localStorage so user's level progression is preserved
   const [level, setLevel] = useState<number>(() => {
     try {
@@ -545,7 +548,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white border border-[#E0DCD3] font-bold text-sm text-[#2D3A2F] hover:bg-[#EAF1E8] active:scale-95 shadow-2xs"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Games Hub</span>
+          <span>{t('back')}</span>
         </button>
 
         {/* Level toggle pills with AI indicator */}
@@ -564,7 +567,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
                   level === lvl ? 'bg-[#5B825B] text-white shadow-xs' : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
                 }`}
               >
-                {lvl === 1 ? 'Easy' : lvl === 2 ? 'Medium' : 'Hard'}
+                {lvl === 1 ? (isHindi ? 'सरल' : 'Easy') : lvl === 2 ? (isHindi ? 'मध्यम' : 'Medium') : (isHindi ? 'कठिन' : 'Hard')}
               </button>
             ))}
           </div>
@@ -654,25 +657,25 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
         <div className="flex gap-4 text-xs font-extrabold text-[#5A6E5D] items-center">
           <div>
             <span className="block text-[#2D3A2F] text-base font-black">{moves}</span>
-            <span>Moves</span>
+            <span>{isHindi ? 'चालें' : 'Moves'}</span>
           </div>
           <div>
             <span className={`block text-base font-black ${mistakes >= (level === 3 ? 8 : level === 2 ? 4 : 99) ? 'text-[#C46A66]' : 'text-[#2D3A2F]'}`}>
               {mistakes}{level === 2 ? '/5' : level === 3 ? '/10' : ''}
             </span>
-            <span>Mistakes {level === 2 ? '(Degrades at 5)' : level === 3 ? '(Degrades at 10)' : ''}</span>
+            <span>{isHindi ? 'गलतियाँ' : 'Mistakes'}</span>
           </div>
           <div>
             <span className="block text-[#5B825B] text-base font-black">
               {deck.filter((c) => c.matched).length / 2}/{LEVEL_CONFIG[level].pairs}
             </span>
-            <span>Matches</span>
+            <span>{isHindi ? 'जोड़े' : 'Matches'}</span>
           </div>
           {/* Win Streak Indicator */}
           <div className="hidden sm:block pl-2 border-l border-[#E0DCD3]">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#EAF1E8] border border-[#5B825B]/30 text-[#5B825B] text-xs font-black">
               <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
-              <span>Streak: {consecutiveWins}{level < 3 ? '/5 to Level Up' : ' (Hard Mastery)'}</span>
+              <span>{isHindi ? 'लगातार जीत' : 'Streak'}: {consecutiveWins}{level < 3 ? '/5' : ''}</span>
             </div>
           </div>
         </div>
@@ -688,7 +691,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
             }`}
           >
             <Lightbulb className="w-4 h-4 text-[#E8B25C]" />
-            <span>Hint ({hintsLeft})</span>
+            <span>{isHindi ? 'संकेत' : 'Hint'} ({hintsLeft})</span>
           </button>
 
           <button
@@ -697,7 +700,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
               initDeck(level);
             }}
             className="p-2 rounded-2xl bg-white border border-[#E0DCD3] text-[#5A6E5D] hover:bg-[#EAF1E8] shadow-2xs active:scale-95"
-            title="Restart round"
+            title={isHindi ? 'पुनः प्रारंभ करें' : 'Restart round'}
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -769,9 +772,11 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
             </div>
           ) : (
             <>
-              <h3 className="text-2xl font-black text-[#2D3A2F]">All Matched!</h3>
+              <h3 className="text-2xl font-black text-[#2D3A2F]">
+                {isHindi ? 'सभी जोड़े मिल गए!' : 'All Matched!'}
+              </h3>
               <p className="text-sm font-semibold text-[#2D3A2F]/90 max-w-xs mx-auto">
-                {helperMessage}
+                {isHindi ? 'बहुत बढ़िया! आपने सभी जोड़े सफलतापूर्वक मिला लिए।' : helperMessage}
               </p>
             </>
           )}
@@ -780,8 +785,8 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
             <Sparkles className="w-4 h-4 text-[#E8B25C]" />
             <span>
               {levelUpInfo?.hasLeveledUp
-                ? `5 / 5 Wins Streak Completed! Active: ${LEVEL_CONFIG[levelUpInfo.toLevel]?.label}`
-                : `Streak: ${consecutiveWins}${level < 3 ? '/5 to Level Up' : ' (Hard Mastery)'}`}
+                ? `5 / 5 ${isHindi ? 'जीत की स्ट्रीक पूरी हुई!' : 'Wins Streak Completed!'}`
+                : `${isHindi ? 'लगातार जीत' : 'Streak'}: ${consecutiveWins}${level < 3 ? '/5' : ''}`}
             </span>
           </div>
 
@@ -807,7 +812,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
                 }}
                 className="px-6 py-3 rounded-2xl bg-[#5B825B] text-white font-black text-sm shadow-xs hover:bg-[#4d704d] active:scale-95 flex items-center gap-2"
               >
-                <span>Play {LEVEL_CONFIG[levelUpInfo.toLevel]?.label.split(' ')[0]} Now</span>
+                <span>{isHindi ? 'अगला स्तर खेलें' : `Play ${LEVEL_CONFIG[levelUpInfo.toLevel]?.label.split(' ')[0]} Now`}</span>
                 <span>({LEVEL_CONFIG[levelUpInfo.toLevel]?.pairs} Pairs) →</span>
               </button>
             ) : (
@@ -818,14 +823,14 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
                 }}
                 className="px-6 py-3 rounded-2xl bg-[#5B825B] text-white font-black text-sm shadow-xs hover:bg-[#4d704d] active:scale-95"
               >
-                Play Again
+                {isHindi ? 'फिर से खेलें' : 'Play Again'}
               </button>
             )}
             <button
               onClick={onBack}
               className="px-5 py-3 rounded-2xl bg-white border border-[#E0DCD3] text-[#2D3A2F] font-bold text-sm hover:bg-gray-50 active:scale-95"
             >
-              Back to Hub
+              {isHindi ? 'वापस जाएं' : 'Back to Hub'}
             </button>
           </div>
         </div>

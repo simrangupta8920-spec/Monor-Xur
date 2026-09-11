@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Play, Square, Music, Sparkles } from 'lucide-react';
 import { soundController } from '../../utils/audio';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface RelaxationMusicProps {
   onBack: () => void;
@@ -17,35 +18,36 @@ interface TrackItem {
 }
 
 export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
+  const { t, isHindi } = useLanguage();
   const [activeTrack, setActiveTrack] = useState<TrackType | null>(null);
 
   const tracks: TrackItem[] = [
     {
       id: 'nature',
-      title: 'Morning Forest Birds',
-      subtitle: 'Gentle morning birdsong and warm breeze',
-      mood: 'Uplifting & Fresh',
+      title: isHindi ? 'सुबह के वन पक्षी' : 'Morning Forest Birds',
+      subtitle: isHindi ? 'मधुर सुबह की चहचहाहट व ठंडी हवा' : 'Gentle morning birdsong and warm breeze',
+      mood: isHindi ? 'ताजगी व ऊर्जा' : 'Uplifting & Fresh',
       color: '#EAF1E8',
     },
     {
       id: 'singing_bowl',
-      title: 'Tibetan Singing Bowl (432Hz)',
-      subtitle: 'Deep resonance for mental calm and focus',
-      mood: 'Deep Calm',
+      title: isHindi ? 'तिब्बती सिंगिंग बाउल (432Hz)' : 'Tibetan Singing Bowl (432Hz)',
+      subtitle: isHindi ? 'मानसिक शांति और एकाग्रता के लिए गहरी गूंज' : 'Deep resonance for mental calm and focus',
+      mood: isHindi ? 'गहरा सुकून' : 'Deep Calm',
       color: '#FDF0D5',
     },
     {
       id: 'harp',
-      title: 'Peaceful Harp Harmonies',
-      subtitle: 'Soft plucked strings with soothing progression',
-      mood: 'Gentle Comfort',
+      title: isHindi ? 'शांत वीणा स्वर' : 'Peaceful Harp Harmonies',
+      subtitle: isHindi ? 'मन को छूने वाले शांत तार' : 'Soft plucked strings with soothing progression',
+      mood: isHindi ? 'सुकूनदायक' : 'Gentle Comfort',
       color: '#D4E4E6',
     },
     {
       id: 'flute',
-      title: 'Bamboo Flute Meditation',
-      subtitle: 'Melodious tranquil Indian bamboo notes',
-      mood: 'Peace of Mind',
+      title: isHindi ? 'बांसुरी ध्यान संगीत' : 'Bamboo Flute Meditation',
+      subtitle: isHindi ? 'पारम्परिक मधुर बांसुरी की तान' : 'Melodious tranquil Indian bamboo notes',
+      mood: isHindi ? 'मन की शांति' : 'Peace of Mind',
       color: '#F0D8D6',
     },
   ];
@@ -76,12 +78,13 @@ export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
             onBack();
           }}
           className="p-2 rounded-2xl bg-white border border-[#E0DCD3] text-[#2D3A2F] hover:bg-[#EAF1E8]"
+          aria-label={t('goBack')}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h2 className="text-2xl font-black text-[#2D3A2F]">Calming Melodies</h2>
-          <p className="text-xs text-[#5A6E5D]">Synthesized gentle soundscapes to relax your mind.</p>
+          <h2 className="text-2xl font-black text-[#2D3A2F]">{t('musicTitle')}</h2>
+          <p className="text-xs text-[#5A6E5D]">{t('musicSub')}</p>
         </div>
       </div>
 
@@ -93,7 +96,9 @@ export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
               <Music className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider block text-[#EAF1E8]">Now Playing</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider block text-[#EAF1E8]">
+                {isHindi ? 'अभी बज रहा है' : 'Now Playing'}
+              </span>
               <h4 className="font-extrabold text-base">
                 {tracks.find((t) => t.id === activeTrack)?.title}
               </h4>
@@ -107,7 +112,7 @@ export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
             className="p-2.5 rounded-2xl bg-white text-[#5B825B] font-bold text-xs flex items-center gap-1 shadow-xs hover:bg-[#EAF1E8]"
           >
             <Square className="w-4 h-4 fill-current" />
-            <span>Stop</span>
+            <span>{t('stopMusic')}</span>
           </button>
         </div>
       )}
@@ -148,7 +153,7 @@ export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
                     ? 'bg-[#C46A66] text-white'
                     : 'bg-[#5B825B] text-white hover:bg-[#4d704d]'
                 }`}
-                aria-label={isPlaying ? 'Stop' : 'Play'}
+                aria-label={isPlaying ? t('stopMusic') : t('playMusic')}
               >
                 {isPlaying ? <Square className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
               </button>

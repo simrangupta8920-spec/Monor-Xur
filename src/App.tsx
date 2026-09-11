@@ -349,7 +349,10 @@ export function App() {
     }
 
     soundController.playSuccess();
-    soundController.speak(`Welcome to Monor Xur, ${data.patient.name}!`);
+    soundController.speakBilingual(
+      `Welcome to Monor Xur, ${data.patient.name}!`,
+      `मोनोर सुर में आपका स्वागत है, ${data.patient.name}!`
+    );
     handleSwitchRole('patient');
   };
 

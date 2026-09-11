@@ -2,6 +2,7 @@ import React from 'react';
 import { Wind, Music, Heart, Sparkles, ArrowLeft } from 'lucide-react';
 import { PatientSubView } from '../../types';
 import { soundController } from '../../utils/audio';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface RelaxationHubProps {
   onSelectSubView: (view: PatientSubView) => void;
@@ -9,18 +10,21 @@ interface RelaxationHubProps {
 }
 
 export const RelaxationHub: React.FC<RelaxationHubProps> = ({ onSelectSubView, onBack }) => {
+  const { t, isHindi } = useLanguage();
+
   return (
     <div className="p-4 pb-24 space-y-4 animate-fadeIn">
       <div className="flex items-center gap-2">
         <button
           onClick={onBack}
           className="p-2 rounded-2xl bg-white border border-[#E0DCD3] text-[#2D3A2F] hover:bg-[#EAF1E8]"
+          aria-label={t('goBack')}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h2 className="text-2xl font-black text-[#2D3A2F]">Relaxation Space</h2>
-          <p className="text-xs text-[#5A6E5D]">Calming breathing & peaceful melodies.</p>
+          <h2 className="text-2xl font-black text-[#2D3A2F]">{t('relaxationTitle')}</h2>
+          <p className="text-xs text-[#5A6E5D]">{t('relaxationSub')}</p>
         </div>
       </div>
 
@@ -37,15 +41,17 @@ export const RelaxationHub: React.FC<RelaxationHubProps> = ({ onSelectSubView, o
             <Wind className="w-8 h-8" />
           </div>
           <span className="px-3 py-1 rounded-full bg-white/80 text-xs font-black text-[#1C2A2D] inline-block mb-2">
-            Gentle 4-2-6 Rhythm
+            {isHindi ? 'सौम्य 4-2-6 लय' : 'Gentle 4-2-6 Rhythm'}
           </span>
-          <h3 className="text-2xl font-black leading-tight">Breathing Exercise</h3>
+          <h3 className="text-2xl font-black leading-tight">{t('breathingTitle')}</h3>
           <p className="text-sm font-medium text-[#1C2A2D]/80 mt-1">
-            Soothing guided inhalation, hold, and gentle exhalation with expanding botanical petals to relieve tension.
+            {t('breathingSub')}
           </p>
           <div className="mt-4 flex items-center justify-between text-xs font-black">
-            <span>4 Cycles • ~1 Minute</span>
-            <span className="px-4 py-2 rounded-xl bg-white text-[#1C2A2D] shadow-xs">Start Breathing →</span>
+            <span>{isHindi ? '4 चक्र • ~1 मिनट' : '4 Cycles • ~1 Minute'}</span>
+            <span className="px-4 py-2 rounded-xl bg-white text-[#1C2A2D] shadow-xs">
+              {isHindi ? 'श्वास शुरू करें →' : 'Start Breathing →'}
+            </span>
           </div>
         </div>
 
@@ -61,15 +67,17 @@ export const RelaxationHub: React.FC<RelaxationHubProps> = ({ onSelectSubView, o
             <Music className="w-8 h-8" />
           </div>
           <span className="px-3 py-1 rounded-full bg-white/80 text-xs font-black text-[#28331F] inline-block mb-2">
-            Ambient & Traditional
+            {isHindi ? 'शांतिदायक व पारम्परिक' : 'Ambient & Traditional'}
           </span>
-          <h3 className="text-2xl font-black leading-tight">Calming Melodies</h3>
+          <h3 className="text-2xl font-black leading-tight">{t('musicTitle')}</h3>
           <p className="text-sm font-medium text-[#28331F]/80 mt-1">
-            Gentle nature sounds, morning sitar, ambient flute, and singing bowl vibrations for peaceful resting.
+            {t('musicSub')}
           </p>
           <div className="mt-4 flex items-center justify-between text-xs font-black">
-            <span>Harmonic Sounds</span>
-            <span className="px-4 py-2 rounded-xl bg-white text-[#28331F] shadow-xs">Listen Now →</span>
+            <span>{isHindi ? 'मधुर ध्वनियां' : 'Harmonic Sounds'}</span>
+            <span className="px-4 py-2 rounded-xl bg-white text-[#28331F] shadow-xs">
+              {isHindi ? 'अभी सुनें →' : 'Listen Now →'}
+            </span>
           </div>
         </div>
       </div>

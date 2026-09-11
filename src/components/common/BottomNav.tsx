@@ -1,6 +1,7 @@
 import React from 'react';
 import { Home, Puzzle, Image as ImageIcon, Settings, Calendar, Bell, User, ClipboardList, BarChart3, TrendingUp, Sparkles } from 'lucide-react';
 import { PatientTab, FamilyCaregiverTab, AshaTab } from '../../types';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface PatientNavProps {
   activeTab: PatientTab;
@@ -8,11 +9,13 @@ interface PatientNavProps {
 }
 
 export const PatientBottomNav: React.FC<PatientNavProps> = ({ activeTab, onSelectTab }) => {
+  const { t } = useLanguage();
+
   const tabs: { key: PatientTab; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { key: 'home', label: 'Home', icon: Home },
-    { key: 'play', label: 'Play', icon: Puzzle },
-    { key: 'memories', label: 'Memories', icon: ImageIcon },
-    { key: 'settings', label: 'Settings', icon: Settings },
+    { key: 'home', label: t('navHome'), icon: Home },
+    { key: 'play', label: t('navPlay'), icon: Puzzle },
+    { key: 'memories', label: t('navMemories'), icon: ImageIcon },
+    { key: 'settings', label: t('navSettings'), icon: Settings },
   ];
 
   return (
@@ -46,13 +49,15 @@ interface FamilyNavProps {
 }
 
 export const FamilyBottomNav: React.FC<FamilyNavProps> = ({ activeTab, onSelectTab, alertCount = 0 }) => {
+  const { t } = useLanguage();
+
   const tabs: { key: FamilyCaregiverTab; label: string; icon: React.FC<{ className?: string }>; badge?: number }[] = [
-    { key: 'home', label: 'Home', icon: Home },
-    { key: 'insights', label: 'Insights', icon: Sparkles },
-    { key: 'progress', label: 'Progress', icon: TrendingUp },
-    { key: 'calendar', label: 'Calendar', icon: Calendar },
-    { key: 'alerts', label: 'Alerts', icon: Bell, badge: alertCount },
-    { key: 'profile', label: 'Profile', icon: User },
+    { key: 'home', label: t('navHome'), icon: Home },
+    { key: 'insights', label: t('navInsights'), icon: Sparkles },
+    { key: 'progress', label: t('navProgress'), icon: TrendingUp },
+    { key: 'calendar', label: t('navCalendar'), icon: Calendar },
+    { key: 'alerts', label: t('navAlerts'), icon: Bell, badge: alertCount },
+    { key: 'profile', label: t('navProfile'), icon: User },
   ];
 
   return (
@@ -93,11 +98,13 @@ interface AshaNavProps {
 }
 
 export const AshaBottomNav: React.FC<AshaNavProps> = ({ activeTab, onSelectTab, pendingTasksCount = 0 }) => {
+  const { t } = useLanguage();
+
   const tabs: { key: AshaTab; label: string; icon: React.FC<{ className?: string }>; badge?: number }[] = [
-    { key: 'home', label: 'Home', icon: Home },
-    { key: 'report', label: 'Report', icon: BarChart3 },
-    { key: 'tasks', label: 'Tasks', icon: ClipboardList, badge: pendingTasksCount },
-    { key: 'alerts', label: 'Alerts', icon: Bell },
+    { key: 'home', label: t('navHome'), icon: Home },
+    { key: 'report', label: t('navReport'), icon: BarChart3 },
+    { key: 'tasks', label: t('navTasks'), icon: ClipboardList, badge: pendingTasksCount },
+    { key: 'alerts', label: t('navAlerts'), icon: Bell },
   ];
 
   return (

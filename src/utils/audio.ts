@@ -134,20 +134,99 @@ class SoundController {
     }
   }
 
-  // Native Speech Synthesis for Read-Aloud
-  speak(text: string, onEnd?: () => void) {
+  public currentLanguage: 'en' | 'hi' = 'en';
+
+  setLanguage(lang: 'en' | 'hi') {
+    this.currentLanguage = lang;
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('monor_xur_language', lang);
+        document.documentElement.lang = lang;
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
+
+  getLanguage(): 'en' | 'hi' {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('monor_xur_language');
+      if (stored === 'en' || stored === 'hi') {
+        this.currentLanguage = stored;
+      }
+    }
+    return this.currentLanguage;
+  }
+
+  // Helper to translate common English voice prompts to Hindi when in Hindi mode
+  private translateSpokenPrompt(text: string): string {
+    if (this.currentLanguage !== 'hi') return text;
+
+    // Direct phrase translations
+    const phrases: Record<string, string> = {
+      'No personal photos uploaded yet. You can play Default Mode with Mango and other treasures!':
+        'अभी तक कोई व्यक्तिगत फ़ोटो अपलोड नहीं की गई है। आप आम और अन्य धरोहरों के साथ डिफ़ॉल्ट मोड खेल सकते हैं!',
+      'Wonderful job! You solved the puzzle.':
+        'बहुत खूब! आपने पहेली पूरी कर ली।',
+      'Congratulations! You matched all pairs beautifully.':
+        'बधाई हो! आपने सभी जोड़े बहुत सुंदर ढंग से मिला लिए।',
+      'Spoken voice reflection.':
+        'आवाज़ की याद।',
+    };
+
+    if (phrases[text]) return phrases[text];
+
+    // Dynamic patterns
+    // e.g. "Hello Player. Read aloud is working warmly and clearly."
+    const helloMatch = text.match(/^Hello\s+(.+?)\.\s+Read aloud is working warmly and clearly\.$/i);
+    if (helloMatch) {
+      return `नमस्ते ${helloMatch[1]}। बोलने वाली आवाज़ साफ़ और स्पष्ट काम कर रही है।`;
+    }
+
+    // e.g. "Welcome to Monor Xur, Player!"
+    const welcomeMatch = text.match(/^Welcome to Monor Xur,\s*(.+?)!$/i);
+    if (welcomeMatch) {
+      return `मनोर सुर में आपका स्वागत है, ${welcomeMatch[1]}!`;
+    }
+
+    // If text already has Devanagari or is custom, return as is
+    return text;
+  }
+
+  // Native Speech Synthesis for Read-Aloud with English & Hindi Support
+  speak(text: string, onEnd?: () => void, langOverride?: 'en' | 'hi') {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const targetLang = langOverride || this.getLanguage();
+    const processedText = targetLang === 'hi' ? this.translateSpokenPrompt(text) : text;
+
+    const utterance = new SpeechSynthesisUtterance(processedText);
     utterance.rate = 0.88; // Gentle, slower rate for elderly comprehension
     utterance.pitch = 1.0;
     
-    // Pick warm natural sounding voice if available
+    // Pick warm natural sounding voice matching the target language
     const voices = window.speechSynthesis.getVoices();
-    const friendlyVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha')));
-    if (friendlyVoice) {
-      utterance.voice = friendlyVoice;
+    if (targetLang === 'hi') {
+      utterance.lang = 'hi-IN';
+      const hindiVoice = voices.find(v => 
+        v.lang === 'hi-IN' || 
+        v.lang.startsWith('hi') || 
+        v.name.toLowerCase().includes('hindi') || 
+        v.name.includes('हिन्दी')
+      );
+      if (hindiVoice) {
+        utterance.voice = hindiVoice;
+      }
+    } else {
+      utterance.lang = 'en-US';
+      const friendlyVoice = voices.find(v => 
+        v.lang.startsWith('en') && 
+        (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Jenny'))
+      );
+      if (friendlyVoice) {
+        utterance.voice = friendlyVoice;
+      }
     }
 
     if (onEnd) {
@@ -156,6 +235,11 @@ class SoundController {
     }
 
     window.speechSynthesis.speak(utterance);
+  }
+
+  speakBilingual(textEn: string, textHi: string, onEnd?: () => void) {
+    const lang = this.getLanguage();
+    this.speak(lang === 'hi' ? textHi : textEn, onEnd, lang);
   }
 
   stopSpeaking() {
