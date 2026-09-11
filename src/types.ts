@@ -50,6 +50,11 @@ export interface Memory {
   date?: string;
   isVoiceDiary?: boolean;
   createdAt?: string;
+  // Voice Reminiscence audio recorded in caregiver's own voice
+  voiceSnippet?: string; // Data URL or audio link
+  voiceSnippetDuration?: number; // Duration in seconds (up to 15s)
+  voiceRecordedBy?: string; // Caregiver relation or name (e.g. "Daughter Priya")
+  voicePromptText?: string; // Transcript / prompt e.g. "Papa, this was Rohan's wedding in Jaipur, 2019"
 }
 
 export interface CaregiverAccount {
@@ -59,6 +64,7 @@ export interface CaregiverAccount {
   pin: string; // 4-digit security PIN set by caregiver
   email?: string;
   isPrimary?: boolean;
+  avatar?: string;
 }
 
 export interface AshaAccount {
@@ -98,6 +104,9 @@ export interface PatientProfile {
   // Dynamic Game Difficulty Progression (persists across sessions & devices)
   gameDifficultyLevel?: number; // Primary/general difficulty (1: Easy, 2: Medium, 3: Hard)
   gameDifficultyLevels?: GameDifficultyLevels; // Specific game difficulty level mapping
+  singleFocusMode?: boolean; // Ultra-Simple single recommendation home screen for elderly
+  sundowningAutomationEnabled?: boolean; // Automatically dim to warm amber and soften chimes from 4:30 PM to 7:30 PM
+  sundowningManualOverride?: boolean; // Manual test/force toggle for twilight calming
   gameStreaks?: Record<string, number>; // Win streaks or solve streaks per game tier
   lastGameSessionTimestamp?: number; // Timestamp of latest gameplay session
   updatedAt?: string;

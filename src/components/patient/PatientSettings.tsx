@@ -75,7 +75,7 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
               {t('activePlayer')}
             </span>
             <h3 className="text-base font-black text-[#2D3A2F] mt-0.5">{playerFullName}</h3>
-            <p className="text-xs text-[#5A6E5D]">{t('mindExplorerLevel', { level: 2 })}</p>
+            <p className="text-xs text-[#5A6E5D]">{isHindi ? 'सप्रेम देखभाल सक्रिय • अपनी गति से खेलें' : 'Loving Care Active • Play at your own pace'}</p>
           </div>
         </div>
       </div>

@@ -54,6 +54,29 @@ const ELDER_AVATARS = [
   }
 ];
 
+export const CAREGIVER_AVATARS = [
+  {
+    id: 'cg-female-1',
+    label: 'Daughter Priya',
+    url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
+  },
+  {
+    id: 'cg-female-2',
+    label: 'Caring Relative',
+    url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=300&q=80',
+  },
+  {
+    id: 'cg-male-1',
+    label: 'Son / Family Member',
+    url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
+  },
+  {
+    id: 'cg-male-2',
+    label: 'Grandson / Caregiver',
+    url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbbce?auto=format&fit=crop&w=300&q=80',
+  },
+];
+
 export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
   initialPatient,
   initialMedical,
@@ -121,6 +144,19 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
   const [confirmPin, setConfirmPin] = useState(
     initialPatient?.caregiver?.pin || '1234'
   );
+  const [caregiverAvatar, setCaregiverAvatar] = useState(
+    initialPatient?.caregiver?.avatar || CAREGIVER_AVATARS[0].url
+  );
+  const [singleFocusMode, setSingleFocusMode] = useState<boolean>(() => {
+    try {
+      if (initialPatient?.singleFocusMode !== undefined) {
+        return initialPatient.singleFocusMode;
+      }
+      return localStorage.getItem('monor_single_focus_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // STEP 4: ASHA Health Worker Setup
   const [ashaWorkerId, setAshaWorkerId] = useState(
@@ -224,7 +260,14 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
       phone: caregiverPhone.trim(),
       pin: caregiverPin.trim(),
       isPrimary: true,
+      avatar: caregiverAvatar,
     };
+
+    try {
+      localStorage.setItem('monor_single_focus_mode', String(singleFocusMode));
+    } catch {
+      // ignore
+    }
 
     const ashaAccount: AshaAccount = {
       workerId: ashaWorkerId.trim().toUpperCase(),
@@ -250,6 +293,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
       isConfigured: true,
       consentGiven: true,
       consentDate: initialPatient?.consentDate || new Date().toISOString(),
+      singleFocusMode,
     };
 
     const medicalData: MedicalProfile = {
@@ -847,6 +891,90 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
               <span className="text-[10px] text-[#5A6E5D] mt-1 block">
                 {tx('⭐ This number will be called when the player taps the green emergency family call button.', '⭐ जब खिलाड़ी हरे रंग के आपातकालीन कॉल बटन पर टैप करेगा तब इस नंबर पर कॉल जाएगा।')}
               </span>
+            </div>
+
+            {/* ITEM E: Caregiver Face Portrait & Photo Picker */}
+            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-3">
+              <div className="flex items-center gap-2 text-[#5B825B]">
+                <Heart className="w-4 h-4" />
+                <span className="text-xs font-black uppercase tracking-wider">
+                  {tx('Caregiver Photo (Displayed on Senior Call Button)', 'देखभालकर्ता की तस्वीर (कॉल बटन पर दिखेगी)')}
+                </span>
+              </div>
+              <p className="text-[11px] text-[#5A6E5D] leading-relaxed">
+                {tx('Choose a familiar, smiling portrait so your elder immediately recognizes who they are calling with zero confusion.', 'एक परिचित, मुस्कुराती हुई तस्वीर चुनें ताकि बुजुर्ग बिना किसी भ्रम के तुरंत पहचान सकें कि वे किसे कॉल कर रहे हैं।')}
+              </p>
+
+              <div className="grid grid-cols-4 gap-2.5">
+                {CAREGIVER_AVATARS.map((av) => (
+                  <button
+                    key={av.id}
+                    type="button"
+                    onClick={() => setCaregiverAvatar(av.url)}
+                    className={`aspect-square rounded-2xl overflow-hidden border-2 transition-all p-0.5 relative group ${
+                      caregiverAvatar === av.url
+                        ? 'border-[#5B825B] ring-2 ring-[#5B825B]/40 shadow-xs scale-102'
+                        : 'border-[#E0DCD3] hover:border-[#5B825B]/50'
+                    }`}
+                  >
+                    <img 
+                      src={av.url} 
+                      alt={av.label} 
+                      className="w-full h-full object-cover rounded-xl"
+                      referrerPolicy="no-referrer"
+                    />
+                    {caregiverAvatar === av.url && (
+                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#5B825B] text-white flex items-center justify-center shadow-xs">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-1">
+                <label className="block text-[11px] font-bold text-[#5A6E5D] mb-1">
+                  {tx('Or enter custom photo URL:', 'या कस्टम फोटो यूआरएल दर्ज करें:')}
+                </label>
+                <input
+                  type="url"
+                  value={caregiverAvatar}
+                  onChange={(e) => setCaregiverAvatar(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E0DCD3] focus:outline-hidden focus:border-[#5B825B]"
+                />
+              </div>
+            </div>
+
+            {/* ITEM B: Ultra-Simple Single-Focus Home Option Toggle */}
+            <div className="p-4 rounded-2xl bg-[#EAF1E8]/50 border-2 border-[#5B825B]/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[#5B825B]">
+                  <Sparkles className="w-4 h-4 text-[#E8B25C]" />
+                  <span className="text-xs font-black uppercase tracking-wider">
+                    {tx('Ultra-Simple (Single-Focus) Home View', 'अति-सरल (एकल-ध्यान) होम दृश्य')}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSingleFocusMode(!singleFocusMode)}
+                  className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-200 ${
+                    singleFocusMode ? 'bg-[#5B825B]' : 'bg-[#D1C9BC]'
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                      singleFocusMode ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+              <p className="text-[11px] text-[#5A6E5D] leading-relaxed">
+                {tx(
+                  'Recommended for seniors with moderate dementia. Replaces the 4-tile grid with a single, high-contrast recommendation tailored to the time of day (Bhajan in morning, Memories in afternoon, Gentle Breathing in evening) to prevent choice paralysis.',
+                  'मध्यम भूलने की बीमारी वाले वरिष्ठों के लिए अनुशंसित। दिन के समय के आधार पर केवल एक मुख्य गतिविधि दिखाता है (सुबह भजन, दोपहर में यादें, शाम को प्राणायाम) ताकि निर्णय लेने में कोई उलझन न हो।'
+                )}
+              </p>
             </div>
 
             {/* Custom 4-Digit PIN */}

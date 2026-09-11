@@ -626,6 +626,7 @@ export function App() {
                     onSelectSubView={setPatientSubView}
                     reminders={reminders}
                     onCallFamily={triggerCallFamily}
+                    caregiver={patientProfile.caregiver}
                   />
                 )}
 

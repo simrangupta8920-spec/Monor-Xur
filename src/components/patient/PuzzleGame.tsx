@@ -11,6 +11,7 @@ import { soundController } from '../../utils/audio';
 import { analyzePuzzleDifficulty, PuzzleAIAnalysisResult, PUZZLE_DESIGNATED_TIMES } from '../../services/aiDifficultyService';
 import { DifficultyToast, DifficultyToastProps } from '../common/DifficultyToast';
 import { useLanguage } from '../../context/LanguageContext';
+import { SpeakButton } from '../common/SpeakButton';
 
 interface PuzzleGameProps {
   memories: Memory[];
@@ -1067,23 +1068,16 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             </h2>
           </div>
 
-          <div className="flex items-center gap-2 sm:self-center flex-wrap">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F8F6F0] border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F]">
-              <Clock className="w-3.5 h-3.5 text-[#E8B25C]" />
-              <span>⏱️ {formatSeconds(elapsedSeconds)}</span>
-              <span className="text-[#5A6E5D] text-[11px] font-semibold">
-                ({isHindi ? 'लक्ष्य' : 'Target'}: ~{designatedTime}s)
-              </span>
-            </div>
-            {consecutiveSolves > 0 && (
-              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#EAF1E8] border border-[#5B825B]/30 text-[11px] font-black text-[#5B825B]">
-                <Sparkles className="w-3 h-3 text-[#E8B25C]" />
-                <span>{isHindi ? 'लगातार' : 'Streak'}: {consecutiveSolves}/3</span>
-              </div>
-            )}
-            <span className="text-xs font-bold text-[#5A6E5D] px-1">
-              {isHindi ? 'चालें' : 'Moves'}: {moves}
+          <div className="flex items-center gap-2 sm:self-center">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-[#EAF1E8] border border-[#5B825B]/30 text-xs font-black text-[#5B825B]">
+              <Heart className="w-3.5 h-3.5 fill-current" />
+              <span>{isHindi ? 'अपनी गति से खेलें' : 'No rush • Take your time'}</span>
             </span>
+            <SpeakButton
+              textEn="Photo puzzle. Tap any piece to select it, then tap an empty slot on the board to place it. Enjoy putting the picture together peacefully."
+              textHi="चित्र पहेली। किसी भी टुकड़े पर टैप करें, फिर खाली जगह पर रखकर तस्वीर पूरी करें। आराम से खेलें।"
+              size="sm"
+            />
           </div>
         </div>
 
@@ -1130,89 +1124,34 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
           </button>
         </div>
 
-        {/* AI Adaptive Engine Status & Dynamic Difficulty Control */}
-        <div className="bg-[#F8F6F0] p-3.5 rounded-2xl border border-[#EAE6DF] space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2.5">
-              <button
-                onClick={() => setShowAIInfoModal(true)}
-                className="w-9 h-9 rounded-2xl bg-[#5B825B] text-white flex items-center justify-center shadow-2xs hover:scale-105 transition-transform shrink-0"
-                title="Inspect AI Cognitive Difficulty Model"
-              >
-                <Brain className="w-5 h-5" />
-              </button>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-black text-[#2D3A2F]">AI Difficulty Auto-Adjust</span>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full border border-[#5B825B]/20">
-                    <Sparkles className="w-2.5 h-2.5 text-[#E8B25C]" />
-                    {isAnalyzingAI ? 'Evaluating Recall Pace...' : 'Gemini 3.8 Flash Active'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#5A6E5D] font-medium leading-tight">
-                  {isAnalyzingAI
-                    ? 'AI model analyzing completion speed & time trends...'
-                    : autoAdjustEnabled
-                    ? `Designated Target: ~${designatedTime}s • 3 consecutive fast solves upgrades • Taking >${degradeThreshold}s degrades`
-                    : 'Auto-adjust paused (Manual Grid Mode)'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-              <button
-                onClick={() => {
-                  soundController.playClick();
-                  setAutoAdjustEnabled(!autoAdjustEnabled);
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 border transition-all ${
-                  autoAdjustEnabled
-                    ? 'bg-[#EAF1E8] border-[#5B825B]/30 text-[#5B825B]'
-                    : 'bg-white border-[#E0DCD3] text-[#8A8070]'
-                }`}
-              >
-                <Brain className={`w-3.5 h-3.5 ${autoAdjustEnabled ? 'text-[#5B825B]' : 'text-[#8A8070]'}`} />
-                <span>Auto-Adjust: {autoAdjustEnabled ? 'ON' : 'OFF'}</span>
-              </button>
-
-              <button
-                onClick={() => setShowAIInfoModal(true)}
-                className="px-2.5 py-1.5 rounded-xl bg-white border border-[#E0DCD3] hover:bg-[#F8F6F0] text-xs font-bold text-[#5A6E5D] flex items-center gap-1 shadow-2xs"
-                title="How AI Auto-Adjustment Works"
-              >
-                <HelpCircle className="w-3.5 h-3.5 text-[#5B825B]" />
-                <span className="hidden sm:inline">How AI Works</span>
-              </button>
+        {/* Simple, peaceful Grid Size Selector */}
+        <div className="bg-[#F8F6F0] p-3.5 rounded-2xl border border-[#EAE6DF] flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black uppercase tracking-wider text-[#2D3A2F] flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5 text-[#5B825B]" />
+              {isHindi ? 'पहेली का आकार:' : 'Puzzle Size:'}
+            </span>
+            <div className="inline-flex rounded-xl bg-white p-1 border border-[#E0DCD3] shadow-2xs">
+              {([2, 3, 4] as GridDimension[]).map((size) => (
+                <button
+                  key={size}
+                  onClick={() => handleSelectGridSize(size)}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    gridSize === size
+                      ? 'bg-[#5B825B] text-white shadow-xs'
+                      : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
+                  }`}
+                >
+                  {GRID_LABELS[size].name}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-[#EAE6DF]">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-black uppercase tracking-wider text-[#2D3A2F] flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-[#5B825B]" />
-                Grid Level:
-              </span>
-              <div className="inline-flex rounded-xl bg-white p-1 border border-[#E0DCD3] shadow-2xs">
-                {([2, 3, 4] as GridDimension[]).map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => handleSelectGridSize(size)}
-                    className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${
-                      gridSize === size
-                        ? 'bg-[#5B825B] text-white shadow-xs'
-                        : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
-                    }`}
-                  >
-                    {GRID_LABELS[size].name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[11px] font-bold text-[#5A6E5D] self-start sm:self-auto">
-              <span>{completionHistory.length} solved history</span>
-            </div>
-          </div>
+          <span className="text-xs font-bold text-[#5B825B] flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
+            <span>{isHindi ? 'शांति से टुकड़े जोड़ें' : 'Piece together with joy'}</span>
+          </span>
         </div>
 
         {/* Mode Selector Carousels */}

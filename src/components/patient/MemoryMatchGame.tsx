@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { 
-  Flower2, Sun, Trees, Bird, Cat, Fish, Star, Heart, Lightbulb, RotateCcw, ArrowLeft, Trophy, Sparkles, Brain, Info, Check, ShieldAlert, Zap, TrendingUp, TrendingDown
+  Flower2, Sun, Trees, Bird, Cat, Fish, Star, Heart, Lightbulb, 
+  RotateCcw, ArrowLeft, Trophy, Sparkles, Check 
 } from 'lucide-react';
 import { soundController } from '../../utils/audio';
 import { DDAMetric, AIAnalysisResult } from '../../types';
 import { analyzePlayerDifficulty } from '../../services/aiDifficultyService';
-import { DifficultyToast, DifficultyToastProps } from '../common/DifficultyToast';
 import { useLanguage } from '../../context/LanguageContext';
+import { SpeakButton } from '../common/SpeakButton';
 
 interface MemoryMatchGameProps {
   onBack: () => void;
@@ -22,27 +23,31 @@ interface CardItem {
   matched: boolean;
 }
 
+// Concrete, real-world unmistakable symbols with high-contrast distinct colors & dual text labels
 const SYMBOL_ICONS = [
-  { icon: Flower2, name: 'Flower', color: '#5B825B' },
-  { icon: Sun, name: 'Sun', color: '#E8B25C' },
-  { icon: Trees, name: 'Tree', color: '#6B8E6B' },
-  { icon: Bird, name: 'Bird', color: '#7A9CA4' },
-  { icon: Cat, name: 'Cat', color: '#C46A66' },
-  { icon: Fish, name: 'Fish', color: '#5A6E5D' },
-  { icon: Star, name: 'Star', color: '#E8B25C' },
-  { icon: Heart, name: 'Heart', color: '#C46A66' },
+  { icon: Flower2, nameEn: 'Flower', nameHi: 'फूल', color: '#E11D48', bg: '#FFF1F2', border: '#E11D48' },
+  { icon: Sun, nameEn: 'Sun', nameHi: 'सूरज', color: '#D97706', bg: '#FEF3C7', border: '#D97706' },
+  { icon: Trees, nameEn: 'Tree', nameHi: 'पेड़', color: '#15803D', bg: '#DCFCE7', border: '#15803D' },
+  { icon: Bird, nameEn: 'Bird', nameHi: 'चिड़िया', color: '#0284C7', bg: '#E0F2FE', border: '#0284C7' },
+  { icon: Cat, nameEn: 'Cat', nameHi: 'बिल्ली', color: '#EA580C', bg: '#FFEDD5', border: '#EA580C' },
+  { icon: Fish, nameEn: 'Fish', nameHi: 'मछली', color: '#0F766E', bg: '#CCFBF1', border: '#0F766E' },
+  { icon: Star, nameEn: 'Star', nameHi: 'तारा', color: '#CA8A04', bg: '#FEF9C3', border: '#CA8A04' },
+  { icon: Heart, nameEn: 'Heart', nameHi: 'दिल', color: '#BE123C', bg: '#FFE4E6', border: '#BE123C' },
 ];
 
-const LEVEL_CONFIG: Record<number, { label: string; pairs: number; hints: number }> = {
-  1: { label: 'Easy (3 Pairs)', pairs: 3, hints: 4 },
-  2: { label: 'Medium (4 Pairs)', pairs: 4, hints: 2 },
-  3: { label: 'Hard (6 Pairs)', pairs: 6, hints: 1 },
+const LEVEL_CONFIG: Record<number, { labelEn: string; labelHi: string; pairs: number; hints: number }> = {
+  1: { labelEn: 'Easy (3 Pairs)', labelHi: 'सरल (3 जोड़े)', pairs: 3, hints: 4 },
+  2: { labelEn: 'Medium (4 Pairs)', labelHi: 'मध्यम (4 जोड़े)', pairs: 4, hints: 3 },
+  3: { labelEn: 'Hard (6 Pairs)', labelHi: 'बड़ा (6 जोड़े)', pairs: 6, hints: 2 },
 };
 
-export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogDDAMetric, playerName = 'Player' }) => {
-  const { t, isHindi } = useLanguage();
+export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ 
+  onBack, 
+  onLogDDAMetric, 
+  playerName = 'Player' 
+}) => {
+  const { t, tx, isHindi } = useLanguage();
 
-  // Store level in localStorage so user's level progression is preserved
   const [level, setLevel] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('monor_memory_level');
@@ -61,11 +66,9 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
   const [mistakes, setMistakes] = useState(0);
   const [consecutiveMistakes, setConsecutiveMistakes] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
-  const [helperMessage, setHelperMessage] = useState<string | null>(null);
+  const [warmAffirmation, setWarmAffirmation] = useState<string>('');
 
-  // Consecutive wins streak tracked per level (5 consecutive wins -> upgrade 1 step)
-  // Easy (1) -> 5 wins -> Medium (2)
-  // Medium (2) -> 5 wins -> Hard (3)
+  // Consecutive wins streak tracked in background for DDA progression
   const [streaks, setStreaks] = useState<Record<number, number>>(() => {
     try {
       const saved = localStorage.getItem('monor_memory_streaks_v2');
@@ -79,63 +82,28 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           };
         }
       }
-      // Migrate legacy single streak value if present
-      const oldVal = localStorage.getItem('monor_memory_consecutive_wins');
-      const migrated = oldVal ? Math.max(0, parseInt(oldVal, 10) || 0) : 0;
-      return { 1: 0, 2: migrated, 3: 0 };
+      return { 1: 0, 2: 0, 3: 0 };
     } catch {
       return { 1: 0, 2: 0, 3: 0 };
     }
   });
 
-  // Current streak for the active difficulty tier
-  const consecutiveWins = streaks[level] || 0;
-
-  // Level Up celebratory info banner state
-  const [levelUpInfo, setLevelUpInfo] = useState<{
-    hasLeveledUp: boolean;
-    fromLevel: number;
-    toLevel: number;
-    streakCompleted: number;
-  } | null>(null);
-
-  // Keep localStorage in sync with level and streaks
-  useEffect(() => {
-    try {
-      localStorage.setItem('monor_memory_level', String(level));
-    } catch {
-      // ignore
-    }
-  }, [level]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('monor_memory_streaks_v2', JSON.stringify(streaks));
-      localStorage.setItem('monor_memory_consecutive_wins', String(consecutiveWins));
-    } catch {
-      // ignore
-    }
-  }, [streaks, consecutiveWins]);
-
-  // AI / ML Adaptation States
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [latestAIResult, setLatestAIResult] = useState<AIAnalysisResult | null>(null);
-  const [autoShiftBanner, setAutoShiftBanner] = useState<{
-    show: boolean;
-    reason: string;
-    encouragement: string;
-    fromLevel: number;
-    toLevel: number;
-    modelSource: string;
-  } | null>(null);
-  const [difficultyToast, setDifficultyToast] = useState<DifficultyToastProps | null>(null);
-  const [showAIInfoModal, setShowAIInfoModal] = useState(false);
-
-  // Performance tracking for DDA
+  // Performance tracking for Caregiver & ASHA DDA telemetry (kept fully intact in background)
   const roundStartTime = useRef<number>(Date.now());
   const roundNumber = useRef<number>(1);
   const isShiftPending = useRef<boolean>(false);
   const isCompleteRef = useRef<boolean>(false);
+  const lastClickTimeRef = useRef<number>(0);
+
+  // Sync to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('monor_memory_level', String(level));
+      localStorage.setItem('monor_memory_streaks_v2', JSON.stringify(streaks));
+    } catch {
+      // ignore
+    }
+  }, [level, streaks]);
 
   const initDeck = useCallback((lvl: number, resetComplete = true) => {
     const config = LEVEL_CONFIG[lvl] || LEVEL_CONFIG[2];
@@ -166,31 +134,26 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
     if (resetComplete) {
       setIsComplete(false);
       isCompleteRef.current = false;
-      setLevelUpInfo(null);
     }
-    setHelperMessage(null);
+    setWarmAffirmation('');
     isShiftPending.current = false;
     roundStartTime.current = Date.now();
   }, []);
 
-  // When level changes during active play, initialize the deck.
-  // If the game was just completed, preserve the win celebration until the user clicks next!
   useEffect(() => {
     if (!isCompleteRef.current) {
       initDeck(level, true);
     }
   }, [level, initDeck]);
 
-  // AI-driven automatic difficulty downshift when player struggles:
-  // Strictly shifts 1 level down: Hard (3) -> Medium (2), Medium (2) -> Easy (1)
+  // Background AI/DDA adjustment without stressful technical banners on screen
   const handleAIDifficultyDownshift = useCallback(
     async (currentMistakes: number, currentConsecutiveMistakes: number, currentMoves: number, matchedCount: number) => {
       if (isShiftPending.current || level <= 1) return;
       isShiftPending.current = true;
-      setIsAnalyzing(true);
 
       const fromLvl = level;
-      const targetLvl = Math.max(1, fromLvl - 1); // Strictly 1 level below!
+      const targetLvl = Math.max(1, fromLvl - 1);
       const elapsedSec = Math.round((Date.now() - roundStartTime.current) / 1000);
 
       try {
@@ -207,41 +170,18 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           consecutiveWins: 0,
         });
 
-        setLatestAIResult(aiResult);
-
         // Reset win streak on level degrade
         setStreaks((prev) => ({ ...prev, [fromLvl]: 0, [targetLvl]: 0 }));
+        soundController.playChime(440, 0.5);
 
-        soundController.playChime(396, 0.7); // Gentle relaxing frequency
+        // Show gentle, comforting affirmation instead of clinical jargon
+        setWarmAffirmation(
+          isHindi
+            ? 'आप बहुत सुंदर खेल रहे हैं। आइए कुछ आसान कार्ड मिलाते हैं।'
+            : 'You are doing wonderfully. Let’s enjoy a gentler set of cards.'
+        );
 
-        setAutoShiftBanner({
-          show: true,
-          reason: aiResult.reasoning,
-          encouragement: aiResult.encouragement,
-          fromLevel: fromLvl,
-          toLevel: targetLvl,
-          modelSource: aiResult.modelSource,
-        });
-
-        // Trigger subtle notification toast with encouraging language
-        setDifficultyToast({
-          show: true,
-          gameTitle: 'Memory Match',
-          action: 'EASE_DIFFICULTY',
-          previousLevelName: LEVEL_CONFIG[fromLvl]?.label || `Level ${fromLvl}`,
-          newLevelName: LEVEL_CONFIG[targetLvl]?.label || `Level ${targetLvl}`,
-          encouragement: aiResult.encouragement || (fromLvl === 3 
-            ? `You're doing wonderfully, ${playerName}! We've made the cards a bit gentler with 4 pairs so you can relax, take your time, and enjoy matching.`
-            : `You're doing wonderfully, ${playerName}! We've switched to a gentle 3-pair board so you can relax, take your time, and have fun.`),
-          reason: aiResult.reasoning,
-          onUndo: () => {
-            setLevel(fromLvl);
-            setDifficultyToast(null);
-          },
-          onDismiss: () => setDifficultyToast(null),
-        });
-
-        // Log AI intervention metric for Caregiver & ASHA telemetry
+        // Log telemetry for Caregivers
         onLogDDAMetric({
           timestamp: Date.now(),
           roundNumber: roundNumber.current++,
@@ -258,50 +198,51 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           gameTitle: 'Memory Match',
         });
 
-        // Shift difficulty level down 1 step after a brief visual cue
-        setTimeout(() => {
-          setLevel(targetLvl);
-          isShiftPending.current = false;
-        }, 600);
-      } catch (e) {
-        console.error('AI difficulty check error:', e);
-        isShiftPending.current = false;
-      } finally {
-        setIsAnalyzing(false);
+        // Quietly switch to gentle level
+        setLevel(targetLvl);
+        initDeck(targetLvl, false);
+      } catch {
+        // Fallback
+        setLevel(targetLvl);
+        initDeck(targetLvl, false);
       }
     },
-    [level, hintsLeft, onLogDDAMetric]
+    [level, playerName, hintsLeft, onLogDDAMetric, initDeck, isHindi]
   );
 
   const handleCardClick = (index: number) => {
-    if (isLocked) return;
-    const card = deck[index];
-    if (card.flipped || card.matched) return;
+    // Motor tremor protection: debounce rapid multi-taps within 320ms
+    const now = Date.now();
+    if (now - lastClickTimeRef.current < 320) return;
+    lastClickTimeRef.current = now;
+
+    if (isLocked || deck[index].flipped || deck[index].matched) return;
 
     soundController.playClick();
 
-    // Flip card
     const updatedDeck = [...deck];
-    updatedDeck[index] = { ...card, flipped: true };
+    updatedDeck[index].flipped = true;
     setDeck(updatedDeck);
 
     if (firstCardIndex === null) {
-      // First card chosen
+      // First card flipped
       setFirstCardIndex(index);
     } else {
-      // Second card chosen
+      // Second card flipped
       const nextMoves = moves + 1;
       setMoves(nextMoves);
-      const firstCard = deck[firstCardIndex];
 
-      if (firstCard.symbolIndex === card.symbolIndex) {
-        // MATCH!
-        soundController.playChime(528, 0.9);
+      const firstSymbol = updatedDeck[firstCardIndex].symbolIndex;
+      const secondSymbol = updatedDeck[index].symbolIndex;
+
+      if (firstSymbol === secondSymbol) {
+        // SUCCESS MATCH!
+        soundController.playChime(528, 0.8);
         updatedDeck[firstCardIndex].matched = true;
         updatedDeck[index].matched = true;
         setDeck(updatedDeck);
         setFirstCardIndex(null);
-        setConsecutiveMistakes(0); // Reset consecutive mistake streak on success
+        setConsecutiveMistakes(0);
 
         // Check if all matched
         const allMatched = updatedDeck.every((c) => c.matched);
@@ -309,7 +250,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           handleGameWon(nextMoves, mistakes);
         }
       } else {
-        // MISMATCH / WRONG GUESS
+        // Mismatch
         setIsLocked(true);
         const nextMistakes = mistakes + 1;
         const nextConsecutive = consecutiveMistakes + 1;
@@ -317,10 +258,6 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
         setConsecutiveMistakes(nextConsecutive);
 
         const currentMatched = updatedDeck.filter((c) => c.matched).length / 2;
-
-        // User degradation thresholds:
-        // - In Medium mode (level 2): degrades to Easy if 5 mistakes (or 3 consecutive)
-        // - In Hard mode (level 3): degrades to Medium if 10 mistakes (or 4 consecutive, or 3 if 0 matches)
         const isStruggling =
           (level === 2 && (nextMistakes >= 5 || nextConsecutive >= 3)) ||
           (level === 3 && (nextMistakes >= 10 || nextConsecutive >= 4 || (nextConsecutive >= 3 && currentMatched === 0)));
@@ -347,7 +284,6 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
     soundController.playClick();
     setHintsLeft((h) => h - 1);
 
-    // Find first unmatched pair
     const unmatched = deck.filter((c) => !c.matched);
     if (unmatched.length < 2) return;
 
@@ -357,7 +293,6 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
       .filter((idx) => idx !== -1);
 
     if (pairIndices.length === 2) {
-      // Flash the pair
       setIsLocked(true);
       setDeck((prev) =>
         prev.map((c, idx) =>
@@ -372,7 +307,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           )
         );
         setIsLocked(false);
-      }, 1200);
+      }, 1300);
     }
   };
 
@@ -383,8 +318,8 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
 
     try {
       confetti({
-        particleCount: 85,
-        spread: 75,
+        particleCount: 75,
+        spread: 70,
         origin: { y: 0.6 },
         colors: ['#5B825B', '#E8B25C', '#C46A66', '#7A9CA4'],
       });
@@ -396,323 +331,143 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
     const currentLvl = level;
     const currentStreak = streaks[currentLvl] || 0;
     const nextStreak = currentStreak + 1;
-
-    // CORE RULE: 5 consecutive wins on current tier triggers level-up by 1 step
-    // Level 1 (Easy) -> 5 consecutive wins -> Level 2 (Medium)
-    // Level 2 (Medium) -> 5 consecutive wins -> Level 3 (Hard)
     const willLevelUp = nextStreak >= 5 && currentLvl < 3;
     const nextLvl = willLevelUp ? currentLvl + 1 : currentLvl;
 
     if (willLevelUp) {
-      soundController.playChime(660, 1.0); // Triumphant chime
-
-      // Set level-up celebration state
-      setLevelUpInfo({
-        hasLeveledUp: true,
-        fromLevel: currentLvl,
-        toLevel: nextLvl,
-        streakCompleted: nextStreak,
-      });
-
-      // Update streaks: reset old level streak to 0, start new level at 0
-      setStreaks((prev) => ({
-        ...prev,
-        [currentLvl]: 0,
-        [nextLvl]: 0,
-      }));
-
-      // Immediately upgrade active level
+      setStreaks((prev) => ({ ...prev, [currentLvl]: 0, [nextLvl]: 0 }));
       setLevel(nextLvl);
-
-      setDifficultyToast({
-        show: true,
-        gameTitle: 'Memory Match',
-        action: 'INCREASE_DIFFICULTY',
-        previousLevelName: LEVEL_CONFIG[currentLvl]?.label || `Level ${currentLvl}`,
-        newLevelName: LEVEL_CONFIG[nextLvl]?.label || `Level ${nextLvl}`,
-        encouragement: currentLvl === 1
-          ? `Splendid 5-game streak, ${playerName}! You've mastered Easy mode and stepped up to Medium (4 Pairs) for a fresh challenge!`
-          : `Sensational 5-game streak, ${playerName}! You've mastered Medium mode and stepped up to Hard (6 Pairs)!`,
-        reason: `5 consecutive victories achieved at ${LEVEL_CONFIG[currentLvl]?.label}. Automatically stepped up to ${LEVEL_CONFIG[nextLvl]?.label}.`,
-        onUndo: () => {
-          setLevel(currentLvl);
-          setStreaks((prev) => ({ ...prev, [currentLvl]: 4 }));
-          setLevelUpInfo(null);
-          setDifficultyToast(null);
-        },
-        onDismiss: () => setDifficultyToast(null),
-      });
-
-      setHelperMessage(
-        currentLvl === 1
-          ? "🎉 5 Consecutive Wins! You've Leveled Up to Medium (4 Pairs)!"
-          : "🎉 5 Consecutive Wins! You've Leveled Up to Hard (6 Pairs)!"
-      );
     } else {
-      setLevelUpInfo(null);
-      setStreaks((prev) => ({
-        ...prev,
-        [currentLvl]: nextStreak,
-      }));
-
-      setHelperMessage(
-        currentLvl === 3
-          ? `Magnificent memory workout on Hard mode! Win streak: ${nextStreak} wins.`
-          : `Excellent memory workout! Win streak: ${nextStreak}/5 towards ${LEVEL_CONFIG[currentLvl + 1]?.label}!`
-      );
+      setStreaks((prev) => ({ ...prev, [currentLvl]: nextStreak }));
     }
 
-    // Run AI telemetry in background without blocking level-up or user interaction
-    runAITelemetry(currentLvl, willLevelUp, nextLvl, nextStreak, finalMoves, finalMistakes, durationMs);
+    // Log complete telemetry for Caregivers
+    onLogDDAMetric({
+      timestamp: Date.now(),
+      roundNumber: roundNumber.current++,
+      difficultyLevel: currentLvl,
+      latencyMs: durationMs,
+      mistakes: finalMistakes,
+      moves: finalMoves,
+      hintsUsed: (LEVEL_CONFIG[currentLvl]?.hints || 2) - hintsLeft,
+      adaptiveAction: willLevelUp ? 'increased' : 'maintained',
+      aiReasoning: willLevelUp
+        ? `Player mastered Level ${currentLvl} with 5 victories. Upgraded to Level ${nextLvl}.`
+        : 'Player completed round smoothly.',
+      fatigueRisk: 'LOW',
+      gameType: 'memory_match',
+      gameTitle: 'Memory Match',
+    });
   };
 
-  const runAITelemetry = async (
-    currentLvl: number,
-    didLevelUp: boolean,
-    targetLvl: number,
-    streakCount: number,
-    finalMoves: number,
-    finalMistakes: number,
-    durationMs: number
-  ) => {
-    setIsAnalyzing(true);
-    try {
-      const aiResult = await analyzePlayerDifficulty({
-        playerName: playerName || 'Player',
-        currentLevel: currentLvl,
-        moves: finalMoves,
-        mistakes: finalMistakes,
-        consecutiveMistakes: 0,
-        matchedPairs: LEVEL_CONFIG[currentLvl]?.pairs || 4,
-        totalPairs: LEVEL_CONFIG[currentLvl]?.pairs || 4,
-        elapsedSeconds: Math.round(durationMs / 1000),
-        triggerEvent: 'round_complete',
-        consecutiveWins: streakCount,
-      });
-
-      setLatestAIResult(aiResult);
-
-      onLogDDAMetric({
-        timestamp: Date.now(),
-        roundNumber: roundNumber.current++,
-        difficultyLevel: currentLvl,
-        latencyMs: durationMs,
-        mistakes: finalMistakes,
-        moves: finalMoves,
-        hintsUsed: (LEVEL_CONFIG[currentLvl]?.hints || 2) - hintsLeft,
-        adaptiveAction: didLevelUp ? 'increased' : 'maintained',
-        aiReasoning: didLevelUp
-          ? `Player achieved 5 consecutive wins at Level ${currentLvl}. Upgraded difficulty 1 level to ${LEVEL_CONFIG[targetLvl]?.label}.`
-          : aiResult.reasoning,
-        aiModel: aiResult.modelSource,
-        fatigueRisk: aiResult.fatigueRisk,
-        gameType: 'memory_match',
-        gameTitle: 'Memory Match',
-      });
-    } catch {
-      onLogDDAMetric({
-        timestamp: Date.now(),
-        roundNumber: roundNumber.current++,
-        difficultyLevel: currentLvl,
-        latencyMs: durationMs,
-        mistakes: finalMistakes,
-        moves: finalMoves,
-        hintsUsed: (LEVEL_CONFIG[currentLvl]?.hints || 2) - hintsLeft,
-        adaptiveAction: didLevelUp ? 'increased' : 'maintained',
-        aiReasoning: didLevelUp
-          ? `Player reached 5 consecutive wins at Level ${currentLvl}. Upgraded to Level ${targetLvl}.`
-          : 'Player completed round smoothly.',
-        fatigueRisk: 'LOW',
-        gameType: 'memory_match',
-        gameTitle: 'Memory Match',
-      });
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+  const matchedPairsCount = deck.filter((c) => c.matched).length / 2;
+  const totalPairsCount = LEVEL_CONFIG[level]?.pairs || 4;
 
   return (
     <div className="p-4 pb-24 space-y-4 animate-fadeIn relative">
-      {/* Subtle AI Difficulty Adjustment Toast Notification */}
-      {difficultyToast && (
-        <DifficultyToast
-          {...difficultyToast}
-          onDismiss={() => setDifficultyToast(null)}
-        />
-      )}
-
-      {/* Top bar */}
+      {/* Top bar with back button, gentle level pills, and audio prompt */}
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white border border-[#E0DCD3] font-bold text-sm text-[#2D3A2F] hover:bg-[#EAF1E8] active:scale-95 shadow-2xs"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white border border-[#E0DCD3] font-black text-sm text-[#2D3A2F] hover:bg-[#EAF1E8] active:scale-95 shadow-xs cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{t('back')}</span>
         </button>
 
-        {/* Level toggle pills with AI indicator */}
-        <div className="flex items-center gap-1.5">
-          <div className="flex gap-1 bg-white p-1 rounded-2xl border border-[#E0DCD3] shadow-2xs">
+        {/* Level toggle with warm, simple labels */}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 bg-white p-1 rounded-2xl border border-[#E0DCD3] shadow-xs">
             {[1, 2, 3].map((lvl) => (
               <button
                 key={lvl}
                 onClick={() => {
                   soundController.playClick();
                   setLevel(lvl);
-                  setLevelUpInfo(null);
                   initDeck(lvl, true);
                 }}
-                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all ${
-                  level === lvl ? 'bg-[#5B825B] text-white shadow-xs' : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                  level === lvl 
+                    ? 'bg-[#5B825B] text-white shadow-xs' 
+                    : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
                 }`}
               >
-                {lvl === 1 ? (isHindi ? 'सरल' : 'Easy') : lvl === 2 ? (isHindi ? 'मध्यम' : 'Medium') : (isHindi ? 'कठिन' : 'Hard')}
+                {lvl === 1 ? tx('Easy', 'सरल') : lvl === 2 ? tx('Medium', 'मध्यम') : tx('Full', 'बड़ा')}
               </button>
             ))}
           </div>
 
-          <button
-            onClick={() => setShowAIInfoModal(true)}
-            className="p-2 rounded-2xl bg-white border border-[#E0DCD3] text-[#5B825B] hover:bg-[#EAF1E8] shadow-2xs"
-            title="How AI Model Adapts Difficulty"
-          >
-            <Info className="w-4 h-4" />
-          </button>
+          <SpeakButton
+            textEn="Memory matching game. Tap any two cards to find matching pairs of flowers, sun, birds, and animals. Take your time, no rush."
+            textHi="जोड़े मिलाने का खेल। दो कार्ड पर टैप करें और एक जैसे चित्र ढूंढें। कोई जल्दी नहीं है, आराम से खेलें।"
+            size="md"
+          />
         </div>
       </div>
 
-      {/* AI Real-time Cognitive Coach Status Banner */}
-      <div className="bg-gradient-to-r from-[#EAF1E8] via-[#F2F7F0] to-[#E5EFE2] rounded-3xl p-3 px-4 border border-[#5B825B]/30 shadow-xs flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#5B825B] text-white flex items-center justify-center shadow-2xs shrink-0">
-            <Brain className="w-4 h-4" />
+      {/* Warm, Soothing Affirmation Header Banner (Zero Clinical Jargon) */}
+      <div className="bg-gradient-to-r from-[#EAF1E8] via-[#F4FAF2] to-[#E5EFE2] rounded-3xl p-4 border-2 border-[#5B825B]/30 shadow-xs flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-[#5B825B] text-white flex items-center justify-center shadow-xs shrink-0">
+            <Heart className="w-5 h-5 fill-current" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-black text-[#2D3A2F]">AI Adaptive Engine</span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-[#5B825B] bg-white/90 px-2 py-0.5 rounded-full border border-[#5B825B]/20">
-                <Sparkles className="w-2.5 h-2.5 text-[#E8B25C]" />
-                {isAnalyzing ? 'Analyzing Input...' : 'Active Monitoring'}
-              </span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-black text-[#2D3A2F] bg-white px-2 py-0.5 rounded-full border border-[#E0DCD3]">
-                🔥 Streak: {consecutiveWins}{level < 3 ? '/5 wins to upgrade' : ' (Hard Mastery)'}
-              </span>
-            </div>
-            <p className="text-[11px] text-[#5A6E5D] font-medium leading-tight pt-0.5">
-              {consecutiveMistakes >= 2
-                ? `Tracking ${consecutiveMistakes} wrong attempts • ${level === 2 ? '5 mistakes or 3 consecutive auto-shifts to Easy' : level === 3 ? '10 mistakes or 4 consecutive auto-shifts to Medium' : 'Gentle assistance active'}`
-                : isAnalyzing
-                ? 'Evaluating cognitive response & error velocity...'
-                : level === 1
-                ? 'Easy Mode (3 Pairs) • Win 5 consecutive games to step up to Medium'
-                : level === 2
-                ? 'Medium Mode (4 Pairs) • Win 5 consecutive games to step up to Hard • 5 mistakes degrades 1 step to Easy'
-                : 'Hard Mode (6 Pairs) • Peak Level • 10 mistakes degrades 1 step to Medium'}
+            <h3 className="text-base font-black text-[#2D3A2F] leading-tight">
+              {tx('Take Your Time & Enjoy', 'आराम से खेलें • हर जोड़ी एक जीत है')}
+            </h3>
+            <p className="text-xs text-[#5A6E5D] font-semibold mt-0.5">
+              {warmAffirmation || tx('Every pair found brings peace and happiness.', 'हर मिलते-जुलते चित्र की खोज मन को शांति देती है।')}
             </p>
           </div>
         </div>
 
-        {isAnalyzing && (
-          <div className="w-5 h-5 border-2 border-[#5B825B] border-t-transparent rounded-full animate-spin shrink-0 ml-2" />
-        )}
+        <div className="text-right shrink-0">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white text-[#5B825B] text-xs font-black border border-[#5B825B]/30 shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
+            {tx(`Pairs: ${matchedPairsCount} / ${totalPairsCount}`, `जोड़े मिले: ${matchedPairsCount} / ${totalPairsCount}`)}
+          </span>
+        </div>
       </div>
 
-      {/* Automatic Shift Notification Alert */}
-      {autoShiftBanner && autoShiftBanner.show && (
-        <div className="bg-gradient-to-br from-[#FDF0D5] to-[#F7E5BD] border-2 border-[#E8B25C] rounded-3xl p-4 shadow-md animate-scaleUp space-y-2">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2 text-[#332610]">
-              <div className="w-7 h-7 rounded-xl bg-[#E8B25C] text-white flex items-center justify-center font-black">
-                <Zap className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="font-black text-sm text-[#2D3A2F]">
-                  AI Dynamic Adjustment: {LEVEL_CONFIG[autoShiftBanner.toLevel]?.label} Activated
-                </h4>
-                <p className="text-[11px] font-bold text-[#332610]">
-                  Shifted 1 step: {LEVEL_CONFIG[autoShiftBanner.fromLevel]?.label} → {LEVEL_CONFIG[autoShiftBanner.toLevel]?.label}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setAutoShiftBanner(null)}
-              className="text-xs font-black text-[#332610] hover:text-black bg-white/60 px-2 py-0.5 rounded-lg"
-            >
-              Dismiss
-            </button>
-          </div>
-          <p className="text-xs text-[#332610] font-semibold bg-white/60 p-2.5 rounded-2xl border border-[#e5cf9c]">
-            "{autoShiftBanner.encouragement}"
-          </p>
-          <div className="text-[10px] text-[#332610]/80 flex items-center justify-between pt-1">
-            <span>Model: {autoShiftBanner.modelSource === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : 'Adaptive ML Heuristic'}</span>
-            <span className="font-bold text-[#5B825B]">Board Re-calibrated (1-Step Downshift)</span>
-          </div>
-        </div>
-      )}
-
-      {/* Game info bar */}
-      <div className="bg-white rounded-3xl p-4 border border-[#E0DCD3] shadow-xs flex items-center justify-between flex-wrap gap-2">
-        <div className="flex gap-4 text-xs font-extrabold text-[#5A6E5D] items-center">
-          <div>
-            <span className="block text-[#2D3A2F] text-base font-black">{moves}</span>
-            <span>{isHindi ? 'चालें' : 'Moves'}</span>
-          </div>
-          <div>
-            <span className={`block text-base font-black ${mistakes >= (level === 3 ? 8 : level === 2 ? 4 : 99) ? 'text-[#C46A66]' : 'text-[#2D3A2F]'}`}>
-              {mistakes}{level === 2 ? '/5' : level === 3 ? '/10' : ''}
-            </span>
-            <span>{isHindi ? 'गलतियाँ' : 'Mistakes'}</span>
-          </div>
-          <div>
-            <span className="block text-[#5B825B] text-base font-black">
-              {deck.filter((c) => c.matched).length / 2}/{LEVEL_CONFIG[level].pairs}
-            </span>
-            <span>{isHindi ? 'जोड़े' : 'Matches'}</span>
-          </div>
-          {/* Win Streak Indicator */}
-          <div className="hidden sm:block pl-2 border-l border-[#E0DCD3]">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#EAF1E8] border border-[#5B825B]/30 text-[#5B825B] text-xs font-black">
-              <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
-              <span>{isHindi ? 'लगातार जीत' : 'Streak'}: {consecutiveWins}{level < 3 ? '/5' : ''}</span>
-            </div>
-          </div>
+      {/* Control bar: Hints and Restart */}
+      <div className="bg-white rounded-3xl p-3.5 px-4 border border-[#E0DCD3] shadow-xs flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-extrabold text-[#5A6E5D]">
+            {tx('Match matching pictures together', 'एक जैसे चित्रों को मिलाएँ')}
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={handleUseHint}
             disabled={hintsLeft <= 0 || isLocked || isComplete}
-            className={`flex items-center gap-1 px-3.5 py-2 rounded-2xl text-xs font-black shadow-xs transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-black shadow-xs transition-all cursor-pointer ${
               hintsLeft > 0 && !isComplete
-                ? 'bg-[#FDF0D5] text-[#332610] border border-[#eadbbf] hover:bg-[#fae8c1] active:scale-95'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                ? 'bg-[#FDF0D5] text-[#332610] border-2 border-[#eadbbf] hover:bg-[#fae8c1] active:scale-95'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
             }`}
           >
             <Lightbulb className="w-4 h-4 text-[#E8B25C]" />
-            <span>{isHindi ? 'संकेत' : 'Hint'} ({hintsLeft})</span>
+            <span>{tx('Hint', 'संकेत')} ({hintsLeft})</span>
           </button>
 
           <button
             onClick={() => {
               soundController.playClick();
-              initDeck(level);
+              initDeck(level, true);
             }}
-            className="p-2 rounded-2xl bg-white border border-[#E0DCD3] text-[#5A6E5D] hover:bg-[#EAF1E8] shadow-2xs active:scale-95"
-            title={isHindi ? 'पुनः प्रारंभ करें' : 'Restart round'}
+            className="p-2.5 rounded-2xl bg-white border border-[#E0DCD3] text-[#5A6E5D] hover:bg-[#EAF1E8] shadow-xs active:scale-95 cursor-pointer"
+            title={tx('Start Over', 'पुनः प्रारंभ करें')}
           >
             <RotateCcw className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Card Grid */}
+      {/* ITEM F: HIGH-CONTRAST TACTILE CARDS WITH DUAL IDENTIFIERS */}
       <div
-        className={`grid gap-3.5 max-w-sm mx-auto ${
-          LEVEL_CONFIG[level].pairs === 3
-            ? 'grid-cols-3'
-            : 'grid-cols-4'
+        className={`grid gap-3.5 max-w-md mx-auto ${
+          LEVEL_CONFIG[level].pairs === 3 ? 'grid-cols-3' : 'grid-cols-4'
         }`}
       >
         {deck.map((card, idx) => {
@@ -725,22 +480,54 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
               key={card.id}
               onClick={() => handleCardClick(idx)}
               disabled={isRevealed || isLocked}
-              aria-label={`Card ${idx + 1}`}
-              className={`aspect-square rounded-2xl border-2 flex items-center justify-center transition-all duration-300 shadow-xs select-none active:scale-95 ${
+              aria-label={isRevealed ? `${sym.nameEn} Card` : `Hidden Card ${idx + 1}`}
+              className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all duration-200 select-none cursor-pointer active:scale-95 relative ${
                 card.matched
-                  ? 'bg-[#EAF1E8] border-[#5B825B] text-[#5B825B] scale-95 opacity-90'
+                  ? 'bg-[#EAF1E8] border-[3.5px] border-[#5B825B] text-[#5B825B] shadow-inner'
                   : card.flipped
-                  ? 'bg-white border-[#5B825B] shadow-md ring-2 ring-[#5B825B]/20'
-                  : 'bg-[#FDFBF7] border-[#E0DCD3] hover:border-[#87A987] hover:bg-[#F0D8D6]/30'
+                  ? 'bg-white border-[3.5px] shadow-lg ring-4 ring-[#5B825B]/25 scale-[1.03]'
+                  : 'bg-[#FAF7F0] border-[3.5px] border-[#D6CFBF] hover:border-[#5B825B] shadow-sm hover:shadow-md'
               }`}
+              style={{
+                borderColor: card.flipped ? sym.border : card.matched ? '#5B825B' : undefined,
+              }}
             >
               {isRevealed ? (
-                <div className="flex flex-col items-center">
-                  <IconComp className="w-9 h-9" style={{ color: sym.color }} />
+                <div className="flex flex-col items-center justify-center p-1">
+                  {/* Large high-contrast icon */}
+                  <div
+                    className="w-11 h-11 sm:w-13 sm:h-13 rounded-xl flex items-center justify-center shadow-xs"
+                    style={{ backgroundColor: sym.bg }}
+                  >
+                    <IconComp
+                      className="w-8 h-8 sm:w-9 sm:h-9 stroke-[2.5]"
+                      style={{ color: sym.color }}
+                    />
+                  </div>
+
+                  {/* Dual Identifier: Clear bold high-contrast text label */}
+                  <span
+                    className="mt-1 text-[11px] sm:text-xs font-black tracking-tight"
+                    style={{ color: card.matched ? '#5B825B' : sym.color }}
+                  >
+                    {isHindi ? sym.nameHi : sym.nameEn}
+                  </span>
+
+                  {card.matched && (
+                    <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#5B825B] text-white flex items-center justify-center shadow-2xs">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="w-7 h-7 rounded-full bg-[#E0DCD3]/50 flex items-center justify-center text-xs font-black text-[#5A6E5D]">
-                  ?
+                /* Face-down inviting tactile surface */
+                <div className="flex flex-col items-center justify-center p-2 text-[#8C8474]">
+                  <div className="w-9 h-9 rounded-full bg-[#EDE8DC] flex items-center justify-center shadow-inner">
+                    <Flower2 className="w-5 h-5 text-[#B5AC9A]" />
+                  </div>
+                  <span className="text-[10px] font-black text-[#A39987] mt-1">
+                    {tx('Tap', 'टैप')}
+                  </span>
                 </div>
               )}
             </button>
@@ -748,234 +535,40 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
         })}
       </div>
 
-      {/* Game complete banner */}
+      {/* Warm Celebration Banner on Completion (Warm, zero-clinical-stress) */}
       {isComplete && (
-        <div className="bg-[#EAF1E8] border-2 border-[#5B825B] rounded-3xl p-5 text-center space-y-3 shadow-md animate-bounce-short">
-          <div className="w-14 h-14 mx-auto rounded-full bg-[#5B825B] text-white flex items-center justify-center shadow-md">
-            <Trophy className="w-8 h-8" />
+        <div className="bg-[#EAF1E8] border-2 border-[#5B825B] rounded-3xl p-6 text-center space-y-4 shadow-lg animate-bounce-short">
+          <div className="w-16 h-16 mx-auto rounded-full bg-[#5B825B] text-white flex items-center justify-center shadow-md">
+            <Trophy className="w-9 h-9 text-[#FDF0D5]" />
           </div>
 
-          {levelUpInfo?.hasLeveledUp ? (
-            <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8B25C] text-[#332610] text-xs font-black uppercase tracking-wider shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 fill-current" />
-                <span>Level Up Unlocked!</span>
-              </div>
-              <h3 className="text-2xl font-black text-[#2D3A2F]">
-                Stepped Up to {LEVEL_CONFIG[levelUpInfo.toLevel]?.label}!
-              </h3>
-              <p className="text-sm font-bold text-[#5B825B] max-w-xs mx-auto">
-                {levelUpInfo.fromLevel === 1
-                  ? "Splendid 5-win streak on Easy! You've mastered 3 pairs and advanced to Medium (4 Pairs)!"
-                  : "Sensational 5-win streak on Medium! You've mastered 4 pairs and advanced to Hard (6 Pairs)!"}
-              </p>
-            </div>
-          ) : (
-            <>
-              <h3 className="text-2xl font-black text-[#2D3A2F]">
-                {isHindi ? 'सभी जोड़े मिल गए!' : 'All Matched!'}
-              </h3>
-              <p className="text-sm font-semibold text-[#2D3A2F]/90 max-w-xs mx-auto">
-                {isHindi ? 'बहुत बढ़िया! आपने सभी जोड़े सफलतापूर्वक मिला लिए।' : helperMessage}
-              </p>
-            </>
-          )}
-
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#5B825B]/30 text-xs font-black text-[#5B825B]">
-            <Sparkles className="w-4 h-4 text-[#E8B25C]" />
-            <span>
-              {levelUpInfo?.hasLeveledUp
-                ? `5 / 5 ${isHindi ? 'जीत की स्ट्रीक पूरी हुई!' : 'Wins Streak Completed!'}`
-                : `${isHindi ? 'लगातार जीत' : 'Streak'}: ${consecutiveWins}${level < 3 ? '/5' : ''}`}
-            </span>
+          <div className="space-y-1">
+            <h3 className="text-2xl sm:text-3xl font-black text-[#2D3A2F]">
+              {tx('Very Well Done!', 'बहुत सुंदर! शाबाश!')}
+            </h3>
+            <p className="text-sm font-bold text-[#5B825B] max-w-sm mx-auto">
+              {tx(
+                'You matched all pairs peacefully. A gentle victory for the mind!',
+                'आपने सभी जोड़े बहुत शांति और सुंदरता से मिला लिए।'
+              )}
+            </p>
           </div>
-
-          {latestAIResult && (
-            <div className="bg-white/90 p-3 rounded-2xl border border-[#5B825B]/30 text-xs text-left max-w-xs mx-auto space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="font-black text-[#5B825B] uppercase text-[10px]">AI Cognitive Feedback</span>
-                <span className="text-[10px] font-bold text-gray-500">{latestAIResult.modelSource}</span>
-              </div>
-              <p className="text-[11px] text-[#2D3A2F] font-medium">{latestAIResult.reasoning}</p>
-            </div>
-          )}
 
           <div className="pt-2 flex justify-center gap-3">
-            {levelUpInfo?.hasLeveledUp ? (
-              <button
-                onClick={() => {
-                  soundController.playClick();
-                  const nextTarget = levelUpInfo.toLevel;
-                  setLevelUpInfo(null);
-                  setLevel(nextTarget);
-                  initDeck(nextTarget, true);
-                }}
-                className="px-6 py-3 rounded-2xl bg-[#5B825B] text-white font-black text-sm shadow-xs hover:bg-[#4d704d] active:scale-95 flex items-center gap-2"
-              >
-                <span>{isHindi ? 'अगला स्तर खेलें' : `Play ${LEVEL_CONFIG[levelUpInfo.toLevel]?.label.split(' ')[0]} Now`}</span>
-                <span>({LEVEL_CONFIG[levelUpInfo.toLevel]?.pairs} Pairs) →</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  soundController.playClick();
-                  initDeck(level, true);
-                }}
-                className="px-6 py-3 rounded-2xl bg-[#5B825B] text-white font-black text-sm shadow-xs hover:bg-[#4d704d] active:scale-95"
-              >
-                {isHindi ? 'फिर से खेलें' : 'Play Again'}
-              </button>
-            )}
+            <button
+              onClick={() => {
+                soundController.playClick();
+                initDeck(level, true);
+              }}
+              className="px-6 py-3.5 rounded-2xl bg-[#5B825B] text-white font-black text-sm shadow-xs hover:bg-[#4d704d] active:scale-95 cursor-pointer"
+            >
+              {tx('Play Once More', 'फिर से खेलें')}
+            </button>
             <button
               onClick={onBack}
-              className="px-5 py-3 rounded-2xl bg-white border border-[#E0DCD3] text-[#2D3A2F] font-bold text-sm hover:bg-gray-50 active:scale-95"
+              className="px-5 py-3.5 rounded-2xl bg-white border border-[#E0DCD3] text-[#2D3A2F] font-bold text-sm hover:bg-gray-50 active:scale-95 cursor-pointer"
             >
-              {isHindi ? 'वापस जाएं' : 'Back to Hub'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: How the AI Model Works */}
-      {showAIInfoModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-scaleUp max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-[#5B825B] text-white flex items-center justify-center shadow-xs">
-                  <Brain className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-[#2D3A2F]">AI Dynamic Difficulty Model</h3>
-                  <p className="text-xs text-[#5A6E5D]">Powered by Gemini 3.8 Flash & Adaptive ML</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowAIInfoModal(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-black text-sm flex items-center justify-center"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-[#2D3A2F] leading-relaxed">
-              <div className="p-3 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] space-y-1.5">
-                <span className="font-black text-[#5B825B] flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5" /> 1. Real-time Response & Mistake Tracking
-                </span>
-                <p className="text-[#5A6E5D]">
-                  The AI model monitors player card selections, tracking mistakes, wrong attempts, and error velocity in real-time.
-                </p>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] space-y-1.5">
-                <span className="font-black text-[#C46A66] flex items-center gap-1">
-                  <TrendingDown className="w-3.5 h-3.5" /> 2. 1-Step Cognitive Strain Downshift
-                </span>
-                <p className="text-[#5A6E5D]">
-                  If the player experiences difficulty, the system <strong>strictly auto-shifts 1 step below</strong> (never jumps directly to Easy from Hard):
-                </p>
-                <ul className="list-disc pl-5 text-[#5A6E5D] space-y-0.5">
-                  <li><strong>Hard Mode (Level 3):</strong> Degrades 1 step to Medium after <strong>10 mistakes</strong> (or 4 consecutive wrong).</li>
-                  <li><strong>Medium Mode (Level 2):</strong> Degrades 1 step to Easy after <strong>5 mistakes</strong> (or 3 consecutive wrong).</li>
-                </ul>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] space-y-1.5">
-                <span className="font-black text-[#5B825B] flex items-center gap-1">
-                  <TrendingUp className="w-3.5 h-3.5" /> 3. 5-Win Streak Level Upgrade
-                </span>
-                <p className="text-[#5A6E5D]">
-                  After <strong>5 consecutive wins</strong>, difficulty advances 1 level up:
-                </p>
-                <ul className="list-disc pl-5 text-[#5A6E5D] space-y-0.5">
-                  <li><strong>Easy Mode (3 Pairs):</strong> 5 consecutive wins upgrades to Medium (4 Pairs).</li>
-                  <li><strong>Medium Mode (4 Pairs):</strong> 5 consecutive wins upgrades to Hard (6 Pairs).</li>
-                </ul>
-              </div>
-
-              {/* Interactive Caregiver / Clinician Test Simulator */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-[#F4F8F3] to-[#EAF1E8] border border-[#5B825B]/40 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-[#2D3A2F] flex items-center gap-1">
-                    <Zap className="w-3.5 h-3.5 text-[#E8B25C]" />
-                    Caregiver / Clinician Test Simulator
-                  </span>
-                  <span className="text-[10px] font-bold text-[#5B825B] bg-white px-2 py-0.5 rounded-full border border-[#5B825B]/30">
-                    Live: Level {level} • {consecutiveWins}/5 Wins
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => {
-                      setShowAIInfoModal(false);
-                      if (level <= 1) {
-                        // Switch to Medium first to test degradation to Easy
-                        setLevel(2);
-                        setTimeout(() => {
-                          handleAIDifficultyDownshift(5, 3, 7, 0);
-                        }, 150);
-                      } else {
-                        const simMistakes = level === 3 ? 10 : 5;
-                        const simConsecutive = level === 3 ? 4 : 3;
-                        handleAIDifficultyDownshift(simMistakes, simConsecutive, simMistakes + 2, 0);
-                      }
-                    }}
-                    className="p-2.5 rounded-xl bg-white border border-[#C46A66]/40 text-[#C46A66] font-black text-[11px] hover:bg-[#FDF0D5] transition-all text-center flex items-center justify-center gap-1 shadow-2xs active:scale-95"
-                  >
-                    <TrendingDown className="w-3.5 h-3.5 text-[#C46A66]" />
-                    <span>Simulate Mistakes (Degrade 1 Step)</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setShowAIInfoModal(false);
-                      // Set current level streak to 4 so winning triggers the 5th win level-up
-                      setStreaks((prev) => ({ ...prev, [level]: 4 }));
-                      setTimeout(() => {
-                        handleGameWon(LEVEL_CONFIG[level]?.pairs * 2 || 8, 0);
-                      }, 120);
-                    }}
-                    className="p-2.5 rounded-xl bg-white border border-[#5B825B]/40 text-[#5B825B] font-black text-[11px] hover:bg-[#EAF1E8] transition-all text-center flex items-center justify-center gap-1 shadow-2xs active:scale-95"
-                  >
-                    <TrendingUp className="w-3.5 h-3.5 text-[#5B825B]" />
-                    <span>Simulate 5th Win (Level Up)</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#5B825B]/20">
-                  <button
-                    onClick={() => {
-                      setStreaks((prev) => ({ ...prev, [level]: 4 }));
-                      setShowAIInfoModal(false);
-                      setHelperMessage(`Win streak set to 4/5! Win this match to trigger the Level Up.`);
-                    }}
-                    className="p-2 rounded-xl bg-white border border-[#5B825B]/60 text-[#2D3A2F] font-black text-[10px] hover:bg-[#EAF1E8] transition-all text-center flex items-center justify-center gap-1"
-                  >
-                    <Sparkles className="w-3 h-3 text-[#E8B25C]" />
-                    <span>Set Streak to 4/5 (1 Win Away)</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setStreaks((prev) => ({ ...prev, [level]: 0 }));
-                      setShowAIInfoModal(false);
-                      setHelperMessage(`Win streak reset to 0/5.`);
-                    }}
-                    className="p-2 rounded-xl bg-white border border-gray-300 text-gray-600 font-black text-[10px] hover:bg-gray-50 transition-all text-center flex items-center justify-center gap-1"
-                  >
-                    <span>Reset Streak to 0/5</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowAIInfoModal(false)}
-              className="w-full py-3 rounded-2xl bg-[#5B825B] text-white font-black text-sm shadow-xs hover:bg-[#4d704d]"
-            >
-              Got it, continue playing
+              {t('back')}
             </button>
           </div>
         </div>
