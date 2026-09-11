@@ -7,11 +7,15 @@ import os
 import logging
 import jwt
 import bcrypt
+import hashlib
+import re
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from bson import ObjectId
+from fastapi.responses import FileResponse
+from emergentintegrations.llm.openai import OpenAITextToSpeech
 
 
 ROOT_DIR = Path(__file__).parent
@@ -200,6 +204,124 @@ async def me(user=Depends(current_user)):
 @api_router.get("/patient/public-content")
 async def patient_public_content():
     return {"mode": "patient", "requires_login": False}
+
+
+# --------------------------------------------------------------------------
+# Read Aloud (Text-to-Speech) — Emergent-managed OpenAI TTS
+# --------------------------------------------------------------------------
+EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
+TTS_DIR = ROOT_DIR / ".tts_cache"
+TTS_DIR.mkdir(exist_ok=True)
+TTS_VOICES = {"alloy", "ash", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"}
+TTS_MODEL = "tts-1"
+
+
+def clean_for_tts(text: str) -> str:
+    text = re.sub(r"https?://\S+", "", text)
+    text = re.sub(r"`{1,3}[^`]*`{1,3}", "", text)
+    text = re.sub(r"[*_#>~|]", "", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def tts_key(text: str, voice: str, model: str, fmt: str) -> str:
+    return hashlib.sha256(f"{text}|{voice}|{model}|{fmt}".encode()).hexdigest()
+
+
+class TTSRequest(BaseModel):
+    text: str
+    voice: Optional[str] = "coral"
+
+
+@api_router.post("/tts/prepare")
+async def tts_prepare(body: TTSRequest):
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(500, "Read Aloud is not configured")
+    text = clean_for_tts(body.text)[:1000]
+    if not text:
+        raise HTTPException(400, "Nothing to read")
+    voice = body.voice if body.voice in TTS_VOICES else "coral"
+    key = tts_key(text, voice, TTS_MODEL, "mp3")
+    path = TTS_DIR / f"{key}.mp3"
+    if not path.exists():
+        try:
+            tts = OpenAITextToSpeech(api_key=EMERGENT_LLM_KEY)
+            audio = await tts.generate_speech(text=text, model=TTS_MODEL, voice=voice)
+        except Exception as e:
+            logger.error("TTS generation failed: %s", e)
+            raise HTTPException(502, "Could not generate audio")
+        with open(path, "wb") as f:
+            f.write(audio)
+    return {"url": f"/api/tts/{key}.mp3"}
+
+
+@api_router.get("/tts/{key}.mp3")
+async def tts_get(key: str):
+    path = TTS_DIR / f"{key}.mp3"
+    if not path.exists():
+        raise HTTPException(404, "Audio not found")
+    return FileResponse(str(path), media_type="audio/mpeg", headers={"Cache-Control": "public, max-age=31536000"})
+
+
+# --------------------------------------------------------------------------
+# Reminders — family caregiver adds medicine / routine reminders for the patient
+# --------------------------------------------------------------------------
+PATIENT_ID = "anita"
+
+
+class ReminderCreate(BaseModel):
+    title: str
+    type: str  # "medicine" | "routine"
+    time_label: str  # e.g. "8:00 AM"
+    minutes: int  # minutes since midnight (0-1439), for sorting & due checks
+    note: Optional[str] = ""
+
+
+def reminder_public(d: dict) -> dict:
+    return {
+        "id": str(d["_id"]),
+        "title": d["title"],
+        "type": d["type"],
+        "time_label": d["time_label"],
+        "minutes": d["minutes"],
+        "note": d.get("note", ""),
+    }
+
+
+@api_router.get("/reminders")
+async def list_reminders():
+    docs = await db.reminders.find({"patient_id": PATIENT_ID, "deleted_at": None}).to_list(200)
+    docs.sort(key=lambda d: d.get("minutes", 0))
+    return [reminder_public(d) for d in docs]
+
+
+@api_router.post("/reminders", status_code=201)
+async def create_reminder(body: ReminderCreate):
+    kind = body.type.strip().lower()
+    if kind not in {"medicine", "routine"}:
+        raise HTTPException(400, "type must be medicine or routine")
+    doc = {
+        "patient_id": PATIENT_ID,
+        "title": body.title.strip(),
+        "type": kind,
+        "time_label": body.time_label.strip(),
+        "minutes": max(0, min(1439, int(body.minutes))),
+        "note": (body.note or "").strip(),
+        "created_at": datetime.now(timezone.utc),
+        "deleted_at": None,
+    }
+    res = await db.reminders.insert_one(doc)
+    doc["_id"] = res.inserted_id
+    return reminder_public(doc)
+
+
+@api_router.delete("/reminders/{rid}")
+async def delete_reminder(rid: str):
+    try:
+        oid = ObjectId(rid)
+    except Exception:
+        raise HTTPException(400, "Invalid id")
+    await db.reminders.update_one({"_id": oid}, {"$set": {"deleted_at": datetime.now(timezone.utc)}})
+    return {"ok": True}
 
 
 # Include the router in the main app

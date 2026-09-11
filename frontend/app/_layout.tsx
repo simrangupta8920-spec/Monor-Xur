@@ -11,6 +11,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 
 import { AuthProvider } from "@/src/auth/auth-context";
 import { CaregiverAuthProvider } from "@/src/auth/caregiver-auth";
+import { ReadAloudProvider } from "@/src/audio/read-aloud";
 import { ErrorBoundary } from "@/src/components/error-boundary";
 import { ToastProvider } from "@/src/components/ui/toast";
 import { queryClient } from "@/src/query-client";
@@ -45,15 +46,17 @@ export default function RootLayout() {
               <AuthProvider>
                 <CaregiverAuthProvider>
                   <TelemetryProvider>
-                    <ToastProvider>
-                      <StatusBar style="dark" />
-                      <Stack
-                        screenOptions={{
-                          headerShown: false,
-                          contentStyle: { backgroundColor: colors.surface },
-                        }}
-                      />
-                    </ToastProvider>
+                    <ReadAloudProvider>
+                      <ToastProvider>
+                        <StatusBar style="dark" />
+                        <Stack
+                          screenOptions={{
+                            headerShown: false,
+                            contentStyle: { backgroundColor: colors.surface },
+                          }}
+                        />
+                      </ToastProvider>
+                    </ReadAloudProvider>
                   </TelemetryProvider>
                 </CaregiverAuthProvider>
               </AuthProvider>
