@@ -5,7 +5,6 @@ import {
   computeGameStats, 
   getGameBreakdown, 
   filterLogsByGame, 
-  BASELINE_GAME_SESSIONS, 
   GameFilterType 
 } from './gameAnalytics';
 
@@ -159,7 +158,7 @@ export function generateMedicalProgressPdf(
   if (includeCognitiveTrends) {
     checkPageBreak(50);
 
-    const effectiveLogs = ddaLogs && ddaLogs.length > 0 ? ddaLogs : BASELINE_GAME_SESSIONS;
+    const effectiveLogs = ddaLogs || [];
     const filteredLogs = filterLogsByGame(effectiveLogs, gameFilter);
     const gameStats = computeGameStats(filteredLogs);
     const breakdown = getGameBreakdown(effectiveLogs);

@@ -23,7 +23,6 @@ import {
 } from 'recharts';
 import { soundController } from '../../utils/audio';
 import { 
-  BASELINE_GAME_SESSIONS, 
   filterLogsByGame, 
   getGameBreakdown, 
   GameFilterType 
@@ -51,9 +50,9 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
   const [selectedChartTab, setSelectedChartTab] = useState<'accuracy' | 'latency' | 'difficulty' | 'assistance'>('accuracy');
   const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
 
-  // Combine live telemetry with baseline if no live sessions yet
-  const hasLiveLogs = ddaLogs.length > 0;
-  const rawLogs = hasLiveLogs ? ddaLogs : BASELINE_GAME_SESSIONS;
+  // Purely dynamic telemetry directly from player gameplay sessions
+  const hasLiveLogs = ddaLogs && ddaLogs.length > 0;
+  const rawLogs = ddaLogs || [];
 
   // Breakdown across both games
   const breakdown = useMemo(() => getGameBreakdown(rawLogs), [rawLogs]);
@@ -241,11 +240,11 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
             </span>
             {hasLiveLogs ? (
               <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
-                ● Live Patient Sessions ({ddaLogs.length})
+                ● Live Patient Telemetry ({ddaLogs.length} Sessions)
               </span>
             ) : (
               <span className="px-2 py-0.5 rounded-full bg-[#FDF0D5] text-[#8C651E] text-[11px] font-bold">
-                Clinical Baseline Preview ({BASELINE_GAME_SESSIONS.length} Rounds)
+                0 Live Sessions Recorded
               </span>
             )}
           </div>

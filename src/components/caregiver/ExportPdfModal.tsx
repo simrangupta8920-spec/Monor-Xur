@@ -6,7 +6,7 @@ import {
 import { PatientProfile, MedicalProfile, DDAMetric, Reminder } from '../../types';
 import { generateMedicalProgressPdf } from '../../utils/pdfReportGenerator';
 import { soundController } from '../../utils/audio';
-import { GameFilterType, getGameBreakdown, BASELINE_GAME_SESSIONS } from '../../utils/gameAnalytics';
+import { GameFilterType, getGameBreakdown } from '../../utils/gameAnalytics';
 import { encryptData } from '../../utils/crypto';
 import { logAuditEvent, DEFAULT_PATIENT_ID } from '../../services/firebase';
 
@@ -39,7 +39,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   const effectiveLogs = useMemo(() => {
-    return ddaLogs && ddaLogs.length > 0 ? ddaLogs : BASELINE_GAME_SESSIONS;
+    return ddaLogs || [];
   }, [ddaLogs]);
 
   const breakdown = useMemo(() => {
@@ -76,7 +76,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
           dpdpCompliance: 'Digital Personal Data Protection Act 2023',
           patientProfile: includeDemographics ? patientProfile : { name: patientProfile.name },
           medicalProfile: includeMedicalConsultations ? medicalProfile : null,
-          cognitiveLogs: includeCognitiveTrends ? (ddaLogs.length > 0 ? ddaLogs : BASELINE_GAME_SESSIONS) : [],
+          cognitiveLogs: includeCognitiveTrends ? (ddaLogs || []) : [],
           routineReminders: includeReminders ? reminders : [],
           caregiverObservation: caregiverNotes || undefined,
           exportedAt: new Date().toISOString(),

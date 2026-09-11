@@ -38,7 +38,6 @@ import {
   getDdaLogs,
   saveDdaLogs
 } from './services/offlineStorage';
-import { BASELINE_GAME_SESSIONS } from './utils/gameAnalytics';
 import { soundController } from './utils/audio';
 import { Phone } from 'lucide-react';
 import { 
@@ -146,8 +145,7 @@ export function App() {
     if (saved && saved.length > 0) {
       return saved;
     }
-    saveDdaLogs(BASELINE_GAME_SESSIONS);
-    return BASELINE_GAME_SESSIONS;
+    return [];
   });
 
   const [contacts, setContacts] = useState<EmergencyContact[]>(() => {

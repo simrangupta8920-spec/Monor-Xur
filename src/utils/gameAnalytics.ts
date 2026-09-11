@@ -36,140 +36,6 @@ export interface GameBreakdownItem {
 }
 
 /**
- * Baseline historical sessions labeled by specific game
- */
-export const BASELINE_GAME_SESSIONS: DDAMetric[] = [
-  // 1. Memory Match - Day 1 (Gentle)
-  {
-    timestamp: Date.now() - 6 * 24 * 3600 * 1000 - 3 * 3600 * 1000,
-    roundNumber: 1,
-    difficultyLevel: 1,
-    latencyMs: 4400,
-    mistakes: 3,
-    moves: 14,
-    hintsUsed: 2,
-    adaptiveAction: 'eased',
-    aiReasoning: 'Initial card matching familiarization. Mild hesitation detected; maintaining gentle pace.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-    gameType: 'memory_match',
-    gameTitle: 'Memory Match',
-  },
-  // 2. Photo Puzzle - Day 1 (2x2 grid)
-  {
-    timestamp: Date.now() - 6 * 24 * 3600 * 1000,
-    roundNumber: 1,
-    difficultyLevel: 1,
-    latencyMs: 5200,
-    mistakes: 2,
-    moves: 6,
-    hintsUsed: 1,
-    adaptiveAction: 'maintained',
-    aiReasoning: 'Completed 2×2 family photo puzzle with gentle visual placement guidance.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-    gameType: 'puzzle',
-    gameTitle: 'Photo Puzzle',
-  },
-  // 3. Memory Match - Day 2
-  {
-    timestamp: Date.now() - 5 * 24 * 3600 * 1000,
-    roundNumber: 2,
-    difficultyLevel: 1,
-    latencyMs: 3800,
-    mistakes: 2,
-    moves: 12,
-    hintsUsed: 1,
-    adaptiveAction: 'maintained',
-    aiReasoning: 'Card flip reaction times stabilized. Improved spatial recall on botanical symbols.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-    gameType: 'memory_match',
-    gameTitle: 'Memory Match',
-  },
-  // 4. Photo Puzzle - Day 3
-  {
-    timestamp: Date.now() - 4 * 24 * 3600 * 1000,
-    roundNumber: 2,
-    difficultyLevel: 1,
-    latencyMs: 4100,
-    mistakes: 1,
-    moves: 5,
-    hintsUsed: 0,
-    adaptiveAction: 'increased',
-    aiReasoning: 'Smooth piece assembly with zero ghost guide hints. Advancing towards 3×3 grid.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-    gameType: 'puzzle',
-    gameTitle: 'Photo Puzzle',
-  },
-  // 5. Memory Match - Day 3
-  {
-    timestamp: Date.now() - 3 * 24 * 3600 * 1000,
-    roundNumber: 3,
-    difficultyLevel: 2,
-    latencyMs: 3400,
-    mistakes: 1,
-    moves: 10,
-    hintsUsed: 1,
-    adaptiveAction: 'increased',
-    aiReasoning: 'Consistent speed and low error rate prompted automatic promotion to Level 2 (4 Pairs).',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-    gameType: 'memory_match',
-    gameTitle: 'Memory Match',
-  },
-  // 6. Photo Puzzle - Day 2 (3x3 grid)
-  {
-    timestamp: Date.now() - 2 * 24 * 3600 * 1000,
-    roundNumber: 3,
-    difficultyLevel: 2,
-    latencyMs: 3900,
-    mistakes: 2,
-    moves: 11,
-    hintsUsed: 1,
-    adaptiveAction: 'maintained',
-    aiReasoning: 'Patient successfully placed all 9 pieces of garden memory with positive engagement.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-    gameType: 'puzzle',
-    gameTitle: 'Photo Puzzle',
-  },
-  // 7. Memory Match - Day 1
-  {
-    timestamp: Date.now() - 1 * 24 * 3600 * 1000,
-    roundNumber: 4,
-    difficultyLevel: 2,
-    latencyMs: 3200,
-    mistakes: 1,
-    moves: 10,
-    hintsUsed: 0,
-    adaptiveAction: 'maintained',
-    aiReasoning: 'Steady cognitive rhythm at Level 2. Zero hints used during visual recall.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-    gameType: 'memory_match',
-    gameTitle: 'Memory Match',
-  },
-  // 8. Memory Match - Today
-  {
-    timestamp: Date.now() - 4 * 3600 * 1000,
-    roundNumber: 5,
-    difficultyLevel: 3,
-    latencyMs: 2900,
-    mistakes: 0,
-    moves: 12,
-    hintsUsed: 0,
-    adaptiveAction: 'increased',
-    aiReasoning: 'Flawless recall round on 6-pair matrix. Visual working memory demonstrates notable stability.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-    gameType: 'memory_match',
-    gameTitle: 'Memory Match',
-  },
-];
-
-/**
  * Filter logs by game type.
  */
 export function filterLogsByGame(logs: DDAMetric[], gameFilter: GameFilterType): DDAMetric[] {
@@ -327,11 +193,15 @@ export function getGameBreakdown(logs: DDAMetric[]): {
     iconName: 'Puzzle',
   };
 
-  let mostPlayed = 'Memory Match';
-  if (puzzleStats.totalSessions > memStats.totalSessions) {
-    mostPlayed = 'Photo Puzzle';
-  } else if (puzzleStats.totalSessions > 0 && memStats.totalSessions > 0) {
-    mostPlayed = 'Balanced (Both Games)';
+  let mostPlayed = 'None yet';
+  if (puzzleStats.totalSessions > 0 || memStats.totalSessions > 0) {
+    if (puzzleStats.totalSessions > memStats.totalSessions) {
+      mostPlayed = 'Photo Puzzle';
+    } else if (memStats.totalSessions > puzzleStats.totalSessions) {
+      mostPlayed = 'Memory Match';
+    } else {
+      mostPlayed = 'Balanced (Both Games)';
+    }
   }
 
   return {

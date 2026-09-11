@@ -9,7 +9,7 @@ import {
   FamilyCaregiverTab, CalendarEvent, Reminder, AlertItem, EmergencyContact, DDAMetric, Memory, 
   PatientProfile, MedicalProfile, MedicalConsultation, MemoryCategory, AuditLog 
 } from '../../types';
-import { GAME_PROGRESS, REPORTS, REPORT_SUMMARY, MEDICAL_DISCLAIMER } from '../../data/mockData';
+import { MEDICAL_DISCLAIMER } from '../../data/mockData';
 import { soundController } from '../../utils/audio';
 import { CognitiveProgressView } from './CognitiveProgressView';
 import { MemoryInsightsView } from './MemoryInsightsView';
@@ -20,8 +20,7 @@ import {
   filterLogsByGame, 
   generateClinicalReportSummary, 
   getWeeklyActivityDistribution, 
-  GameFilterType,
-  BASELINE_GAME_SESSIONS
+  GameFilterType
 } from '../../utils/gameAnalytics';
 
 interface FamilyDashboardProps {
@@ -156,9 +155,9 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
   const [reportsGameFilter, setReportsGameFilter] = useState<GameFilterType>('all');
   const [telemetryGameFilter, setTelemetryGameFilter] = useState<GameFilterType>('all');
 
-  // Dynamic game analytics derived from actual player telemetry
+  // Dynamic game analytics derived purely from actual player telemetry
   const effectiveDdaLogs = useMemo(() => {
-    return ddaLogs && ddaLogs.length > 0 ? ddaLogs : BASELINE_GAME_SESSIONS;
+    return ddaLogs || [];
   }, [ddaLogs]);
 
   const globalGameStats = useMemo(() => {

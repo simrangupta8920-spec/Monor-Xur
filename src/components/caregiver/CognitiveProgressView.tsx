@@ -22,7 +22,6 @@ import {
 } from 'recharts';
 import { soundController } from '../../utils/audio';
 import { 
-  BASELINE_GAME_SESSIONS, 
   filterLogsByGame, 
   GameFilterType 
 } from '../../utils/gameAnalytics';
@@ -36,101 +35,6 @@ interface CognitiveProgressViewProps {
   onOpenPdfExport?: () => void;
   onNavigateToInsights?: () => void;
 }
-
-// Sample baseline historical trend to display when the user hasn't played games yet
-const BASELINE_DDA_SESSIONS: DDAMetric[] = [
-  {
-    timestamp: Date.now() - 6 * 24 * 3600 * 1000,
-    roundNumber: 1,
-    difficultyLevel: 1,
-    latencyMs: 4600,
-    mistakes: 3,
-    moves: 14,
-    hintsUsed: 2,
-    adaptiveAction: 'eased',
-    aiReasoning: 'Initial familiarization session. Mild hesitation detected; maintaining gentle pace.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-  },
-  {
-    timestamp: Date.now() - 5 * 24 * 3600 * 1000,
-    roundNumber: 2,
-    difficultyLevel: 1,
-    latencyMs: 3900,
-    mistakes: 2,
-    moves: 12,
-    hintsUsed: 1,
-    adaptiveAction: 'maintained',
-    aiReasoning: 'Response times stabilized. Improved spatial recall on pattern recognition.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-  },
-  {
-    timestamp: Date.now() - 4 * 24 * 3600 * 1000,
-    roundNumber: 3,
-    difficultyLevel: 2,
-    latencyMs: 3400,
-    mistakes: 1,
-    moves: 10,
-    hintsUsed: 1,
-    adaptiveAction: 'increased',
-    aiReasoning: 'Consistent speed and low error rate prompted automatic promotion to Level 2.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-  },
-  {
-    timestamp: Date.now() - 3 * 24 * 3600 * 1000,
-    roundNumber: 4,
-    difficultyLevel: 2,
-    latencyMs: 3600,
-    mistakes: 2,
-    moves: 12,
-    hintsUsed: 0,
-    adaptiveAction: 'maintained',
-    aiReasoning: 'Healthy focus maintained with zero hint dependencies.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-  },
-  {
-    timestamp: Date.now() - 2 * 24 * 3600 * 1000,
-    roundNumber: 5,
-    difficultyLevel: 2,
-    latencyMs: 3100,
-    mistakes: 1,
-    moves: 10,
-    hintsUsed: 0,
-    adaptiveAction: 'increased',
-    aiReasoning: 'High visual search efficiency; scaling challenge to level 3.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-  },
-  {
-    timestamp: Date.now() - 1 * 24 * 3600 * 1000,
-    roundNumber: 6,
-    difficultyLevel: 3,
-    latencyMs: 3300,
-    mistakes: 1,
-    moves: 14,
-    hintsUsed: 1,
-    adaptiveAction: 'maintained',
-    aiReasoning: 'Steady cognitive rhythm at level 3. Good retention of multi-step sequence.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-  },
-  {
-    timestamp: Date.now() - 4 * 3600 * 1000,
-    roundNumber: 7,
-    difficultyLevel: 3,
-    latencyMs: 2900,
-    mistakes: 0,
-    moves: 12,
-    hintsUsed: 0,
-    adaptiveAction: 'maintained',
-    aiReasoning: 'Peak accuracy achieved today without hesitation flags.',
-    aiModel: 'Gemini 3.8 Flash',
-    fatigueRisk: 'LOW',
-  },
-];
 
 // Helper to compute cognitive engagement score (0 - 100)
 function calculateEngagementScore(metric: DDAMetric): number {
@@ -164,8 +68,8 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
   const [timeFilter, setTimeFilter] = useState<'all' | 'recent' | 'adaptive'>('all');
   const [activeMetricTab, setActiveMetricTab] = useState<'engagement' | 'latency' | 'difficulty'>('engagement');
 
-  const isUsingBaseline = ddaLogs.length === 0;
-  const rawLogs = isUsingBaseline ? BASELINE_GAME_SESSIONS : ddaLogs;
+  const rawLogs = ddaLogs || [];
+  const hasLogs = rawLogs.length > 0;
   const filteredByGameLogs = useMemo(() => filterLogsByGame(rawLogs, gameFilter), [rawLogs, gameFilter]);
 
   // Process and sort logs chronologically for recharts
@@ -399,21 +303,25 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
         </span>
       </div>
 
-      {/* Baseline Notice Banner if no game played yet */}
-      {isUsingBaseline && (
-        <div className="p-3.5 rounded-2xl bg-[#F4EFE6] border border-[#E2DDD2] flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-[#4A3D29]">
-            <Brain className="w-4 h-4 text-[#C98A2C] shrink-0" />
+      {/* Dynamic Notice Banner if no game played yet */}
+      {!hasLogs && (
+        <div className="p-4 rounded-2xl bg-[#F4EFE6] border border-[#E2DDD2] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-[#4A3D29]">
+            <Brain className="w-5 h-5 text-[#C98A2C] shrink-0" />
             <span>
-              <strong>Showing Baseline Progression:</strong> Telemetry from player puzzle & memory games will automatically update this trend line in real time.
+              <strong>No Gameplay Telemetry Recorded Yet:</strong> Real-time cognitive progress, reaction speed trends, and AI difficulty adaptation will automatically populate from live sessions played by <strong className="text-[#2D3A2F]">{patientName}</strong> in the Player Zone.
             </span>
           </div>
-          {onAddSampleSession && (
+          {onNavigateToGames && (
             <button
-              onClick={handleSimulateNewEntry}
-              className="px-2.5 py-1 rounded-lg bg-white border border-[#D5CFBF] text-[11px] font-black text-[#2D3A2F] hover:bg-[#EAF1E8] shrink-0 shadow-2xs"
+              onClick={() => {
+                soundController.playClick();
+                onNavigateToGames();
+              }}
+              className="px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-bold hover:bg-[#4A6D4A] shrink-0 shadow-xs flex items-center gap-1.5"
             >
-              + Log Sample Point
+              <Play className="w-3.5 h-3.5 fill-white" />
+              <span>Play Games</span>
             </button>
           )}
         </div>

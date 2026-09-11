@@ -263,6 +263,7 @@ To provide clinicians, neurologists, and family caregivers with precise insights
 ```
 
 ### Analytical Capabilities & Metrics
+- **Zero Static Mock Data Architecture**: All clinical reports, cognitive insights, Recharts curves, MMSE trajectories, and downloadable PDF dossiers are generated 100% dynamically from real-time gameplay telemetry (`ddaMetrics`) saved during the player's active sessions. All static baseline mock sessions have been completely removed from the analytics engine; when 0 sessions exist, the system presents clear, non-stigmatizing invitations to play, updating instantaneously upon completing a game round.
 - **Multi-Game Scope Filtering**: Caregivers and health workers can toggle between `All Games` (combined aggregate), `Memory Match Only`, and `Photo Puzzle Only` across all dashboards, charts, and report generators.
 - **Side-by-Side Dual Game Comparison**: Directly contrasts session volume, mean accuracy, decision speed, error rates, and active DDA tiers between Memory Match and Photo Puzzle.
 - **Clinical Trend Visualizations**: Uses Recharts to plot chronological accuracy trajectories, move latencies, and adaptive tier progressions with clear visual game differentiation.
@@ -296,10 +297,21 @@ Monor Xur is engineered for high-availability in rural and semi-urban settings w
            └────────────────────────────────┘
 ```
 
+### Cross-Device Game Difficulty Persistence Model
+The patient's clinical engagement state and current game difficulty level are persisted directly within `PatientProfile` in Firestore (`patients/{patientId}`) to ensure seamless continuity across devices, web browsers, and caregiver visits:
+- `gameDifficultyLevels`: Tracks active difficulty level for each game:
+  - `memoryMatch`: Level 1 (Easy 3-pair), Level 2 (Medium 4-pair), or Level 3 (Hard 6-pair)
+  - `puzzle`: Level 1 (2×2 grid), Level 2 (3×3 grid), or Level 3 (4×4 grid)
+- `gameStreaks`: Tracks consecutive win streaks and under-baseline solve counts required for DDA progression:
+  - `memoryMatchWins`: Consecutive round victories
+  - `puzzleUnderBaselineCount`: Consecutive solves under the clinical speed baseline
+- `lastGameSessionTimestamp`: Epoch millisecond timestamp of the player's most recent game session.
+- **Persistence Method**: `updateGameDifficultyProgress(patientId, gameType, newLevel, newStreak)` immediately writes updates to Firestore with fallback queuing in `offlineStorage`.
+
 ### Storage Collections & Keys
 
 1. **Cloud Firestore Collections**:
-   - `patients/{patientId}`: Core demographic and care profile document.
+   - `patients/{patientId}`: Core demographic, active game difficulty levels, win streaks, and care profile document.
    - `patients/{patientId}/medical/profile`: Neurologist consults, prescriptions, allergies.
    - `patients/{patientId}/memories`: Photo/video stories and transcribed voice journals.
    - `patients/{patientId}/reminders`: Scheduled medication times and routine alarms.

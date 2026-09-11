@@ -99,6 +99,7 @@ export interface PatientProfile {
   gameDifficultyLevel?: number; // Primary/general difficulty (1: Easy, 2: Medium, 3: Hard)
   gameDifficultyLevels?: GameDifficultyLevels; // Specific game difficulty level mapping
   gameStreaks?: Record<string, number>; // Win streaks or solve streaks per game tier
+  lastGameSessionTimestamp?: number; // Timestamp of latest gameplay session
   updatedAt?: string;
 }
 

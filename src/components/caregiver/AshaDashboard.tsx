@@ -11,8 +11,7 @@ import {
   getGameBreakdown, 
   filterLogsByGame, 
   generateClinicalReportSummary, 
-  GameFilterType,
-  BASELINE_GAME_SESSIONS
+  GameFilterType
 } from '../../utils/gameAnalytics';
 
 interface AshaDashboardProps {
@@ -47,7 +46,7 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
   const completedTasks = tasks.filter((t) => t.done).length;
 
   const effectiveLogs = useMemo(() => {
-    return ddaLogs && ddaLogs.length > 0 ? ddaLogs : BASELINE_GAME_SESSIONS;
+    return ddaLogs || [];
   }, [ddaLogs]);
 
   const globalGameStats = useMemo(() => {

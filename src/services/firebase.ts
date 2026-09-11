@@ -216,6 +216,7 @@ export async function updateGameDifficultyProgress(
       gameDifficultyLevel: normalizedLevel,
       gameDifficultyLevels: updatedLevels,
       gameStreaks: updatedStreaks,
+      lastGameSessionTimestamp: Date.now(),
       updatedAt: nowIso,
     }, { merge: true });
 
