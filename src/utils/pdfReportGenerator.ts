@@ -1,6 +1,13 @@
 import { jsPDF } from 'jspdf';
 import { PatientProfile, MedicalProfile, DDAMetric, Reminder } from '../types';
 import { MEDICAL_DISCLAIMER } from '../data/mockData';
+import { 
+  computeGameStats, 
+  getGameBreakdown, 
+  filterLogsByGame, 
+  BASELINE_GAME_SESSIONS, 
+  GameFilterType 
+} from './gameAnalytics';
 
 export interface PdfExportOptions {
   includeDemographics?: boolean;
@@ -8,6 +15,7 @@ export interface PdfExportOptions {
   includeMedicalConsultations?: boolean;
   includeReminders?: boolean;
   caregiverNotes?: string;
+  gameFilter?: GameFilterType;
 }
 
 // Helper to compute cognitive engagement score (0 - 100)
@@ -38,6 +46,7 @@ export function generateMedicalProgressPdf(
     includeMedicalConsultations = true,
     includeReminders = true,
     caregiverNotes = '',
+    gameFilter = 'all',
   } = options;
 
   const doc = new jsPDF({
@@ -150,31 +159,46 @@ export function generateMedicalProgressPdf(
   if (includeCognitiveTrends) {
     checkPageBreak(50);
 
+    const effectiveLogs = ddaLogs && ddaLogs.length > 0 ? ddaLogs : BASELINE_GAME_SESSIONS;
+    const filteredLogs = filterLogsByGame(effectiveLogs, gameFilter);
+    const gameStats = computeGameStats(filteredLogs);
+    const breakdown = getGameBreakdown(effectiveLogs);
+
+    let sectionTitle = '2. Cognitive Engagement Trends & Multi-Game Telemetry (DDA)';
+    let sectionSubtitle = 'Comparative performance analysis across Memory Match and Photo Puzzle exercises';
+
+    if (gameFilter === 'memory_match') {
+      sectionTitle = '2. Cognitive Engagement - Memory Match Clinical Assessment';
+      sectionSubtitle = 'Working spatial memory, card recognition tempo, and adaptive difficulty';
+    } else if (gameFilter === 'puzzle') {
+      sectionTitle = '2. Cognitive Engagement - Photo Puzzle Clinical Assessment';
+      sectionSubtitle = 'Visual-spatial assembly, nostalgic photo recognition, and adaptive difficulty';
+    }
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(45, 58, 47);
-    doc.text('2. Cognitive Engagement & Dynamic Difficulty Adjustment (DDA) Trends', margin, y + 4);
-    y += 7;
+    doc.text(sectionTitle, margin, y + 4);
 
-    // Metrics summary grid
-    const totalSessions = ddaLogs.length;
-    const avgLatency = totalSessions > 0
-      ? (ddaLogs.reduce((acc, l) => acc + (l.latencyMs || 3000), 0) / totalSessions / 1000).toFixed(1)
-      : '3.3';
-    const avgScore = totalSessions > 0
-      ? Math.round(ddaLogs.reduce((acc, l) => acc + calculateEngagement(l), 0) / totalSessions)
-      : 84;
-    const latestLevel = totalSessions > 0 ? ddaLogs[ddaLogs.length - 1].difficultyLevel : 3;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(90, 110, 93);
+    doc.text(sectionSubtitle, margin, y + 8);
+    y += 11;
 
     // 4 Key KPI Boxes
     const boxWidth = (contentWidth - 6) / 4;
     const boxHeight = 16;
 
     const kpiBoxes = [
-      { label: 'Avg Engagement', value: `${avgScore}%`, sub: 'Optimal focus (75%+)' },
-      { label: 'Avg Latency', value: `${avgLatency}s`, sub: 'Steady decision tempo' },
-      { label: 'Difficulty Scale', value: `Level ${latestLevel}`, sub: 'DDA AI Adaptive' },
-      { label: 'Training Sessions', value: `${totalSessions || 7}`, sub: 'Recorded game rounds' },
+      { label: 'Avg Accuracy', value: `${gameStats.avgAccuracy}%`, sub: 'Target benchmark: 75%+' },
+      { label: 'Decision Speed', value: `${gameStats.avgLatencySec}s`, sub: 'Mean response latency' },
+      { label: 'DDA AI Tier', value: `Level ${gameStats.currentDifficultyLevel}`, sub: 'Dynamic AI scaling' },
+      { 
+        label: 'Sessions Evaluated', 
+        value: `${gameStats.totalSessions}`, 
+        sub: gameFilter === 'all' ? 'All games combined' : `${gameFilter === 'puzzle' ? 'Photo Puzzle' : 'Memory Match'} logs` 
+      },
     ];
 
     kpiBoxes.forEach((box, i) => {
@@ -201,6 +225,58 @@ export function generateMedicalProgressPdf(
 
     y += boxHeight + 4;
 
+    // Side-by-side Dual Game Comparison Box when 'all' is selected
+    if (gameFilter === 'all') {
+      checkPageBreak(22);
+      const halfWidth = (contentWidth - 3) / 2;
+      const compareHeight = 18;
+
+      // Memory Match Card
+      doc.setFillColor(243, 248, 243);
+      doc.setDrawColor(180, 210, 180);
+      doc.roundedRect(margin, y, halfWidth, compareHeight, 1.5, 1.5, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(45, 58, 47);
+      doc.text('GAME 1: MEMORY MATCH (Recall)', margin + 3, y + 5);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(91, 130, 91);
+      doc.text(`${breakdown.memoryMatch.accuracy}% Accuracy`, margin + halfWidth - 3, y + 5, { align: 'right' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(70, 90, 72);
+      doc.text(`Sessions: ${breakdown.memoryMatch.sessions} • Latency: ${breakdown.memoryMatch.avgLatencySec}s • Errors: ${breakdown.memoryMatch.avgMistakes}/rd`, margin + 3, y + 10.5);
+      doc.text(`Adaptive Difficulty: Tier Level ${breakdown.memoryMatch.level} • DDA Shifts: ${breakdown.memoryMatch.adaptiveShifts}`, margin + 3, y + 15);
+
+      // Photo Puzzle Card
+      const puzzleX = margin + halfWidth + 3;
+      doc.setFillColor(254, 250, 242);
+      doc.setDrawColor(230, 205, 160);
+      doc.roundedRect(puzzleX, y, halfWidth, compareHeight, 1.5, 1.5, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(45, 58, 47);
+      doc.text('GAME 2: PHOTO PUZZLE (Visual)', puzzleX + 3, y + 5);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(190, 125, 30);
+      doc.text(`${breakdown.puzzle.accuracy}% Accuracy`, puzzleX + halfWidth - 3, y + 5, { align: 'right' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(90, 80, 60);
+      doc.text(`Sessions: ${breakdown.puzzle.sessions} • Latency: ${breakdown.puzzle.avgLatencySec}s • Errors: ${breakdown.puzzle.avgMistakes}/rd`, puzzleX + 3, y + 10.5);
+      doc.text(`Adaptive Difficulty: Tier Level ${breakdown.puzzle.level} • DDA Shifts: ${breakdown.puzzle.adaptiveShifts}`, puzzleX + 3, y + 15);
+
+      y += compareHeight + 4;
+    }
+
     // DDA Historical Table
     checkPageBreak(40);
 
@@ -208,28 +284,30 @@ export function generateMedicalProgressPdf(
     doc.setFillColor(91, 130, 91);
     doc.rect(margin, y, contentWidth, 6.5, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
     doc.setTextColor(255, 255, 255);
 
-    const c1 = margin + 3;
-    const c2 = margin + 28;
-    const c3 = margin + 44;
+    const c1 = margin + 2;
+    const c2 = margin + 24;
+    const c3 = margin + 50;
     const c4 = margin + 64;
-    const c5 = margin + 84;
-    const c6 = margin + 106;
-    const c7 = margin + 132;
+    const c5 = margin + 78;
+    const c6 = margin + 94;
+    const c7 = margin + 116;
+    const c8 = margin + 134;
 
     doc.text('Date / Time', c1, y + 4.5);
-    doc.text('Session', c2, y + 4.5);
-    doc.text('Level', c3, y + 4.5);
-    doc.text('Speed (s)', c4, y + 4.5);
-    doc.text('Mistakes/Hints', c5, y + 4.5);
-    doc.text('Engagement', c6, y + 4.5);
-    doc.text('Adaptive Action & AI Model', c7, y + 4.5);
+    doc.text('Game Type', c2, y + 4.5);
+    doc.text('Round', c3, y + 4.5);
+    doc.text('Level', c4, y + 4.5);
+    doc.text('Speed', c5, y + 4.5);
+    doc.text('Mistakes', c6, y + 4.5);
+    doc.text('Accuracy', c7, y + 4.5);
+    doc.text('Adaptive Action & AI Engine', c8, y + 4.5);
 
     y += 6.5;
 
-    const displayLogs = ddaLogs.length > 0 ? ddaLogs.slice(-8) : [];
+    const displayLogs = filteredLogs.length > 0 ? filteredLogs.slice(-8) : [];
 
     if (displayLogs.length === 0) {
       doc.setFillColor(253, 251, 247);
@@ -237,7 +315,7 @@ export function generateMedicalProgressPdf(
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(90, 110, 93);
-      doc.text('Baseline cognitive engagement stabilized at 84%. Live player games will append real-time rows.', margin + 4, y + 5.5);
+      doc.text('No sessions recorded for the selected game filter yet. Playing a round will append live metrics.', margin + 4, y + 5.5);
       y += 8;
     } else {
       displayLogs.forEach((log, index) => {
@@ -251,25 +329,38 @@ export function generateMedicalProgressPdf(
         const dateStr = new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         const timeStr = new Date(log.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         const score = calculateEngagement(log);
+        const gameLabel = log.gameTitle || (log.gameType === 'puzzle' ? 'Photo Puzzle' : 'Memory Match');
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
+        doc.setFontSize(6.5);
         doc.setTextColor(60, 75, 63);
 
         doc.text(`${dateStr} ${timeStr}`, c1, y + 4.5);
-        doc.text(`Round ${log.roundNumber || index + 1}`, c2, y + 4.5);
-        doc.text(`Lvl ${log.difficultyLevel || 1}`, c3, y + 4.5);
-        doc.text(`${((log.latencyMs || 3000) / 1000).toFixed(1)}s`, c4, y + 4.5);
-        doc.text(`${log.mistakes || 0} err / ${log.hintsUsed || 0} hints`, c5, y + 4.5);
 
+        // Game badge text
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(91, 130, 91);
-        doc.text(`${score}%`, c6, y + 4.5);
+        if (log.gameType === 'puzzle') {
+          doc.setTextColor(165, 110, 25);
+        } else {
+          doc.setTextColor(70, 115, 70);
+        }
+        doc.text(gameLabel.substring(0, 16), c2, y + 4.5);
 
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(60, 75, 63);
-        const actionText = `${log.adaptiveAction || 'maintained'} (${log.aiModel || 'Gemini 3.8 Flash'})`;
-        doc.text(actionText.substring(0, 32), c7, y + 4.5);
+        doc.text(`R${log.roundNumber || index + 1}`, c3, y + 4.5);
+        doc.text(`Lvl ${log.difficultyLevel || 1}`, c4, y + 4.5);
+        doc.text(`${((log.latencyMs || 3000) / 1000).toFixed(1)}s`, c5, y + 4.5);
+        doc.text(`${log.mistakes || 0} err / ${log.hintsUsed || 0} h`, c6, y + 4.5);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(91, 130, 91);
+        doc.text(`${score}%`, c7, y + 4.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 75, 63);
+        const actionText = `${log.adaptiveAction || 'maintained'} (${log.aiModel || 'Gemini 3.8'})`;
+        doc.text(actionText.substring(0, 30), c8, y + 4.5);
 
         y += 7;
       });

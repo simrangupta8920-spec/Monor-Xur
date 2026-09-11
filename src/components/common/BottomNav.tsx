@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Puzzle, Image as ImageIcon, Settings, Calendar, Bell, User, ClipboardList, BarChart3, TrendingUp } from 'lucide-react';
+import { Home, Puzzle, Image as ImageIcon, Settings, Calendar, Bell, User, ClipboardList, BarChart3, TrendingUp, Sparkles } from 'lucide-react';
 import { PatientTab, FamilyCaregiverTab, AshaTab } from '../../types';
 
 interface PatientNavProps {
@@ -48,6 +48,7 @@ interface FamilyNavProps {
 export const FamilyBottomNav: React.FC<FamilyNavProps> = ({ activeTab, onSelectTab, alertCount = 0 }) => {
   const tabs: { key: FamilyCaregiverTab; label: string; icon: React.FC<{ className?: string }>; badge?: number }[] = [
     { key: 'home', label: 'Home', icon: Home },
+    { key: 'insights', label: 'Insights', icon: Sparkles },
     { key: 'progress', label: 'Progress', icon: TrendingUp },
     { key: 'calendar', label: 'Calendar', icon: Calendar },
     { key: 'alerts', label: 'Alerts', icon: Bell, badge: alertCount },
@@ -55,7 +56,7 @@ export const FamilyBottomNav: React.FC<FamilyNavProps> = ({ activeTab, onSelectT
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-30 bg-white/95 backdrop-blur-md border-t border-[#E0DCD3] px-3 py-2 flex items-center justify-around shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-30 bg-white/95 backdrop-blur-md border-t border-[#E0DCD3] px-2 py-2 flex items-center justify-around shadow-lg">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.key;
@@ -63,7 +64,7 @@ export const FamilyBottomNav: React.FC<FamilyNavProps> = ({ activeTab, onSelectT
           <button
             key={tab.key}
             onClick={() => onSelectTab(tab.key)}
-            className={`relative flex flex-col items-center justify-center py-1.5 px-4 rounded-2xl transition-all ${
+            className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all ${
               isActive
                 ? 'text-[#5B825B] font-extrabold scale-105 bg-[#EAF1E8]'
                 : 'text-[#5A6E5D] font-bold hover:text-[#2D3A2F]'

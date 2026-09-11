@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   FileText, Download, Check, X, ShieldAlert, Sparkles, Brain, Stethoscope, 
-  Calendar, CheckSquare, Square, AlertCircle, Printer
+  Calendar, CheckSquare, Square, AlertCircle, Printer, Puzzle
 } from 'lucide-react';
 import { PatientProfile, MedicalProfile, DDAMetric, Reminder } from '../../types';
 import { generateMedicalProgressPdf } from '../../utils/pdfReportGenerator';
 import { soundController } from '../../utils/audio';
+import { GameFilterType, getGameBreakdown, BASELINE_GAME_SESSIONS } from '../../utils/gameAnalytics';
 
 interface ExportPdfModalProps {
   isOpen: boolean;
@@ -28,9 +29,18 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
   const [includeCognitiveTrends, setIncludeCognitiveTrends] = useState(true);
   const [includeMedicalConsultations, setIncludeMedicalConsultations] = useState(true);
   const [includeReminders, setIncludeReminders] = useState(true);
+  const [gameFilter, setGameFilter] = useState<GameFilterType>('all');
   const [caregiverNotes, setCaregiverNotes] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+
+  const effectiveLogs = useMemo(() => {
+    return ddaLogs && ddaLogs.length > 0 ? ddaLogs : BASELINE_GAME_SESSIONS;
+  }, [ddaLogs]);
+
+  const breakdown = useMemo(() => {
+    return getGameBreakdown(effectiveLogs);
+  }, [effectiveLogs]);
 
   if (!isOpen) return null;
 
@@ -51,6 +61,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
             includeMedicalConsultations,
             includeReminders,
             caregiverNotes,
+            gameFilter,
           }
         );
         soundController.playSuccess();
@@ -107,6 +118,74 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
               <span className="px-2.5 py-1 rounded-xl bg-white border border-[#5B825B]/20 text-[#5B825B] text-[10px] font-black">
                 {ddaLogs.length > 0 ? `${ddaLogs.length} DDA Sessions` : 'Baseline Telemetry'}
               </span>
+            </div>
+          </div>
+
+          {/* Game Analytics Scope Selection */}
+          <div className="space-y-2 bg-[#F9F7F2] p-3.5 rounded-2xl border border-[#E0DCD3]">
+            <div className="flex items-center justify-between">
+              <label className="font-black text-xs uppercase tracking-wider text-[#2D3A2F] block">
+                Game Analytics Scope
+              </label>
+              <span className="text-[10px] font-bold text-[#5A6E5D]">
+                {gameFilter === 'all' ? 'Combined Assessment' : gameFilter === 'puzzle' ? 'Photo Puzzle Only' : 'Memory Match Only'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  soundController.playClick();
+                  setGameFilter('all');
+                }}
+                className={`p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
+                  gameFilter === 'all'
+                    ? 'bg-[#2D3A2F] text-white border-[#2D3A2F] shadow-2xs'
+                    : 'bg-white text-[#5A6E5D] border-[#E0DCD3] hover:bg-[#EAF1E8]'
+                }`}
+              >
+                <span className="font-black text-xs">All Games</span>
+                <span className="text-[10px] opacity-80 mt-0.5">Dual Comparison</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  soundController.playClick();
+                  setGameFilter('memory_match');
+                }}
+                className={`p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
+                  gameFilter === 'memory_match'
+                    ? 'bg-[#5B825B] text-white border-[#5B825B] shadow-2xs'
+                    : 'bg-white text-[#5A6E5D] border-[#E0DCD3] hover:bg-[#EAF1E8]'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <Brain className="w-3 h-3" />
+                  <span className="font-black text-xs">Memory Match</span>
+                </div>
+                <span className="text-[10px] opacity-80 mt-0.5">{breakdown.memoryMatch.sessions} sessions</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  soundController.playClick();
+                  setGameFilter('puzzle');
+                }}
+                className={`p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
+                  gameFilter === 'puzzle'
+                    ? 'bg-[#E8B25C] text-[#332610] border-[#E8B25C] shadow-2xs'
+                    : 'bg-white text-[#5A6E5D] border-[#E0DCD3] hover:bg-[#FDF0D5]'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <Puzzle className="w-3 h-3" />
+                  <span className="font-black text-xs">Photo Puzzle</span>
+                </div>
+                <span className="text-[10px] opacity-80 mt-0.5">{breakdown.puzzle.sessions} sessions</span>
+              </button>
             </div>
           </div>
 

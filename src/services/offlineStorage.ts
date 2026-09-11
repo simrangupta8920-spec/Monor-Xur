@@ -5,11 +5,13 @@ import {
   CalendarEvent, 
   CareTask, 
   Memory, 
-  EmergencyContact 
+  EmergencyContact,
+  DDAMetric
 } from '../types';
 
 export const OFFLINE_CACHE_KEY = 'monor_xur_offline_cache_v1';
 export const OFFLINE_QUEUE_KEY = 'monor_xur_offline_mutation_queue_v1';
+export const DDA_LOGS_STORAGE_KEY = 'monor_xur_dda_logs_v2';
 
 export interface OfflinePatientData {
   patientProfile: PatientProfile | null;
@@ -125,5 +127,33 @@ export function clearOfflineQueue(): void {
     localStorage.removeItem(OFFLINE_QUEUE_KEY);
   } catch (err) {
     console.warn('Failed to clear offline queue:', err);
+  }
+}
+
+/**
+ * Persist live DDA telemetry session logs from played games.
+ */
+export function saveDdaLogs(logs: DDAMetric[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(DDA_LOGS_STORAGE_KEY, JSON.stringify(logs));
+  } catch (err) {
+    console.warn('Failed to save DDA logs to localStorage:', err);
+  }
+}
+
+/**
+ * Retrieve cached DDA telemetry session logs from played games.
+ */
+export function getDdaLogs(): DDAMetric[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(DDA_LOGS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.warn('Failed to parse DDA logs from localStorage:', err);
+    return [];
   }
 }

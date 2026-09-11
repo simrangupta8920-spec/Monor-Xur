@@ -1,22 +1,65 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Trophy, Play, CheckCircle2, Puzzle, Brain, Sparkles, ArrowRight } from 'lucide-react';
-import { PatientSubView } from '../../types';
+import { PatientSubView, DDAMetric } from '../../types';
 import { soundController } from '../../utils/audio';
 
 interface GamesHubProps {
   onSelectGame: (game: PatientSubView) => void;
   currentLevel: number;
+  ddaLogs?: DDAMetric[];
 }
 
-export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel }) => {
+export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, ddaLogs = [] }) => {
+  const gamesStats = useMemo(() => {
+    const isToday = (timestamp: number) => {
+      const d = new Date(timestamp);
+      const now = new Date();
+      return (
+        d.getDate() === now.getDate() &&
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear()
+      );
+    };
+
+    const puzzleLogs = ddaLogs.filter(
+      (l) => l.gameType === 'puzzle' || (l.gameTitle && l.gameTitle.toLowerCase().includes('puzzle'))
+    );
+    const memoryLogs = ddaLogs.filter(
+      (l) => !l.gameType || l.gameType === 'memory_match' || (l.gameTitle && l.gameTitle.toLowerCase().includes('memory'))
+    );
+
+    const puzzlePlayedToday = puzzleLogs.some((l) => isToday(l.timestamp));
+    const memoryPlayedToday = memoryLogs.some((l) => isToday(l.timestamp));
+
+    const latestPuzzle = puzzleLogs.sort((a, b) => b.timestamp - a.timestamp)[0];
+    const latestMemory = memoryLogs.sort((a, b) => b.timestamp - a.timestamp)[0];
+
+    const puzzleScore = latestPuzzle 
+      ? `Level ${latestPuzzle.difficultyLevel} • ${puzzleLogs.length} Rounds Logged`
+      : 'Gentle, Medium & Challenge';
+
+    const memoryScore = latestMemory
+      ? `Level ${latestMemory.difficultyLevel} • ${memoryLogs.length} Rounds Logged`
+      : 'Personalized Speed Baseline';
+
+    return {
+      puzzlePlayedToday,
+      memoryPlayedToday,
+      puzzleScore,
+      memoryScore,
+      puzzleCount: puzzleLogs.length,
+      memoryCount: memoryLogs.length,
+    };
+  }, [ddaLogs]);
+
   const games = [
     {
       id: 'puzzle' as PatientSubView,
       title: 'Photo Puzzle',
       desc: 'Assemble 4, 9, or 16 piece puzzles using personalized family memories and everyday treasures with AI difficulty adaptation.',
       badge: 'AI Adaptive • 2×2 to 4×4',
-      playedToday: false,
-      score: 'Gentle, Medium & Challenge',
+      playedToday: gamesStats.puzzlePlayedToday,
+      score: gamesStats.puzzleScore,
       accent: '#FDF0D5',
       textColor: '#332610',
       icon: Puzzle,
@@ -28,8 +71,8 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel }
       title: 'Memory Match',
       desc: 'Flip and match pairs of familiar botanical, nature, and animal symbols with real-time AI cognitive difficulty scaling.',
       badge: 'AI Adaptive • Card Recall',
-      playedToday: true,
-      score: 'Personalized Speed Baseline',
+      playedToday: gamesStats.memoryPlayedToday,
+      score: gamesStats.memoryScore,
       accent: '#EAF1E8',
       textColor: '#1E3B1E',
       icon: Brain,

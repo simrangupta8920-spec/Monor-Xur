@@ -264,6 +264,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
   const [latestAIResult, setLatestAIResult] = useState<PuzzleAIAnalysisResult | null>(null);
   const [showAIInfoModal, setShowAIInfoModal] = useState<boolean>(false);
   const isShiftPendingRef = useRef<boolean>(false);
+  const roundNumberRef = useRef<number>(1);
 
   // Puzzle State:
   // Board has totalPieces slots. Each slot holds a piece index (0..totalPieces-1) or null.
@@ -411,7 +412,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
           if (onLogDDAMetric) {
             onLogDDAMetric({
               timestamp: Date.now(),
-              roundNumber: 1,
+              roundNumber: roundNumberRef.current++,
               difficultyLevel: fromG === 2 ? 1 : fromG === 3 ? 2 : 3,
               latencyMs: timeTakenSeconds * 1000,
               mistakes: Math.max(0, currentMoves - totalPieces),
@@ -421,6 +422,8 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
               aiReasoning: aiResult.reasoning,
               aiModel: aiResult.modelSource,
               fatigueRisk: aiResult.fatigueRisk,
+              gameType: 'puzzle',
+              gameTitle: 'Photo Puzzle',
             });
           }
 
@@ -447,7 +450,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
           if (onLogDDAMetric && trigger === 'round_complete') {
             onLogDDAMetric({
               timestamp: Date.now(),
-              roundNumber: 1,
+              roundNumber: roundNumberRef.current++,
               difficultyLevel: gridSize === 2 ? 1 : gridSize === 3 ? 2 : 3,
               latencyMs: timeTakenSeconds * 1000,
               mistakes: Math.max(0, currentMoves - totalPieces),
@@ -457,6 +460,8 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
               aiReasoning: aiResult.reasoning,
               aiModel: aiResult.modelSource,
               fatigueRisk: aiResult.fatigueRisk,
+              gameType: 'puzzle',
+              gameTitle: 'Photo Puzzle',
             });
           }
         }

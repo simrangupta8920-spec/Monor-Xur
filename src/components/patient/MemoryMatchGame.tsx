@@ -196,6 +196,8 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           aiReasoning: aiResult.reasoning,
           aiModel: aiResult.modelSource,
           fatigueRisk: aiResult.fatigueRisk,
+          gameType: 'memory_match',
+          gameTitle: 'Memory Match',
         });
 
         // Shift difficulty level down 1 step after a brief visual cue
@@ -397,6 +399,8 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           aiReasoning: `Player reached 5 consecutive wins. Upgraded difficulty 1 level from ${LEVEL_CONFIG[level]?.label} to ${LEVEL_CONFIG[nextLvl]?.label}.`,
           aiModel: aiResult.modelSource,
           fatigueRisk: 'LOW',
+          gameType: 'memory_match',
+          gameTitle: 'Memory Match',
         });
       } else {
         setHelperMessage(
@@ -418,6 +422,8 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           aiReasoning: aiResult.reasoning,
           aiModel: aiResult.modelSource,
           fatigueRisk: aiResult.fatigueRisk,
+          gameType: 'memory_match',
+          gameTitle: 'Memory Match',
         });
       }
     } catch {
@@ -431,6 +437,8 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
         moves: finalMoves,
         hintsUsed: LEVEL_CONFIG[level].hints - hintsLeft,
         adaptiveAction: 'maintained',
+        gameType: 'memory_match',
+        gameTitle: 'Memory Match',
       });
     } finally {
       setIsAnalyzing(false);

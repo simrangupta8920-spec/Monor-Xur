@@ -3,7 +3,7 @@ import { DDAMetric } from '../../types';
 import { 
   TrendingUp, Activity, Brain, Clock, ShieldCheck, Sparkles, 
   AlertTriangle, ArrowUpRight, ArrowDownRight, Minus, RefreshCw, 
-  HelpCircle, Calendar, Play, Download, FileText
+  HelpCircle, Calendar, Play, Download, FileText, Puzzle
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -21,6 +21,11 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { soundController } from '../../utils/audio';
+import { 
+  BASELINE_GAME_SESSIONS, 
+  filterLogsByGame, 
+  GameFilterType 
+} from '../../utils/gameAnalytics';
 
 interface CognitiveProgressViewProps {
   ddaLogs: DDAMetric[];
@@ -29,6 +34,7 @@ interface CognitiveProgressViewProps {
   onNavigateToGames?: () => void;
   onAddSampleSession?: (metric: DDAMetric) => void;
   onOpenPdfExport?: () => void;
+  onNavigateToInsights?: () => void;
 }
 
 // Sample baseline historical trend to display when the user hasn't played games yet
@@ -152,16 +158,19 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
   onNavigateToGames,
   onAddSampleSession,
   onOpenPdfExport,
+  onNavigateToInsights,
 }) => {
+  const [gameFilter, setGameFilter] = useState<GameFilterType>('all');
   const [timeFilter, setTimeFilter] = useState<'all' | 'recent' | 'adaptive'>('all');
   const [activeMetricTab, setActiveMetricTab] = useState<'engagement' | 'latency' | 'difficulty'>('engagement');
 
   const isUsingBaseline = ddaLogs.length === 0;
-  const rawLogs = isUsingBaseline ? BASELINE_DDA_SESSIONS : ddaLogs;
+  const rawLogs = isUsingBaseline ? BASELINE_GAME_SESSIONS : ddaLogs;
+  const filteredByGameLogs = useMemo(() => filterLogsByGame(rawLogs, gameFilter), [rawLogs, gameFilter]);
 
   // Process and sort logs chronologically for recharts
   const chartData = useMemo(() => {
-    const sorted = [...rawLogs].sort((a, b) => a.timestamp - b.timestamp);
+    const sorted = [...filteredByGameLogs].sort((a, b) => a.timestamp - b.timestamp);
 
     return sorted.map((log, index) => {
       const dateObj = new Date(log.timestamp);
@@ -169,10 +178,14 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
       const timeLabel = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       const engagement = calculateEngagementScore(log);
       const latencySec = parseFloat(((log.latencyMs || 0) / 1000).toFixed(1));
+      const resolvedGameType = log.gameType === 'puzzle' || (log.gameTitle && log.gameTitle.toLowerCase().includes('puzzle'))
+        ? 'puzzle'
+        : 'memory_match';
+      const resolvedGameTitle = log.gameTitle || (resolvedGameType === 'puzzle' ? 'Photo Puzzle' : 'Memory Match');
 
       return {
         id: log.roundNumber || index + 1,
-        sessionName: `Session ${index + 1}`,
+        sessionName: `${resolvedGameTitle} #${log.roundNumber || index + 1}`,
         dateLabel,
         timeLabel,
         displayLabel: dateLabel,
@@ -187,9 +200,11 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
         aiReasoning: log.aiReasoning || 'Consistent engagement observed.',
         aiModel: log.aiModel || 'Gemini 3.8 Flash',
         fatigueRisk: log.fatigueRisk || 'LOW',
+        gameType: resolvedGameType,
+        gameTitle: resolvedGameTitle,
       };
     });
-  }, [rawLogs]);
+  }, [filteredByGameLogs]);
 
   // Aggregate Key Statistics
   const latestMetric = chartData[chartData.length - 1];
@@ -273,6 +288,19 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
 
         {/* Quick action: play, simulate, or download PDF */}
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {onNavigateToInsights && (
+            <button
+              onClick={() => {
+                soundController.playClick();
+                onNavigateToInsights();
+              }}
+              className="px-3 py-1.5 rounded-xl bg-[#EAF1E8] border border-[#5B825B]/40 text-[#5B825B] text-xs font-black flex items-center gap-1.5 hover:bg-[#dfeade] shadow-2xs transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#5B825B]" />
+              <span>Memory Insights</span>
+            </button>
+          )}
+
           {onOpenPdfExport && (
             <button
               onClick={() => {
@@ -311,6 +339,64 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
             </button>
           )}
         </div>
+      </div>
+
+      {/* Game Filter Bar */}
+      <div className="bg-white p-3.5 rounded-2xl border border-[#E0DCD3] shadow-xs flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">Game Filter:</span>
+          
+          <button
+            onClick={() => {
+              soundController.playClick();
+              setGameFilter('all');
+            }}
+            className={`px-3 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              gameFilter === 'all'
+                ? 'bg-[#2D3A2F] text-white shadow-2xs'
+                : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
+            }`}
+          >
+            <span>All Games</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+              {rawLogs.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
+              soundController.playClick();
+              setGameFilter('memory_match');
+            }}
+            className={`px-3 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              gameFilter === 'memory_match'
+                ? 'bg-[#5B825B] text-white shadow-2xs'
+                : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
+            }`}
+          >
+            <Brain className="w-3.5 h-3.5" />
+            <span>Memory Match</span>
+          </button>
+
+          <button
+            onClick={() => {
+              soundController.playClick();
+              setGameFilter('puzzle');
+            }}
+            className={`px-3 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              gameFilter === 'puzzle'
+                ? 'bg-[#E8B25C] text-[#332610] shadow-2xs'
+                : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#FDF0D5]'
+            }`}
+          >
+            <Puzzle className="w-3.5 h-3.5" />
+            <span>Photo Puzzle</span>
+          </button>
+        </div>
+
+        <span className="text-[11px] font-bold text-[#5A6E5D] pr-1">
+          Showing {chartData.length} records matching {gameFilter === 'all' ? 'both games' : gameFilter === 'puzzle' ? 'Photo Puzzle' : 'Memory Match'}
+        </span>
       </div>
 
       {/* Baseline Notice Banner if no game played yet */}
@@ -639,9 +725,17 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
               className="p-3 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
             >
               <div className="space-y-1 flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black ${
+                    item.gameType === 'puzzle'
+                      ? 'bg-[#FDF0D5] text-[#8C651E]'
+                      : 'bg-[#EAF1E8] text-[#5B825B]'
+                  }`}>
+                    {item.gameType === 'puzzle' ? <Puzzle className="w-2.5 h-2.5" /> : <Brain className="w-2.5 h-2.5" />}
+                    {item.gameTitle}
+                  </span>
                   <span className="font-black text-[#2D3A2F]">
-                    {item.sessionName} • Level {item.difficultyLevel}
+                    Level {item.difficultyLevel}
                   </span>
                   <span className="text-[11px] text-[#5A6E5D]">({item.dateLabel})</span>
                   <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${

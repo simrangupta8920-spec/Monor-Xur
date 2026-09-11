@@ -19,14 +19,15 @@
 2. [Ecosystem Architecture & System Topology](#-ecosystem-architecture--system-topology)
 3. [Core Pillars & User Personas](#-core-pillars--user-personas)
 4. [Clinical Dynamic Difficulty Adjustment (DDA) Engine](#-clinical-dynamic-difficulty-adjustment-dda-engine)
-5. [Data Persistence & Offline-First Synchronization](#-data-persistence--offline-first-synchronization)
-6. [API Reference](#-api-reference)
-7. [Vector Clinical PDF Report Generator](#-vector-clinical-pdf-report-generator)
-8. [Auditory & Relaxation Engineering](#-auditory--relaxation-engineering)
-9. [Project Directory Structure](#-project-directory-structure)
-10. [Getting Started & Local Development](#-getting-started--local-development)
-11. [Production Deployment & Containerization](#-production-deployment--containerization)
-12. [Accessibility & Ethical AI Principles](#-accessibility--ethical-ai-principles)
+5. [Game-Specific Cognitive Analytics & Telemetry](#-game-specific-cognitive-analytics--telemetry)
+6. [Data Persistence & Offline-First Synchronization](#-data-persistence--offline-first-synchronization)
+7. [API Reference](#-api-reference)
+8. [Vector Clinical PDF Report Generator](#-vector-clinical-pdf-report-generator)
+9. [Auditory & Relaxation Engineering](#-auditory--relaxation-engineering)
+10. [Project Directory Structure](#-project-directory-structure)
+11. [Getting Started & Local Development](#-getting-started--local-development)
+12. [Production Deployment & Containerization](#-production-deployment--containerization)
+13. [Accessibility & Ethical AI Principles](#-accessibility--ethical-ai-principles)
 
 ---
 
@@ -221,6 +222,52 @@ To eliminate frustration (which induces anxiety and catastrophic reactions in de
 
 ---
 
+## 📊 Game-Specific Cognitive Analytics & Telemetry
+
+To provide clinicians, neurologists, and family caregivers with precise insights into distinct cognitive domains (e.g., working spatial memory vs. visual-spatial assembly), Monor Xur processes telemetry segmented by game type (`memory_match` vs. `puzzle`).
+
+```
+                              ┌───────────────────────────────┐
+                              │     Player Session Stream     │
+                              │ (Round, Latency, Mistakes, DDA│
+                              └───────────────┬───────────────┘
+                                              │
+                      ┌───────────────────────┴───────────────────────┐
+                      ▼                                               ▼
+      ┌───────────────────────────────┐               ┌───────────────────────────────┐
+      │      Memory Match Stream      │               │      Photo Puzzle Stream      │
+      │  • Working spatial recall     │               │  • Visual-spatial synthesis   │
+      │  • Card pair latency tracking │               │  • Assembly speed vs. baseline│
+      │  • Mismatch error frequency   │               │  • Hint request tracking      │
+      │  • 1-step adaptive tiering    │               │  • Grid scale (2x2, 3x3, 4x4) │
+      └───────────────┬───────────────┘               └───────────────┬───────────────┘
+                      │                                               │
+                      └───────────────────────┬───────────────────────┘
+                                              ▼
+                              ┌───────────────────────────────┐
+                              │    gameAnalytics.ts Engine    │
+                              │ • computeGameStats()          │
+                              │ • getGameBreakdown()          │
+                              │ • filterLogsByGame()          │
+                              └───────────────┬───────────────┘
+                                              │
+              ┌───────────────────────────────┼───────────────────────────────┐
+              ▼                               ▼                               ▼
+    ┌───────────────────┐           ┌───────────────────┐           ┌───────────────────┐
+    │  Family Dashboard │           │  ASHA Health Hub  │           │ Vector PDF Dossier│
+    │ • 3-Way Selector  │           │ • Quick Metrics   │           │ • Dual Comparison │
+    │ • Recharts Graphs │           │ • Scope Filter Bar│           │ • Scope Selection │
+    │ • Trend Lines     │           │ • Clinical Summary│           │ • Labeled Rows    │
+    └───────────────────┘           └───────────────────┘           └───────────────────┘
+```
+
+### Analytical Capabilities & Metrics
+- **Multi-Game Scope Filtering**: Caregivers and health workers can toggle between `All Games` (combined aggregate), `Memory Match Only`, and `Photo Puzzle Only` across all dashboards, charts, and report generators.
+- **Side-by-Side Dual Game Comparison**: Directly contrasts session volume, mean accuracy, decision speed, error rates, and active DDA tiers between Memory Match and Photo Puzzle.
+- **Clinical Trend Visualizations**: Uses Recharts to plot chronological accuracy trajectories, move latencies, and adaptive tier progressions with clear visual game differentiation.
+
+---
+
 ## 💾 Data Persistence & Offline-First Synchronization
 
 Monor Xur is engineered for high-availability in rural and semi-urban settings with unstable internet access.
@@ -347,11 +394,14 @@ The Node.js Express server (`server.ts`) exposes high-performance endpoints:
 
 Monor Xur includes a client-side vector document compiler powered by **jsPDF**:
 - **Format**: Structured medical dossier in A4 format.
+- **Dynamic Game Scope Configuration**:
+  - **Combined Assessment (`All Games`)**: Features 4 aggregate KPI metrics, followed by side-by-side comparative clinical cards contrasting Memory Match (recall latency, error rates, adaptive level) against Photo Puzzle (visual assembly time, hints, adaptive level).
+  - **Domain-Specific Assessment (`Memory Match Only` or `Photo Puzzle Only`)**: Isolates telemetry for targeted neurological evaluation of working spatial memory or visual-spatial reasoning.
 - **Sections**:
-  1. **Executive Clinical Summary**: Patient demographics, stage of cognitive condition, blood group, primary physician contacts.
-  2. **Longitudinal Cognitive Metrics**: Average latency, mistake frequency, hint utilization, and AI difficulty trajectory.
+  1. **Executive Clinical Summary**: Patient demographics, stage of cognitive condition, blood group, primary physician and emergency contacts.
+  2. **Cognitive Engagement Trends & Multi-Game Telemetry (DDA)**: Mean accuracy percentage, response latency, current DDA difficulty tier, side-by-side game comparison panels, and an 8-row historical telemetry table with game badges, speed, errors, accuracy scores, and adaptive AI adjustments.
   3. **Physician Visit Logs**: Detailed history of neurologist consultations, clinical observations, and care instructions.
-  4. **Daily Routine & Medication Adherence**: Weekly compliance breakdown and schedule.
+  4. **Daily Routine & Medication Adherence**: Weekly compliance breakdown and scheduled timings.
   5. **Caregiver Field Notes**: Qualitative observations entered by family members.
   6. **Standard Geriatric Disclaimer**: Verified medical notice regarding non-diagnostic assistive technology.
 
@@ -399,12 +449,12 @@ monor-xur/
     │
     ├── components/
     │   ├── caregiver/                    # Family & ASHA portal views
-    │   │   ├── AshaDashboard.tsx         # ASHA home visit protocol & MMSE observation logs
+    │   │   ├── AshaDashboard.tsx         # ASHA home visit protocol, game filter & observation logs
     │   │   ├── AshaLogin.tsx             # Passcode authentication for health workers
     │   │   ├── CaregiverSelect.tsx       # Dual-portal gateway (Family vs ASHA)
-    │   │   ├── CognitiveProgressView.tsx # Recharts interactive DDA visualization
-    │   │   ├── ExportPdfModal.tsx        # Vector PDF configuration modal
-    │   │   ├── FamilyDashboard.tsx       # Caregiver 9-tab command dashboard
+    │   │   ├── CognitiveProgressView.tsx # Recharts interactive multi-game DDA visualization
+    │   │   ├── ExportPdfModal.tsx        # Vector PDF configuration modal with game scope selector
+    │   │   ├── FamilyDashboard.tsx       # Caregiver command dashboard with game-filtered tabs
     │   │   └── FamilyLogin.tsx           # 4-digit PIN security lock
     │   │
     │   ├── common/                       # Shared design system components
@@ -418,7 +468,7 @@ monor-xur/
     │   │   ├── AudioDiaryRecorder.tsx    # Web Speech + MediaRecorder voice journal modal
     │   │   ├── BreathingExercise.tsx     # Diaphragmatic 4-4-4-4 rhythm animation
     │   │   ├── DailyLife.tsx             # Large-target daily routine & medication tracker
-    │   │   ├── GamesHub.tsx              # Cognitive stimulation selection menu
+    │   │   ├── GamesHub.tsx              # Cognitive stimulation selection menu with live status
     │   │   ├── MemoriesGallery.tsx       # Reminiscence gallery with audio badges
     │   │   ├── MemoryMatchGame.tsx       # Adaptive paired-card recall game with DDA
     │   │   ├── MemoryViewer.tsx          # Fullscreen media reader with audio playback
@@ -442,7 +492,8 @@ monor-xur/
     │   └── offlineStorage.ts             # Snapshot cache & mutation queue manager
     └── utils/
         ├── audio.ts                      # Web Audio API harmonic sound synthesizers
-        └── pdfReportGenerator.ts         # jsPDF vector clinical report compiler
+        ├── gameAnalytics.ts              # Multi-game stats, breakdowns, and baseline aggregation
+        └── pdfReportGenerator.ts         # jsPDF vector clinical report compiler with game scopes
 ```
 
 ---

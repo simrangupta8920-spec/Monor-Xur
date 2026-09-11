@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   User, Heart, Calendar, Bell, ShieldAlert, BarChart3, Plus, Trash2, 
   Phone, Clock, AlertTriangle, CheckCircle2, ChevronRight, Activity, Award, Sparkles, FileText,
-  Edit3, Video, Image as ImageIcon, Upload, Eye, X, Stethoscope, Check, Play, Film, Mic, TrendingUp, Download
+  Edit3, Video, Image as ImageIcon, Upload, Eye, X, Stethoscope, Check, Play, Film, Mic, TrendingUp, Download,
+  Puzzle, Brain
 } from 'lucide-react';
 import { 
   FamilyCaregiverTab, CalendarEvent, Reminder, AlertItem, EmergencyContact, DDAMetric, Memory, 
@@ -11,7 +12,17 @@ import {
 import { GAME_PROGRESS, REPORTS, REPORT_SUMMARY, MEDICAL_DISCLAIMER } from '../../data/mockData';
 import { soundController } from '../../utils/audio';
 import { CognitiveProgressView } from './CognitiveProgressView';
+import { MemoryInsightsView } from './MemoryInsightsView';
 import { ExportPdfModal } from './ExportPdfModal';
+import { 
+  computeGameStats, 
+  getGameBreakdown, 
+  filterLogsByGame, 
+  generateClinicalReportSummary, 
+  getWeeklyActivityDistribution, 
+  GameFilterType,
+  BASELINE_GAME_SESSIONS
+} from '../../utils/gameAnalytics';
 
 interface FamilyDashboardProps {
   currentTab: FamilyCaregiverTab;
@@ -138,6 +149,39 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
   // PDF Export Modal state
   const [showExportPdfModal, setShowExportPdfModal] = useState(false);
+
+  // Game-specific filter states
+  const [reportsGameFilter, setReportsGameFilter] = useState<GameFilterType>('all');
+  const [telemetryGameFilter, setTelemetryGameFilter] = useState<GameFilterType>('all');
+
+  // Dynamic game analytics derived from actual player telemetry
+  const effectiveDdaLogs = useMemo(() => {
+    return ddaLogs && ddaLogs.length > 0 ? ddaLogs : BASELINE_GAME_SESSIONS;
+  }, [ddaLogs]);
+
+  const globalGameStats = useMemo(() => {
+    return computeGameStats(effectiveDdaLogs);
+  }, [effectiveDdaLogs]);
+
+  const gameBreakdown = useMemo(() => {
+    return getGameBreakdown(effectiveDdaLogs);
+  }, [effectiveDdaLogs]);
+
+  const filteredReportLogs = useMemo(() => {
+    return filterLogsByGame(effectiveDdaLogs, reportsGameFilter);
+  }, [effectiveDdaLogs, reportsGameFilter]);
+
+  const dynamicReportSummary = useMemo(() => {
+    return generateClinicalReportSummary(filteredReportLogs, patientProfile.fullName);
+  }, [filteredReportLogs, patientProfile.fullName]);
+
+  const weeklyActivity = useMemo(() => {
+    return getWeeklyActivityDistribution(filteredReportLogs);
+  }, [filteredReportLogs]);
+
+  const filteredTelemetryLogs = useMemo(() => {
+    return filterLogsByGame(effectiveDdaLogs, telemetryGameFilter);
+  }, [effectiveDdaLogs, telemetryGameFilter]);
 
   // Handlers for Events & Reminders
   const handleCreateEvent = (e: React.FormEvent) => {
@@ -375,16 +419,25 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
           {/* Quick Metrics Bar */}
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="bg-white p-3 rounded-2xl border border-[#E0DCD3] shadow-xs">
-              <span className="text-2xl font-black text-[#5B825B]">{GAME_PROGRESS.accuracy}%</span>
+              <span className="text-2xl font-black text-[#5B825B]">{globalGameStats.avgAccuracy}%</span>
               <span className="block text-[11px] font-bold text-[#5A6E5D] mt-0.5">Avg Accuracy</span>
+              <span className="block text-[9px] text-[#5B825B] font-extrabold truncate">
+                {gameBreakdown.memoryMatch.sessions} Match • {gameBreakdown.puzzle.sessions} Puzzle
+              </span>
             </div>
             <div className="bg-white p-3 rounded-2xl border border-[#E0DCD3] shadow-xs">
-              <span className="text-2xl font-black text-[#2D3A2F]">{GAME_PROGRESS.gamesThisWeek}</span>
-              <span className="block text-[11px] font-bold text-[#5A6E5D] mt-0.5">Games This Week</span>
+              <span className="text-2xl font-black text-[#2D3A2F]">{globalGameStats.totalSessions}</span>
+              <span className="block text-[11px] font-bold text-[#5A6E5D] mt-0.5">Rounds Recorded</span>
+              <span className="block text-[9px] text-[#5A6E5D] font-extrabold truncate">
+                Level {globalGameStats.currentLevel} Adaptive Tier
+              </span>
             </div>
             <div className="bg-white p-3 rounded-2xl border border-[#E0DCD3] shadow-xs">
-              <span className="text-2xl font-black text-[#E8B25C]">{GAME_PROGRESS.frequency}</span>
-              <span className="block text-[11px] font-bold text-[#5A6E5D] mt-0.5">Activity Days</span>
+              <span className="text-2xl font-black text-[#E8B25C]">{globalGameStats.activeDays}</span>
+              <span className="block text-[11px] font-bold text-[#5A6E5D] mt-0.5">Active Days</span>
+              <span className="block text-[9px] text-[#8C651E] font-extrabold truncate">
+                {globalGameStats.avgLatencySec}s avg latency
+              </span>
             </div>
           </div>
 
@@ -394,21 +447,47 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => onSelectTab('progress')}
-                className="p-3.5 rounded-2xl bg-[#EAF1E8]/70 border border-[#5B825B]/30 text-left hover:bg-[#EAF1E8] transition-colors col-span-2 flex items-center justify-between shadow-2xs"
+                onClick={() => {
+                  soundController.playClick();
+                  onSelectTab('insights');
+                }}
+                className="p-3.5 rounded-2xl bg-[#EAF1E8] border border-[#5B825B]/40 text-left hover:bg-[#dfeade] transition-colors col-span-2 flex items-center justify-between shadow-2xs group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#5B825B] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                  <div className="w-10 h-10 rounded-2xl bg-[#5B825B] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">Memory Games Insights</h4>
+                      <span className="px-2 py-0.2 rounded-full bg-[#5B825B] text-white text-[10px] font-black uppercase tracking-wider">
+                        Recharts
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#5A6E5D]">Track accuracy, mistakes, reaction speed & DDA shifts over time</p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-xl bg-white border border-[#5B825B]/30 text-[#5B825B] text-xs font-black">
+                  View Insights →
+                </span>
+              </button>
+
+              <button
+                onClick={() => onSelectTab('progress')}
+                className="p-3.5 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] text-left hover:bg-[#EAF1E8] transition-colors col-span-2 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#5B825B]/80 text-white flex items-center justify-center shrink-0 shadow-2xs">
                     <TrendingUp className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-extrabold text-sm text-[#2D3A2F]">DDA Cognitive Progress</h4>
                       <span className="px-2 py-0.2 rounded-full bg-white text-[#5B825B] text-[10px] font-black uppercase">
-                        Trend Line
+                        Clinical Report
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#5A6E5D]">Recharts visual telemetry tracking cognitive engagement</p>
+                    <p className="text-[11px] text-[#5A6E5D]">Holistic cognitive engagement score and PDF health export</p>
                   </div>
                 </div>
                 <span className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[#2D3A2F] text-xs font-black">
@@ -446,14 +525,14 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               </button>
 
               <button
-                onClick={() => onSelectTab('game_progress')}
+                onClick={() => onSelectTab('insights')}
                 className="p-3.5 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] text-left hover:bg-[#EAF1E8] transition-colors"
               >
-                <div className="w-8 h-8 rounded-xl bg-[#FDF0D5] text-[#E8B25C] flex items-center justify-center mb-1.5">
+                <div className="w-8 h-8 rounded-xl bg-[#FDF0D5] text-[#8C651E] flex items-center justify-center mb-1.5">
                   <Activity className="w-4 h-4" />
                 </div>
                 <h4 className="font-extrabold text-sm text-[#2D3A2F]">DDA Insights</h4>
-                <p className="text-[11px] text-[#5A6E5D]">AI shifts & telemetry</p>
+                <p className="text-[11px] text-[#5A6E5D]">Charts & telemetry</p>
               </button>
 
               <button
@@ -1047,6 +1126,21 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
         </div>
       )}
 
+      {/* INSIGHTS TAB - RECHARTS MEMORY GAMES PERFORMANCE TRENDS (ACCURACY, MISTAKES, LATENCY, DDA TIER) */}
+      {currentTab === 'insights' && (
+        <MemoryInsightsView
+          ddaLogs={ddaLogs}
+          patientName={patientProfile.name}
+          onBack={() => onSelectTab('home')}
+          onNavigateToGames={onNavigateToGames}
+          onAddSampleSession={onLogDDAMetric}
+          onOpenPdfExport={() => {
+            soundController.playClick();
+            setShowExportPdfModal(true);
+          }}
+        />
+      )}
+
       {/* PROGRESS TAB - RECHARTS DDA TELEMETRY & COGNITIVE ENGAGEMENT */}
       {currentTab === 'progress' && (
         <CognitiveProgressView
@@ -1055,6 +1149,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
           onBack={() => onSelectTab('home')}
           onNavigateToGames={onNavigateToGames}
           onAddSampleSession={onLogDDAMetric}
+          onNavigateToInsights={() => onSelectTab('insights')}
           onOpenPdfExport={() => {
             soundController.playClick();
             setShowExportPdfModal(true);
@@ -1073,15 +1168,24 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               >
                 ← Back
               </button>
-              <h2 className="text-xl font-black text-[#2D3A2F]">DDA Insights & Logs</h2>
+              <h2 className="text-xl font-black text-[#2D3A2F]">DDA Insights & Telemetry</h2>
             </div>
-            <button
-              onClick={() => onSelectTab('progress')}
-              className="px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black flex items-center gap-1.5 shadow-2xs hover:bg-[#4a6b4a]"
-            >
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>View Trend Line</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onSelectTab('insights')}
+                className="px-3 py-1.5 rounded-xl bg-[#EAF1E8] border border-[#5B825B]/40 text-[#5B825B] text-xs font-black flex items-center gap-1.5 shadow-2xs hover:bg-[#dfeade]"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Memory Charts</span>
+              </button>
+              <button
+                onClick={() => onSelectTab('progress')}
+                className="px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black flex items-center gap-1.5 shadow-2xs hover:bg-[#4a6b4a]"
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>Cognitive Progress</span>
+              </button>
+            </div>
           </div>
 
           {/* DDA explanation banner */}
@@ -1092,50 +1196,118 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
             </p>
           </div>
 
+          {/* Game Filter Bar */}
+          <div className="bg-white p-3 rounded-2xl border border-[#E0DCD3] shadow-xs flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">Filter by Game:</span>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setTelemetryGameFilter('all');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  telemetryGameFilter === 'all'
+                    ? 'bg-[#2D3A2F] text-white shadow-2xs'
+                    : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
+                }`}
+              >
+                <span>All Games ({effectiveDdaLogs.length})</span>
+              </button>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setTelemetryGameFilter('memory_match');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  telemetryGameFilter === 'memory_match'
+                    ? 'bg-[#5B825B] text-white shadow-2xs'
+                    : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
+                }`}
+              >
+                <Brain className="w-3.5 h-3.5" />
+                <span>Memory Match ({gameBreakdown.memoryMatch.sessions})</span>
+              </button>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setTelemetryGameFilter('puzzle');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  telemetryGameFilter === 'puzzle'
+                    ? 'bg-[#E8B25C] text-[#332610] shadow-2xs'
+                    : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#FDF0D5]'
+                }`}
+              >
+                <Puzzle className="w-3.5 h-3.5" />
+                <span>Photo Puzzle ({gameBreakdown.puzzle.sessions})</span>
+              </button>
+            </div>
+            <span className="text-[11px] font-bold text-[#5A6E5D]">
+              Showing {filteredTelemetryLogs.length} logs
+            </span>
+          </div>
+
           {/* Live Telemetry Logs from player sessions */}
           <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
-            <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">Telemetry Logs ({ddaLogs.length})</h3>
-            {ddaLogs.length === 0 ? (
-              <p className="text-xs text-[#5A6E5D]">Play a round in Player Mode to log real-time adaptive metrics.</p>
+            <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">
+              Telemetry Logs ({filteredTelemetryLogs.length})
+            </h3>
+            {filteredTelemetryLogs.length === 0 ? (
+              <p className="text-xs text-[#5A6E5D]">No game sessions found matching the selected filter. Play a round in Player Mode!</p>
             ) : (
               <div className="space-y-2.5">
-                {ddaLogs.map((log, idx) => (
-                  <div key={idx} className="p-3.5 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] text-xs space-y-2 shadow-2xs">
-                    <div className="flex items-center justify-between font-extrabold">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[#2D3A2F]">Round {log.roundNumber} (Level {log.difficultyLevel})</span>
-                        {log.aiModel && (
-                          <span className="text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
-                            AI Analyzed
+                {filteredTelemetryLogs.map((log, idx) => {
+                  const resolvedGameType = log.gameType === 'puzzle' || (log.gameTitle && log.gameTitle.toLowerCase().includes('puzzle'))
+                    ? 'puzzle'
+                    : 'memory_match';
+                  const resolvedGameTitle = log.gameTitle || (resolvedGameType === 'puzzle' ? 'Photo Puzzle' : 'Memory Match');
+
+                  return (
+                    <div key={idx} className="p-3.5 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] text-xs space-y-2 shadow-2xs">
+                      <div className="flex items-center justify-between font-extrabold flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black ${
+                            resolvedGameType === 'puzzle'
+                              ? 'bg-[#FDF0D5] text-[#8C651E]'
+                              : 'bg-[#EAF1E8] text-[#5B825B]'
+                          }`}>
+                            {resolvedGameType === 'puzzle' ? <Puzzle className="w-2.5 h-2.5" /> : <Brain className="w-2.5 h-2.5" />}
+                            {resolvedGameTitle}
                           </span>
-                        )}
-                      </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-black capitalize ${
-                        log.adaptiveAction === 'eased' 
-                          ? 'bg-[#FDF0D5] text-[#332610] border border-[#eadbbf]' 
-                          : log.adaptiveAction === 'increased'
-                          ? 'bg-[#EAF1E8] text-[#5B825B]'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        AI: {log.adaptiveAction}
-                      </span>
-                    </div>
-
-                    <p className="text-[#5A6E5D]">
-                      Latency: {(log.latencyMs / 1000).toFixed(1)}s • Moves: {log.moves} • Mistakes: <strong className={log.mistakes >= 3 ? 'text-[#C46A66]' : 'text-[#2D3A2F]'}>{log.mistakes}</strong> • Hints: {log.hintsUsed}
-                    </p>
-
-                    {log.aiReasoning && (
-                      <div className="bg-white p-2.5 rounded-xl border border-[#5B825B]/20 text-[11px] space-y-1">
-                        <div className="flex items-center justify-between text-[10px] font-black text-[#5B825B]">
-                          <span>AI MODEL RATIONALE</span>
-                          <span>{log.aiModel}</span>
+                          <span className="text-[#2D3A2F]">Round {log.roundNumber} (Level {log.difficultyLevel})</span>
+                          {log.aiModel && (
+                            <span className="text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
+                              AI Analyzed
+                            </span>
+                          )}
                         </div>
-                        <p className="text-[#2D3A2F]">{log.aiReasoning}</p>
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-black capitalize ${
+                          log.adaptiveAction === 'eased' 
+                            ? 'bg-[#FDF0D5] text-[#332610] border border-[#eadbbf]' 
+                            : log.adaptiveAction === 'increased'
+                            ? 'bg-[#EAF1E8] text-[#5B825B]'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          AI: {log.adaptiveAction}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      <p className="text-[#5A6E5D]">
+                        Latency: {(log.latencyMs / 1000).toFixed(1)}s • Moves: {log.moves} • Mistakes: <strong className={log.mistakes >= 3 ? 'text-[#C46A66]' : 'text-[#2D3A2F]'}>{log.mistakes}</strong> • Hints: {log.hintsUsed}
+                      </p>
+
+                      {log.aiReasoning && (
+                        <div className="bg-white p-2.5 rounded-xl border border-[#5B825B]/20 text-[11px] space-y-1">
+                          <div className="flex items-center justify-between text-[10px] font-black text-[#5B825B]">
+                            <span>AI MODEL RATIONALE</span>
+                            <span>{log.aiModel}</span>
+                          </div>
+                          <p className="text-[#2D3A2F]">{log.aiReasoning}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1167,28 +1339,163 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
             </button>
           </div>
 
+          {/* Reports Game Filter Bar */}
+          <div className="bg-white p-3.5 rounded-2xl border border-[#E0DCD3] shadow-xs flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">Report Filter:</span>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setReportsGameFilter('all');
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  reportsGameFilter === 'all'
+                    ? 'bg-[#2D3A2F] text-white shadow-2xs'
+                    : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
+                }`}
+              >
+                <span>Combined Overview ({effectiveDdaLogs.length})</span>
+              </button>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setReportsGameFilter('memory_match');
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  reportsGameFilter === 'memory_match'
+                    ? 'bg-[#5B825B] text-white shadow-2xs'
+                    : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
+                }`}
+              >
+                <Brain className="w-3.5 h-3.5" />
+                <span>Memory Match Report ({gameBreakdown.memoryMatch.sessions})</span>
+              </button>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setReportsGameFilter('puzzle');
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  reportsGameFilter === 'puzzle'
+                    ? 'bg-[#E8B25C] text-[#332610] shadow-2xs'
+                    : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#FDF0D5]'
+                }`}
+              >
+                <Puzzle className="w-3.5 h-3.5" />
+                <span>Photo Puzzle Report ({gameBreakdown.puzzle.sessions})</span>
+              </button>
+            </div>
+            <span className="text-[11px] font-bold text-[#5A6E5D]">
+              Active Scope: {reportsGameFilter === 'all' ? 'All Games' : reportsGameFilter === 'puzzle' ? 'Photo Puzzle' : 'Memory Match'}
+            </span>
+          </div>
+
+          {/* Game Comparison Breakdown when 'All' is selected */}
+          {reportsGameFilter === 'all' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-white p-4 rounded-3xl border border-[#5B825B]/30 shadow-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#EAF1E8] text-[#5B825B] flex items-center justify-center">
+                      <Brain className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">Memory Match Performance</h4>
+                      <p className="text-[11px] text-[#5A6E5D]">{gameBreakdown.memoryMatch.sessions} sessions played</p>
+                    </div>
+                  </div>
+                  <span className="text-xl font-black text-[#5B825B]">{gameBreakdown.memoryMatch.accuracy}%</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#EAE6DF] text-center text-xs">
+                  <div>
+                    <span className="block text-[10px] text-[#5A6E5D]">Avg Errors</span>
+                    <strong className="text-[#2D3A2F] font-black">{gameBreakdown.memoryMatch.avgMistakes}</strong>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-[#5A6E5D]">Avg Speed</span>
+                    <strong className="text-[#2D3A2F] font-black">{gameBreakdown.memoryMatch.avgLatencySec}s</strong>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-[#5A6E5D]">Current Level</span>
+                    <strong className="text-[#5B825B] font-black">Lvl {gameBreakdown.memoryMatch.level}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-3xl border border-[#E8B25C]/40 shadow-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#FDF0D5] text-[#8C651E] flex items-center justify-center">
+                      <Puzzle className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">Photo Puzzle Performance</h4>
+                      <p className="text-[11px] text-[#5A6E5D]">{gameBreakdown.puzzle.sessions} sessions played</p>
+                    </div>
+                  </div>
+                  <span className="text-xl font-black text-[#E8B25C]">{gameBreakdown.puzzle.accuracy}%</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#EAE6DF] text-center text-xs">
+                  <div>
+                    <span className="block text-[10px] text-[#5A6E5D]">Avg Errors</span>
+                    <strong className="text-[#2D3A2F] font-black">{gameBreakdown.puzzle.avgMistakes}</strong>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-[#5A6E5D]">Avg Speed</span>
+                    <strong className="text-[#2D3A2F] font-black">{gameBreakdown.puzzle.avgLatencySec}s</strong>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-[#5A6E5D]">Current Level</span>
+                    <strong className="text-[#E8B25C] font-black">Lvl {gameBreakdown.puzzle.level}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-[#5B825B]">{REPORT_SUMMARY.period}</span>
+              <span className="text-xs font-black uppercase tracking-wider text-[#5B825B]">
+                {dynamicReportSummary.period}
+              </span>
               <span className="px-3 py-1 rounded-full bg-[#EAF1E8] text-[#5B825B] text-xs font-extrabold">
-                {REPORT_SUMMARY.engagement} Engagement
+                {dynamicReportSummary.engagement}
               </span>
             </div>
-            <h3 className="text-xl font-black text-[#2D3A2F]">Summary & Routine Health</h3>
-            <p className="text-xs text-[#5A6E5D] bg-[#FDFBF7] p-3 rounded-2xl border border-[#E0DCD3]">
-              {REPORT_SUMMARY.note}
+            <h3 className="text-xl font-black text-[#2D3A2F]">
+              {reportsGameFilter === 'all' 
+                ? 'Clinical Summary & Cognitive Routine' 
+                : reportsGameFilter === 'puzzle'
+                ? 'Photo Puzzle Clinical Telemetry Summary'
+                : 'Memory Match Clinical Telemetry Summary'}
+            </h3>
+            <p className="text-xs text-[#5A6E5D] bg-[#FDFBF7] p-3.5 rounded-2xl border border-[#E0DCD3] leading-relaxed">
+              {dynamicReportSummary.note}
             </p>
 
-            {/* Weekly bar visualizer */}
+            {/* Weekly bar visualizer from actual game sessions */}
             <div className="pt-3">
-              <h4 className="font-extrabold text-xs text-[#2D3A2F] mb-3">Daily Activity Hours (This Week)</h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-extrabold text-xs text-[#2D3A2F]">
+                  Daily Game Activity Hours (This Week)
+                </h4>
+                <span className="text-[11px] font-bold text-[#5A6E5D]">
+                  {filteredReportLogs.length} total sessions accounted
+                </span>
+              </div>
               <div className="flex items-end justify-between h-32 pt-4 px-2">
-                {REPORTS.daily.map((d) => (
+                {weeklyActivity.map((d) => (
                   <div key={d.label} className="flex flex-col items-center gap-1.5 flex-1">
-                    <span className="text-[10px] font-bold text-[#5A6E5D]">{d.value}</span>
+                    <span className="text-[10px] font-bold text-[#5A6E5D]">{d.value}h</span>
                     <div
-                      className="w-7 rounded-t-xl bg-[#5B825B] transition-all"
-                      style={{ height: `${Math.max(12, d.value * 24)}px` }}
+                      className={`w-7 rounded-t-xl transition-all ${
+                        reportsGameFilter === 'puzzle'
+                          ? 'bg-[#E8B25C]'
+                          : reportsGameFilter === 'memory_match'
+                          ? 'bg-[#5B825B]'
+                          : 'bg-[#5B825B]'
+                      }`}
+                      style={{ height: `${Math.max(12, d.value * 32)}px` }}
                     />
                     <span className="text-xs font-extrabold text-[#2D3A2F]">{d.label}</span>
                   </div>

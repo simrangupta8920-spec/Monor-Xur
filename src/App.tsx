@@ -34,8 +34,11 @@ import {
   getOfflineSnapshot, 
   queueOfflineMutation, 
   getOfflineQueue, 
-  clearOfflineQueue 
+  clearOfflineQueue,
+  getDdaLogs,
+  saveDdaLogs
 } from './services/offlineStorage';
+import { BASELINE_GAME_SESSIONS } from './utils/gameAnalytics';
 import { soundController } from './utils/audio';
 import { Phone } from 'lucide-react';
 import { 
@@ -136,7 +139,14 @@ export function App() {
     return INITIAL_CARE_TASKS;
   });
 
-  const [ddaLogs, setDdaLogs] = useState<DDAMetric[]>([]);
+  const [ddaLogs, setDdaLogs] = useState<DDAMetric[]>(() => {
+    const saved = getDdaLogs();
+    if (saved && saved.length > 0) {
+      return saved;
+    }
+    saveDdaLogs(BASELINE_GAME_SESSIONS);
+    return BASELINE_GAME_SESSIONS;
+  });
 
   const [contacts, setContacts] = useState<EmergencyContact[]>(() => {
     if (cachedOfflineSnapshot?.contacts && cachedOfflineSnapshot.contacts.length > 0) {
@@ -394,7 +404,11 @@ export function App() {
   };
 
   const handleLogDDAMetric = (metric: DDAMetric) => {
-    setDdaLogs((prev) => [metric, ...prev]);
+    setDdaLogs((prev) => {
+      const updated = [metric, ...prev];
+      saveDdaLogs(updated);
+      return updated;
+    });
   };
 
   const handleAddMemory = async (memory: Memory) => {
@@ -549,6 +563,7 @@ export function App() {
                   <GamesHub
                     onSelectGame={(g) => setPatientSubView(g)}
                     currentLevel={2}
+                    ddaLogs={ddaLogs}
                   />
                 )}
 
@@ -641,6 +656,7 @@ export function App() {
             patientProfile={patientProfile}
             medicalProfile={medicalProfile}
             onOpenSetup={() => handleSwitchRole('setup')}
+            ddaLogs={ddaLogs}
           />
         )}
       </main>

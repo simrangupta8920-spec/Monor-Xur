@@ -21,6 +21,7 @@ export type PatientSubView =
 
 export type FamilyCaregiverTab = 
   | 'home' 
+  | 'insights'
   | 'progress'
   | 'calendar' 
   | 'alerts' 
@@ -178,4 +179,6 @@ export interface DDAMetric {
   aiReasoning?: string;
   aiModel?: string;
   fatigueRisk?: 'LOW' | 'MODERATE' | 'HIGH';
+  gameType?: 'memory_match' | 'puzzle' | string;
+  gameTitle?: string;
 }
