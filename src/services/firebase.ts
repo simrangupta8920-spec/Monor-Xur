@@ -26,7 +26,12 @@ import {
   AuditLog
 } from '../types';
 
-const app = initializeApp(firebaseConfig);
+const resolvedConfig = {
+  ...firebaseConfig,
+  apiKey: (import.meta.env?.VITE_FIREBASE_API_KEY as string) || firebaseConfig.apiKey,
+};
+
+const app = initializeApp(resolvedConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth();
 
