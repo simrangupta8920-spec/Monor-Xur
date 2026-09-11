@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { 
-  Flower2, Sun, Trees, Bird, Cat, Fish, Star, Heart, Lightbulb, RotateCcw, ArrowLeft, Trophy, Sparkles, Brain, Info, Check, ShieldAlert, Zap
+  Flower2, Sun, Trees, Bird, Cat, Fish, Star, Heart, Lightbulb, RotateCcw, ArrowLeft, Trophy, Sparkles, Brain, Info, Check, ShieldAlert, Zap, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { soundController } from '../../utils/audio';
 import { DDAMetric, AIAnalysisResult } from '../../types';
 import { analyzePlayerDifficulty } from '../../services/aiDifficultyService';
+import { DifficultyToast, DifficultyToastProps } from '../common/DifficultyToast';
 
 interface MemoryMatchGameProps {
   onBack: () => void;
@@ -48,6 +49,25 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
   const [isComplete, setIsComplete] = useState(false);
   const [helperMessage, setHelperMessage] = useState<string | null>(null);
 
+  // Consecutive wins streak for current level (5 consecutive wins -> upgrade 1 step)
+  const [consecutiveWins, setConsecutiveWins] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('monor_memory_consecutive_wins');
+      return saved ? Math.max(0, parseInt(saved, 10) || 0) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  // Keep localStorage in sync with consecutive wins
+  useEffect(() => {
+    try {
+      localStorage.setItem('monor_memory_consecutive_wins', String(consecutiveWins));
+    } catch {
+      // ignore
+    }
+  }, [consecutiveWins]);
+
   // AI / ML Adaptation States
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [latestAIResult, setLatestAIResult] = useState<AIAnalysisResult | null>(null);
@@ -59,6 +79,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
     toLevel: number;
     modelSource: string;
   } | null>(null);
+  const [difficultyToast, setDifficultyToast] = useState<DifficultyToastProps | null>(null);
   const [showAIInfoModal, setShowAIInfoModal] = useState(false);
 
   // Performance tracking for DDA
@@ -101,68 +122,86 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
     initDeck(level);
   }, [level, initDeck]);
 
-  // AI-driven automatic difficulty downshift when player struggles
-  const handleAIAutoShiftToEasy = useCallback(
+  // AI-driven automatic difficulty downshift when player struggles:
+  // Strictly shifts 1 level down: Hard (3) -> Medium (2), Medium (2) -> Easy (1)
+  const handleAIDifficultyDownshift = useCallback(
     async (currentMistakes: number, currentConsecutiveMistakes: number, currentMoves: number, matchedCount: number) => {
       if (isShiftPending.current || level <= 1) return;
       isShiftPending.current = true;
       setIsAnalyzing(true);
 
+      const fromLvl = level;
+      const targetLvl = Math.max(1, fromLvl - 1); // Strictly 1 level below!
       const elapsedSec = Math.round((Date.now() - roundStartTime.current) / 1000);
 
       try {
         const aiResult = await analyzePlayerDifficulty({
           playerName: 'Anita',
-          currentLevel: level,
+          currentLevel: fromLvl,
           moves: currentMoves,
           mistakes: currentMistakes,
           consecutiveMistakes: currentConsecutiveMistakes,
           matchedPairs: matchedCount,
-          totalPairs: LEVEL_CONFIG[level].pairs,
+          totalPairs: LEVEL_CONFIG[fromLvl].pairs,
           elapsedSeconds: elapsedSec,
           triggerEvent: 'mistake',
+          consecutiveWins: 0,
         });
 
         setLatestAIResult(aiResult);
 
-        // If the AI model decides player is not able to handle this difficulty
-        if (aiResult.triggerAutoShift || aiResult.action === 'EASE_DIFFICULTY') {
-          soundController.playChime(396, 0.7); // Gentle relaxing frequency
-          const fromLvl = level;
-          const targetLvl = 1; // Auto shift to Easy
+        // Reset win streak on level degrade
+        setConsecutiveWins(0);
 
-          setAutoShiftBanner({
-            show: true,
-            reason: aiResult.reasoning,
-            encouragement: aiResult.encouragement,
-            fromLevel: fromLvl,
-            toLevel: targetLvl,
-            modelSource: aiResult.modelSource,
-          });
+        soundController.playChime(396, 0.7); // Gentle relaxing frequency
 
-          // Log AI intervention metric for Caregiver & ASHA telemetry
-          onLogDDAMetric({
-            timestamp: Date.now(),
-            roundNumber: roundNumber.current++,
-            difficultyLevel: fromLvl,
-            latencyMs: Date.now() - roundStartTime.current,
-            mistakes: currentMistakes,
-            moves: currentMoves,
-            hintsUsed: LEVEL_CONFIG[fromLvl].hints - hintsLeft,
-            adaptiveAction: 'eased',
-            aiReasoning: aiResult.reasoning,
-            aiModel: aiResult.modelSource,
-            fatigueRisk: aiResult.fatigueRisk,
-          });
+        setAutoShiftBanner({
+          show: true,
+          reason: aiResult.reasoning,
+          encouragement: aiResult.encouragement,
+          fromLevel: fromLvl,
+          toLevel: targetLvl,
+          modelSource: aiResult.modelSource,
+        });
 
-          // Shift difficulty level to Easy after a brief visual cue
-          setTimeout(() => {
-            setLevel(targetLvl);
-            isShiftPending.current = false;
-          }, 600);
-        } else {
+        // Trigger subtle notification toast with encouraging language
+        setDifficultyToast({
+          show: true,
+          gameTitle: 'Memory Match',
+          action: 'EASE_DIFFICULTY',
+          previousLevelName: LEVEL_CONFIG[fromLvl]?.label || `Level ${fromLvl}`,
+          newLevelName: LEVEL_CONFIG[targetLvl]?.label || `Level ${targetLvl}`,
+          encouragement: aiResult.encouragement || (fromLvl === 3 
+            ? "You're doing wonderfully, Anita! We've made the cards a bit gentler with 4 pairs so you can relax, take your time, and enjoy matching."
+            : "You're doing wonderfully, Anita! We've switched to a gentle 3-pair board so you can relax, take your time, and have fun."),
+          reason: aiResult.reasoning,
+          onUndo: () => {
+            setLevel(fromLvl);
+            setDifficultyToast(null);
+          },
+          onDismiss: () => setDifficultyToast(null),
+        });
+
+        // Log AI intervention metric for Caregiver & ASHA telemetry
+        onLogDDAMetric({
+          timestamp: Date.now(),
+          roundNumber: roundNumber.current++,
+          difficultyLevel: fromLvl,
+          latencyMs: Date.now() - roundStartTime.current,
+          mistakes: currentMistakes,
+          moves: currentMoves,
+          hintsUsed: LEVEL_CONFIG[fromLvl].hints - hintsLeft,
+          adaptiveAction: 'eased',
+          aiReasoning: aiResult.reasoning,
+          aiModel: aiResult.modelSource,
+          fatigueRisk: aiResult.fatigueRisk,
+        });
+
+        // Shift difficulty level down 1 step after a brief visual cue
+        setTimeout(() => {
+          setLevel(targetLvl);
           isShiftPending.current = false;
-        }
+        }, 600);
       } catch (e) {
         console.error('AI difficulty check error:', e);
         isShiftPending.current = false;
@@ -204,7 +243,6 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
         setConsecutiveMistakes(0); // Reset consecutive mistake streak on success
 
         // Check if all matched
-        const matchedPairsCount = updatedDeck.filter((c) => c.matched).length / 2;
         const allMatched = updatedDeck.every((c) => c.matched);
         if (allMatched) {
           handleGameWon(nextMoves, mistakes);
@@ -219,9 +257,15 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
 
         const currentMatched = updatedDeck.filter((c) => c.matched).length / 2;
 
-        // Trigger AI analysis if player is struggling (3+ consecutive wrong or 4+ total wrong on Medium/Hard)
-        if (level > 1 && (nextConsecutive >= 3 || (nextMistakes >= 4 && currentMatched <= 1))) {
-          handleAIAutoShiftToEasy(nextMistakes, nextConsecutive, nextMoves, currentMatched);
+        // User degradation thresholds:
+        // - In Medium mode (level 2): degrades to Easy if 5 mistakes (or 3 consecutive)
+        // - In Hard mode (level 3): degrades to Medium if 10 mistakes (or 4 consecutive, or 3 if 0 matches)
+        const isStruggling =
+          (level === 2 && (nextMistakes >= 5 || nextConsecutive >= 3)) ||
+          (level === 3 && (nextMistakes >= 10 || nextConsecutive >= 4 || (nextConsecutive >= 3 && currentMatched === 0)));
+
+        if (level > 1 && isStruggling) {
+          handleAIDifficultyDownshift(nextMistakes, nextConsecutive, nextMoves, currentMatched);
         }
 
         setTimeout(() => {
@@ -287,6 +331,8 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
     }
 
     const durationMs = Date.now() - roundStartTime.current;
+    const nextStreak = consecutiveWins + 1;
+    setConsecutiveWins(nextStreak);
     setIsAnalyzing(true);
 
     try {
@@ -301,28 +347,78 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
         totalPairs: LEVEL_CONFIG[level].pairs,
         elapsedSeconds: Math.round(durationMs / 1000),
         triggerEvent: 'round_complete',
+        consecutiveWins: nextStreak,
       });
 
       setLatestAIResult(aiResult);
-      setHelperMessage(aiResult.encouragement || "Excellent memory workout! Well done Anita.");
 
-      const adaptiveAction = 
-        aiResult.action === 'INCREASE_DIFFICULTY' ? 'increased' :
-        aiResult.action === 'EASE_DIFFICULTY' ? 'eased' : 'maintained';
+      // RULE: After 5 streaks in Easy mode -> upgrade to Medium (1 level up).
+      // After 5 streaks in Medium mode -> upgrade to Hard (1 level up).
+      if (nextStreak >= 5 && level < 3) {
+        const nextLvl = level + 1;
+        setConsecutiveWins(0); // Reset streak upon tier upgrade
+        soundController.playChime(660, 1.0); // Triumphant chime
 
-      onLogDDAMetric({
-        timestamp: Date.now(),
-        roundNumber: roundNumber.current++,
-        difficultyLevel: level,
-        latencyMs: durationMs,
-        mistakes: finalMistakes,
-        moves: finalMoves,
-        hintsUsed: LEVEL_CONFIG[level].hints - hintsLeft,
-        adaptiveAction,
-        aiReasoning: aiResult.reasoning,
-        aiModel: aiResult.modelSource,
-        fatigueRisk: aiResult.fatigueRisk,
-      });
+        setDifficultyToast({
+          show: true,
+          gameTitle: 'Memory Match',
+          action: 'INCREASE_DIFFICULTY',
+          previousLevelName: LEVEL_CONFIG[level]?.label || `Level ${level}`,
+          newLevelName: LEVEL_CONFIG[nextLvl]?.label || `Level ${nextLvl}`,
+          encouragement: level === 1
+            ? "Splendid 5-game streak, Anita! You've mastered Easy mode and stepped up to Medium (4 Pairs) for a fresh spark!"
+            : "Sensational 5-game streak, Anita! You've mastered Medium mode and stepped up to Hard (6 Pairs)!",
+          reason: `5 consecutive victories achieved at ${LEVEL_CONFIG[level]?.label}. Upgraded by 1 level.`,
+          onUndo: () => setLevel(level),
+          onDismiss: () => setDifficultyToast(null),
+        });
+
+        setHelperMessage(
+          level === 1
+            ? "5 consecutive wins! You've stepped up to Medium Level (4 Pairs)!"
+            : "5 consecutive wins! You've stepped up to Hard Level (6 Pairs)!"
+        );
+
+        // Auto transition to next level after celebration
+        setTimeout(() => {
+          setLevel(nextLvl);
+        }, 1200);
+
+        onLogDDAMetric({
+          timestamp: Date.now(),
+          roundNumber: roundNumber.current++,
+          difficultyLevel: level,
+          latencyMs: durationMs,
+          mistakes: finalMistakes,
+          moves: finalMoves,
+          hintsUsed: LEVEL_CONFIG[level].hints - hintsLeft,
+          adaptiveAction: 'increased',
+          aiReasoning: `Player reached 5 consecutive wins. Upgraded difficulty 1 level from ${LEVEL_CONFIG[level]?.label} to ${LEVEL_CONFIG[nextLvl]?.label}.`,
+          aiModel: aiResult.modelSource,
+          fatigueRisk: 'LOW',
+        });
+      } else {
+        setHelperMessage(
+          aiResult.encouragement ||
+            (level === 3
+              ? `Magnificent memory workout on Hard mode! Win streak: ${nextStreak}.`
+              : `Excellent memory workout! Win streak: ${nextStreak}/5 towards ${LEVEL_CONFIG[level + 1]?.label}!`)
+        );
+
+        onLogDDAMetric({
+          timestamp: Date.now(),
+          roundNumber: roundNumber.current++,
+          difficultyLevel: level,
+          latencyMs: durationMs,
+          mistakes: finalMistakes,
+          moves: finalMoves,
+          hintsUsed: LEVEL_CONFIG[level].hints - hintsLeft,
+          adaptiveAction: 'maintained',
+          aiReasoning: aiResult.reasoning,
+          aiModel: aiResult.modelSource,
+          fatigueRisk: aiResult.fatigueRisk,
+        });
+      }
     } catch {
       setHelperMessage("Excellent memory workout! Well done Anita.");
       onLogDDAMetric({
@@ -341,7 +437,15 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
   };
 
   return (
-    <div className="p-4 pb-24 space-y-4 animate-fadeIn">
+    <div className="p-4 pb-24 space-y-4 animate-fadeIn relative">
+      {/* Subtle AI Difficulty Adjustment Toast Notification */}
+      {difficultyToast && (
+        <DifficultyToast
+          {...difficultyToast}
+          onDismiss={() => setDifficultyToast(null)}
+        />
+      )}
+
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <button
@@ -361,6 +465,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
                 onClick={() => {
                   soundController.playClick();
                   setLevel(lvl);
+                  setConsecutiveWins(0);
                 }}
                 className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all ${
                   level === lvl ? 'bg-[#5B825B] text-white shadow-xs' : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
@@ -388,25 +493,32 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
             <Brain className="w-4 h-4" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-xs font-black text-[#2D3A2F]">AI Adaptive Engine</span>
               <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-[#5B825B] bg-white/90 px-2 py-0.5 rounded-full border border-[#5B825B]/20">
                 <Sparkles className="w-2.5 h-2.5 text-[#E8B25C]" />
                 {isAnalyzing ? 'Analyzing Input...' : 'Active Monitoring'}
               </span>
+              <span className="inline-flex items-center gap-1 text-[10px] font-black text-[#2D3A2F] bg-white px-2 py-0.5 rounded-full border border-[#E0DCD3]">
+                🔥 Streak: {consecutiveWins}{level < 3 ? '/5 wins to upgrade' : ' (Hard Mastery)'}
+              </span>
             </div>
-            <p className="text-[11px] text-[#5A6E5D] font-medium leading-tight">
+            <p className="text-[11px] text-[#5A6E5D] font-medium leading-tight pt-0.5">
               {consecutiveMistakes >= 2
-                ? `Tracking ${consecutiveMistakes} wrong attempts • Ready to ease difficulty`
+                ? `Tracking ${consecutiveMistakes} wrong attempts • ${level === 2 ? '5 mistakes or 3 consecutive auto-shifts to Easy' : level === 3 ? '10 mistakes or 4 consecutive auto-shifts to Medium' : 'Gentle assistance active'}`
                 : isAnalyzing
                 ? 'Evaluating cognitive response & error velocity...'
-                : `Tracking accuracy in real-time. Auto-shifts to Easy if struggling.`}
+                : level === 1
+                ? 'Easy Mode (3 Pairs) • Win 5 consecutive games to step up to Medium'
+                : level === 2
+                ? 'Medium Mode (4 Pairs) • Win 5 consecutive games to step up to Hard • 5 mistakes degrades 1 step to Easy'
+                : 'Hard Mode (6 Pairs) • Peak Level • 10 mistakes degrades 1 step to Medium'}
             </p>
           </div>
         </div>
 
         {isAnalyzing && (
-          <div className="w-5 h-5 border-2 border-[#5B825B] border-t-transparent rounded-full animate-spin shrink-0" />
+          <div className="w-5 h-5 border-2 border-[#5B825B] border-t-transparent rounded-full animate-spin shrink-0 ml-2" />
         )}
       </div>
 
@@ -419,9 +531,11 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
                 <Zap className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="font-black text-sm text-[#2D3A2F]">AI Comfort Shift: Easy Level Activated</h4>
+                <h4 className="font-black text-sm text-[#2D3A2F]">
+                  AI Dynamic Adjustment: {LEVEL_CONFIG[autoShiftBanner.toLevel]?.label} Activated
+                </h4>
                 <p className="text-[11px] font-bold text-[#332610]">
-                  Shifted from Level {autoShiftBanner.fromLevel} → Easy (3 Pairs)
+                  Shifted 1 step: {LEVEL_CONFIG[autoShiftBanner.fromLevel]?.label} → {LEVEL_CONFIG[autoShiftBanner.toLevel]?.label}
                 </p>
               </div>
             </div>
@@ -437,29 +551,36 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           </p>
           <div className="text-[10px] text-[#332610]/80 flex items-center justify-between pt-1">
             <span>Model: {autoShiftBanner.modelSource === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : 'Adaptive ML Heuristic'}</span>
-            <span className="font-bold text-[#5B825B]">Board Re-calibrated for Maximum Comfort</span>
+            <span className="font-bold text-[#5B825B]">Board Re-calibrated (1-Step Downshift)</span>
           </div>
         </div>
       )}
 
       {/* Game info bar */}
-      <div className="bg-white rounded-3xl p-4 border border-[#E0DCD3] shadow-xs flex items-center justify-between">
-        <div className="flex gap-4 text-xs font-extrabold text-[#5A6E5D]">
+      <div className="bg-white rounded-3xl p-4 border border-[#E0DCD3] shadow-xs flex items-center justify-between flex-wrap gap-2">
+        <div className="flex gap-4 text-xs font-extrabold text-[#5A6E5D] items-center">
           <div>
             <span className="block text-[#2D3A2F] text-base font-black">{moves}</span>
             <span>Moves</span>
           </div>
           <div>
-            <span className={`block text-base font-black ${mistakes >= 3 ? 'text-[#C46A66]' : 'text-[#2D3A2F]'}`}>
-              {mistakes}
+            <span className={`block text-base font-black ${mistakes >= (level === 3 ? 8 : level === 2 ? 4 : 99) ? 'text-[#C46A66]' : 'text-[#2D3A2F]'}`}>
+              {mistakes}{level === 2 ? '/5' : level === 3 ? '/10' : ''}
             </span>
-            <span>Mistakes</span>
+            <span>Mistakes {level === 2 ? '(Degrades at 5)' : level === 3 ? '(Degrades at 10)' : ''}</span>
           </div>
           <div>
             <span className="block text-[#5B825B] text-base font-black">
               {deck.filter((c) => c.matched).length / 2}/{LEVEL_CONFIG[level].pairs}
             </span>
             <span>Matches</span>
+          </div>
+          {/* Win Streak Indicator */}
+          <div className="hidden sm:block pl-2 border-l border-[#E0DCD3]">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#EAF1E8] border border-[#5B825B]/30 text-[#5B825B] text-xs font-black">
+              <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
+              <span>Streak: {consecutiveWins}{level < 3 ? '/5 to Level Up' : ' (Hard Mastery)'}</span>
+            </div>
           </div>
         </div>
 
@@ -542,6 +663,11 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
             {helperMessage}
           </p>
 
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#5B825B]/30 text-xs font-black text-[#5B825B]">
+            <Sparkles className="w-4 h-4 text-[#E8B25C]" />
+            <span>Consecutive Wins: {consecutiveWins}{level < 3 ? '/5 to Level Up' : ' (Hard Mastery)'}</span>
+          </div>
+
           {latestAIResult && (
             <div className="bg-white/90 p-3 rounded-2xl border border-[#5B825B]/30 text-xs text-left max-w-xs mx-auto space-y-1">
               <div className="flex items-center justify-between">
@@ -575,7 +701,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
       {/* Modal: How the AI Model Works */}
       {showAIInfoModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-scaleUp">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-scaleUp max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-2xl bg-[#5B825B] text-white flex items-center justify-center shadow-xs">
@@ -600,26 +726,148 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
                   <Check className="w-3.5 h-3.5" /> 1. Real-time Response & Mistake Tracking
                 </span>
                 <p className="text-[#5A6E5D]">
-                  The AI model monitors player card selections, tracking how many wrong attempts and mismatches occur sequentially.
+                  The AI model monitors player card selections, tracking mistakes, wrong attempts, and error velocity in real-time.
                 </p>
               </div>
 
               <div className="p-3 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] space-y-1.5">
-                <span className="font-black text-[#E8B25C] flex items-center gap-1">
-                  <ShieldAlert className="w-3.5 h-3.5" /> 2. Cognitive Strain Detection
+                <span className="font-black text-[#C46A66] flex items-center gap-1">
+                  <TrendingDown className="w-3.5 h-3.5" /> 2. 1-Step Cognitive Strain Downshift
                 </span>
                 <p className="text-[#5A6E5D]">
-                  If 3 consecutive mismatches occur or mistakes spike above threshold on Medium or Hard levels, the model diagnoses that the difficulty is too demanding.
+                  If the player experiences difficulty, the system <strong>strictly auto-shifts 1 step below</strong> (never jumps directly to Easy from Hard):
                 </p>
+                <ul className="list-disc pl-5 text-[#5A6E5D] space-y-0.5">
+                  <li><strong>Hard Mode (Level 3):</strong> Degrades 1 step to Medium after <strong>10 mistakes</strong> (or 4 consecutive wrong).</li>
+                  <li><strong>Medium Mode (Level 2):</strong> Degrades 1 step to Easy after <strong>5 mistakes</strong> (or 3 consecutive wrong).</li>
+                </ul>
               </div>
 
               <div className="p-3 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] space-y-1.5">
                 <span className="font-black text-[#5B825B] flex items-center gap-1">
-                  <Zap className="w-3.5 h-3.5" /> 3. Automatic Shift to Easy Level
+                  <TrendingUp className="w-3.5 h-3.5" /> 3. 5-Win Streak Level Upgrade
                 </span>
                 <p className="text-[#5A6E5D]">
-                  The model immediately downshifts the game to <strong>Easy (3 Pairs)</strong> with soothing encouragement and 4 hints, ensuring zero frustration and sustained cognitive warmth.
+                  After <strong>5 consecutive wins</strong>, difficulty advances 1 level up:
                 </p>
+                <ul className="list-disc pl-5 text-[#5A6E5D] space-y-0.5">
+                  <li><strong>Easy Mode (3 Pairs):</strong> 5 consecutive wins upgrades to Medium (4 Pairs).</li>
+                  <li><strong>Medium Mode (4 Pairs):</strong> 5 consecutive wins upgrades to Hard (6 Pairs).</li>
+                </ul>
+              </div>
+
+              {/* Interactive Caregiver / Clinician Test Simulator */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-[#F4F8F3] to-[#EAF1E8] border border-[#5B825B]/40 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-[#2D3A2F] flex items-center gap-1">
+                    <Zap className="w-3.5 h-3.5 text-[#E8B25C]" />
+                    Caregiver / Clinician Test Simulator
+                  </span>
+                  <span className="text-[10px] font-bold text-[#5B825B] bg-white px-2 py-0.5 rounded-full border border-[#5B825B]/30">
+                    Live: Level {level} • {consecutiveWins}/5 Wins
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      setShowAIInfoModal(false);
+                      if (level <= 1) {
+                        // Switch to Medium first to test degradation to Easy
+                        setLevel(2);
+                        setTimeout(() => {
+                          handleAIDifficultyDownshift(5, 3, 7, 0);
+                        }, 150);
+                      } else {
+                        const simMistakes = level === 3 ? 10 : 5;
+                        const simConsecutive = level === 3 ? 4 : 3;
+                        handleAIDifficultyDownshift(simMistakes, simConsecutive, simMistakes + 2, 0);
+                      }
+                    }}
+                    className="p-2.5 rounded-xl bg-white border border-[#C46A66]/40 text-[#C46A66] font-black text-[11px] hover:bg-[#FDF0D5] transition-all text-center flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                  >
+                    <TrendingDown className="w-3.5 h-3.5 text-[#C46A66]" />
+                    <span>Simulate Mistake Limit (Degrade 1 Step)</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowAIInfoModal(false);
+                      const currentLvl = level >= 3 ? 1 : level;
+                      const nextLvl = currentLvl + 1;
+                      setLevel(currentLvl);
+                      setConsecutiveWins(5);
+
+                      soundController.playChime(660, 1.0);
+                      setDifficultyToast({
+                        show: true,
+                        gameTitle: 'Memory Match',
+                        action: 'INCREASE_DIFFICULTY',
+                        previousLevelName: LEVEL_CONFIG[currentLvl]?.label || `Level ${currentLvl}`,
+                        newLevelName: LEVEL_CONFIG[nextLvl]?.label || `Level ${nextLvl}`,
+                        encouragement: currentLvl === 1
+                          ? "Splendid 5-game streak, Anita! You've mastered Easy mode and stepped up to Medium (4 Pairs) for a fresh spark!"
+                          : "Sensational 5-game streak, Anita! You've mastered Medium mode and stepped up to Hard (6 Pairs)!",
+                        reason: `5 consecutive victories achieved at ${LEVEL_CONFIG[currentLvl]?.label}. Upgraded 1 level.`,
+                        onUndo: () => setLevel(currentLvl),
+                        onDismiss: () => setDifficultyToast(null),
+                      });
+
+                      setTimeout(() => {
+                        setLevel(nextLvl);
+                        setConsecutiveWins(0);
+                      }, 1000);
+                    }}
+                    className="p-2.5 rounded-xl bg-white border border-[#5B825B]/40 text-[#5B825B] font-black text-[11px] hover:bg-[#EAF1E8] transition-all text-center flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                  >
+                    <TrendingUp className="w-3.5 h-3.5 text-[#5B825B]" />
+                    <span>Simulate 5th Win (Upgrade 1 Step)</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#5B825B]/20">
+                  <button
+                    onClick={() => {
+                      setShowAIInfoModal(false);
+                      setDifficultyToast({
+                        show: true,
+                        gameTitle: 'Memory Match',
+                        action: 'EASE_DIFFICULTY',
+                        previousLevelName: 'Hard (6 Pairs)',
+                        newLevelName: 'Medium (4 Pairs)',
+                        encouragement: "You're doing wonderfully, Anita! We've made the cards a little gentler so you can relax, take your time, and enjoy matching.",
+                        reason: "Player reached 10 mistakes on Hard mode. Auto-shifting 1 step down to Medium mode.",
+                        onUndo: () => setLevel(3),
+                        onDismiss: () => setDifficultyToast(null),
+                      });
+                    }}
+                    className="p-2 rounded-xl bg-[#FDF0D5] border border-[#E8B25C]/60 text-[#332610] font-black text-[10px] hover:bg-[#fce6b8] transition-all text-center flex items-center justify-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3 text-[#E8B25C]" />
+                    <span>Preview Eased Toast</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowAIInfoModal(false);
+                      setDifficultyToast({
+                        show: true,
+                        gameTitle: 'Memory Match',
+                        action: 'INCREASE_DIFFICULTY',
+                        previousLevelName: 'Easy (3 Pairs)',
+                        newLevelName: 'Medium (4 Pairs)',
+                        encouragement: "Splendid focus, Anita! 5 wins in a row! We've stepped up the cards for a fun fresh spark.",
+                        reason: "5 consecutive wins achieved. Upgrading 1 level to Medium.",
+                        onUndo: () => setLevel(1),
+                        onDismiss: () => setDifficultyToast(null),
+                      });
+                    }}
+                    className="p-2 rounded-xl bg-[#EAF1E8] border border-[#5B825B]/60 text-[#1E3B1E] font-black text-[10px] hover:bg-[#d8e8d5] transition-all text-center flex items-center justify-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3 text-[#5B825B]" />
+                    <span>Preview Advance Toast</span>
+                  </button>
+                </div>
               </div>
             </div>
 

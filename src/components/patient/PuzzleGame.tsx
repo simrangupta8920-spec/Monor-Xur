@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { Memory, DDAMetric } from '../../types';
 import { soundController } from '../../utils/audio';
-import { analyzePuzzleDifficulty, PuzzleAIAnalysisResult } from '../../services/aiDifficultyService';
+import { analyzePuzzleDifficulty, PuzzleAIAnalysisResult, PUZZLE_DESIGNATED_TIMES } from '../../services/aiDifficultyService';
+import { DifficultyToast, DifficultyToastProps } from '../common/DifficultyToast';
 
 interface PuzzleGameProps {
   memories: Memory[];
@@ -52,6 +53,24 @@ export function getPieceGeometry(pieceIdx: number, gridSize: GridDimension) {
     bgSize: `${gridSize * 100}% ${gridSize * 100}%`,
     label,
   };
+}
+
+export const GRID_LABELS: Record<GridDimension, { name: string; pieces: number; tag: string; designatedTime: number; degradeThreshold: number }> = {
+  2: { name: 'Easy (2×2)', pieces: 4, tag: 'Easy', designatedTime: 25, degradeThreshold: 50 },
+  3: { name: 'Medium (3×3)', pieces: 9, tag: 'Medium', designatedTime: 45, degradeThreshold: 70 },
+  4: { name: 'Tough (4×4)', pieces: 16, tag: 'Tough', designatedTime: 120, degradeThreshold: 145 },
+};
+
+interface PuzzleAutoShiftBanner {
+  show: boolean;
+  reason: string;
+  encouragement: string;
+  fromGrid: GridDimension;
+  toGrid: GridDimension;
+  timeTaken: number;
+  averageTime: number;
+  action: 'EASE_DIFFICULTY' | 'INCREASE_DIFFICULTY' | 'MAINTAIN';
+  modelSource: string;
 }
 
 function formatSeconds(sec: number): string {
@@ -192,6 +211,22 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
   const [gridSize, setGridSize] = useState<GridDimension>(2);
   const totalPieces = gridSize * gridSize;
 
+  // Designated average time based on user requirements:
+  // Easy (2×2): 25 seconds, Medium (3×3): 45 seconds (40-45s), Tough (4×4): 120 seconds
+  const designatedTime = PUZZLE_DESIGNATED_TIMES[gridSize] || 25;
+  // Degrade threshold: > designated time + 25 seconds (e.g. > 50s on Easy, > 70s on Medium, > 145s on Tough)
+  const degradeThreshold = designatedTime + 25;
+
+  // Track consecutive successful quick solves at current level (upgrades at 3 consecutive solves)
+  const [consecutiveSolves, setConsecutiveSolves] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem('monor_puzzle_consecutive_solves');
+      return stored ? Math.max(0, Number(stored) || 0) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
   // Auto-adjustment configuration and history tracking
   const [autoAdjustEnabled, setAutoAdjustEnabled] = useState<boolean>(true);
   const [completionHistory, setCompletionHistory] = useState<number[]>(() => {
@@ -204,28 +239,30 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     } catch {
       // Fallback
     }
-    return [25, 30]; // Baseline initial average (~28s)
+    return [25]; // Baseline initial average (25s on Easy)
   });
 
   // Calculate previous average completion time (seconds)
   const previousAverageSeconds = useMemo(() => {
-    if (completionHistory.length === 0) return 30;
+    if (completionHistory.length === 0) return designatedTime;
     const sum = completionHistory.reduce((acc, t) => acc + t, 0);
-    return Math.max(15, Math.round(sum / completionHistory.length));
-  }, [completionHistory]);
+    return Math.max(10, Math.round(sum / completionHistory.length));
+  }, [completionHistory, designatedTime]);
 
   // Live timer state
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
   // Auto-adjustment notification banner state
-  const [autoAdjustBanner, setAutoAdjustBanner] = useState<{
-    show: boolean;
-    reason: string;
-    fromGrid: number;
-    toGrid: number;
-    timeTaken: number;
-    averageTime: number;
-  } | null>(null);
+  const [autoAdjustBanner, setAutoAdjustBanner] = useState<PuzzleAutoShiftBanner | null>(null);
+  
+  // Subtle difficulty adjustment notification toast state
+  const [difficultyToast, setDifficultyToast] = useState<DifficultyToastProps | null>(null);
+
+  // AI Cognitive Model & Telemetry State
+  const [isAnalyzingAI, setIsAnalyzingAI] = useState<boolean>(false);
+  const [latestAIResult, setLatestAIResult] = useState<PuzzleAIAnalysisResult | null>(null);
+  const [showAIInfoModal, setShowAIInfoModal] = useState<boolean>(false);
+  const isShiftPendingRef = useRef<boolean>(false);
 
   // Puzzle State:
   // Board has totalPieces slots. Each slot holds a piece index (0..totalPieces-1) or null.
@@ -287,66 +324,172 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     return arr;
   }, []);
 
-  // Trigger auto-simplification down to 2x2
-  const triggerAutoAdjustment = useCallback(
-    (
-      fromGrid: GridDimension,
-      toGrid: GridDimension,
-      timeTaken: number,
-      avgTime: number,
-      triggerType: 'in_game_struggle' | 'round_complete'
+  // AI Puzzle Difficulty Analysis Handler (mirrors Card Match AI Engine)
+  const handleAIPuzzleAnalysis = useCallback(
+    async (
+      timeTakenSeconds: number,
+      currentMoves: number,
+      trigger: 'round_complete' | 'in_game_struggle',
+      consecutiveCount?: number
     ) => {
-      setGridSize(toGrid);
-      const newTotal = toGrid * toGrid;
-      const shuffled = shufflePieces(toGrid);
-      setBoardSlots(Array.from({ length: newTotal }, () => null));
-      setTrayPieces(shuffled);
-      setSelectedSource(null);
-      setIsComplete(false);
-      setMoves(0);
-      setStartTime(Date.now());
-      setElapsedSeconds(0);
-      setHasLoggedMetric(false);
+      if (!autoAdjustEnabled || isShiftPendingRef.current) return;
+      isShiftPendingRef.current = true;
+      setIsAnalyzingAI(true);
 
-      const reason =
-        triggerType === 'in_game_struggle'
-          ? `You were working thoughtfully for ${timeTaken}s (past your ${avgTime}s average). We automatically simplified the puzzle from ${fromGrid}×${fromGrid} to 2×2 so you can assemble with relaxed ease!`
-          : `That puzzle took ${timeTaken}s, which is significantly longer than your ${avgTime}s average. We automatically simplified your next puzzle to 2×2 to keep things joyful and comfortable!`;
+      const baselineAvg = previousAverageSeconds;
+      const designatedAvg = PUZZLE_DESIGNATED_TIMES[gridSize] || 25;
+      const streakToEvaluate = consecutiveCount !== undefined ? consecutiveCount : consecutiveSolves;
+      const recentHistory = [...completionHistory, timeTakenSeconds].slice(-10);
 
-      setAutoAdjustBanner({
-        show: true,
-        reason,
-        fromGrid,
-        toGrid,
-        timeTaken,
-        averageTime: avgTime,
-      });
-
-      soundController.playChime(620, 0.4);
-      soundController.speak('We made the puzzle a bit simpler for you, so you can relax and have fun!');
-
-      if (onLogDDAMetric) {
-        onLogDDAMetric({
-          timestamp: Date.now(),
-          roundNumber: 1,
-          difficultyLevel: 1,
-          latencyMs: timeTaken * 1000,
-          mistakes: Math.max(0, moves - totalPieces),
-          moves,
-          hintsUsed: showGhostGuide ? 1 : 0,
-          adaptiveAction: 'eased',
-          aiReasoning: `Auto-simplified puzzle grid from ${fromGrid}x${fromGrid} to ${toGrid}x${toGrid}: time (${timeTaken}s) significantly exceeded previous average (${avgTime}s).`,
-          fatigueRisk: 'MODERATE',
+      try {
+        const correctCount = boardSlots.filter((p, i) => p === i).length;
+        const aiResult = await analyzePuzzleDifficulty({
+          playerName: 'Anita',
+          currentGrid: gridSize,
+          timeTaken: timeTakenSeconds,
+          previousAverageSeconds: baselineAvg,
+          designatedAverageSeconds: designatedAvg,
+          consecutiveSolves: streakToEvaluate,
+          recentTimes: recentHistory,
+          moves: currentMoves,
+          piecesPlaced: trigger === 'round_complete' ? totalPieces : correctCount,
+          totalPieces: totalPieces,
+          triggerEvent: trigger,
         });
+
+        setLatestAIResult(aiResult);
+
+        // If AI recommends shifting difficulty up or down by 1 step
+        if (aiResult.triggerAutoShift && aiResult.recommendedGrid !== gridSize) {
+          const fromG = gridSize;
+          const targetG = aiResult.recommendedGrid;
+
+          // Sound cues: soothing chime for easing, triumphant chime for stepping up
+          if (aiResult.action === 'EASE_DIFFICULTY') {
+            soundController.playChime(396, 0.7);
+          } else if (aiResult.action === 'INCREASE_DIFFICULTY') {
+            soundController.playChime(660, 0.6);
+          }
+
+          // Reset streak on level change
+          setConsecutiveSolves(0);
+          try {
+            localStorage.setItem('monor_puzzle_consecutive_solves', '0');
+          } catch {
+            // Ignore
+          }
+
+          setAutoAdjustBanner({
+            show: true,
+            reason: aiResult.reasoning,
+            encouragement: aiResult.encouragement,
+            fromGrid: fromG,
+            toGrid: targetG,
+            timeTaken: timeTakenSeconds,
+            averageTime: designatedAvg,
+            action: aiResult.action,
+            modelSource: aiResult.modelSource,
+          });
+
+          // Trigger subtle notification toast with encouraging language
+          setDifficultyToast({
+            show: true,
+            gameTitle: 'Photo Puzzle',
+            action: aiResult.action,
+            previousLevelName: GRID_LABELS[fromG]?.name || `${fromG}×${fromG}`,
+            newLevelName: GRID_LABELS[targetG]?.name || `${targetG}×${targetG}`,
+            encouragement: aiResult.encouragement,
+            reason: aiResult.reasoning,
+            timeTaken: timeTakenSeconds,
+            averageTime: designatedAvg,
+            onUndo: () => handleSelectGridSize(fromG),
+            onDismiss: () => setDifficultyToast(null),
+          });
+
+          // Log AI intervention metric for Caregiver & ASHA telemetry
+          if (onLogDDAMetric) {
+            onLogDDAMetric({
+              timestamp: Date.now(),
+              roundNumber: 1,
+              difficultyLevel: fromG === 2 ? 1 : fromG === 3 ? 2 : 3,
+              latencyMs: timeTakenSeconds * 1000,
+              mistakes: Math.max(0, currentMoves - totalPieces),
+              moves: currentMoves,
+              hintsUsed: showGhostGuide ? 1 : 0,
+              adaptiveAction: aiResult.action === 'EASE_DIFFICULTY' ? 'eased' : 'increased',
+              aiReasoning: aiResult.reasoning,
+              aiModel: aiResult.modelSource,
+              fatigueRisk: aiResult.fatigueRisk,
+            });
+          }
+
+          // If in-game struggle, reconfigure grid immediately so the player can complete with ease
+          if (trigger === 'in_game_struggle') {
+            setGridSize(targetG);
+            const newTotal = targetG * targetG;
+            const shuffled = shufflePieces(targetG);
+            setBoardSlots(Array.from({ length: newTotal }, () => null));
+            setTrayPieces(shuffled);
+            setSelectedSource(null);
+            setIsComplete(false);
+            setMoves(0);
+            setStartTime(Date.now());
+            setElapsedSeconds(0);
+            setHasLoggedMetric(false);
+            soundController.speak(aiResult.encouragement);
+          } else {
+            // Round complete: set new grid size for next round!
+            setGridSize(targetG);
+          }
+        } else {
+          // Difficulty maintained
+          if (onLogDDAMetric && trigger === 'round_complete') {
+            onLogDDAMetric({
+              timestamp: Date.now(),
+              roundNumber: 1,
+              difficultyLevel: gridSize === 2 ? 1 : gridSize === 3 ? 2 : 3,
+              latencyMs: timeTakenSeconds * 1000,
+              mistakes: Math.max(0, currentMoves - totalPieces),
+              moves: currentMoves,
+              hintsUsed: showGhostGuide ? 1 : 0,
+              adaptiveAction: 'maintained',
+              aiReasoning: aiResult.reasoning,
+              aiModel: aiResult.modelSource,
+              fatigueRisk: aiResult.fatigueRisk,
+            });
+          }
+        }
+      } catch (err) {
+        console.error('AI puzzle difficulty evaluation error:', err);
+      } finally {
+        setIsAnalyzingAI(false);
+        isShiftPendingRef.current = false;
       }
     },
-    [shufflePieces, onLogDDAMetric, moves, totalPieces, showGhostGuide]
+    [
+      autoAdjustEnabled,
+      previousAverageSeconds,
+      completionHistory,
+      gridSize,
+      consecutiveSolves,
+      totalPieces,
+      boardSlots,
+      onLogDDAMetric,
+      showGhostGuide,
+      shufflePieces,
+    ]
   );
 
   // Manual select grid size
   const handleSelectGridSize = (newSize: GridDimension) => {
     soundController.playClick();
     setGridSize(newSize);
+    setConsecutiveSolves(0);
+    try {
+      localStorage.setItem('monor_puzzle_consecutive_solves', '0');
+    } catch {
+      // Ignore
+    }
     const newTotal = newSize * newSize;
     const shuffled = shufflePieces(newSize);
     setBoardSlots(Array.from({ length: newTotal }, () => null));
@@ -359,6 +502,79 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     setElapsedSeconds(0);
     setHasLoggedMetric(false);
     setAutoAdjustBanner(null);
+  };
+
+  // Simulation test helper for Caregivers / Testers
+  const simulateAIDifficultyTest = async (type: 'slower' | 'faster') => {
+    soundController.playClick();
+    setIsAnalyzingAI(true);
+    // If 'slower': simulate taking > designated time + 25s (e.g. 75s on Medium, or 150s on Tough)
+    // If 'faster': simulate solving easily at <= designated time with 3 consecutive solves
+    const testBaseline = designatedTime;
+    const testTime = type === 'slower' ? degradeThreshold + 5 : Math.max(10, designatedTime - 5);
+    const testConsecutive = type === 'faster' ? 3 : 0;
+
+    try {
+      const aiResult = await analyzePuzzleDifficulty({
+        playerName: 'Anita',
+        currentGrid: gridSize,
+        timeTaken: testTime,
+        previousAverageSeconds: testBaseline,
+        designatedAverageSeconds: testBaseline,
+        consecutiveSolves: testConsecutive,
+        recentTimes: type === 'slower' ? [testBaseline, testTime] : [testBaseline, testTime, testTime],
+        moves: totalPieces + 2,
+        piecesPlaced: totalPieces,
+        totalPieces: totalPieces,
+        triggerEvent: 'round_complete',
+      });
+
+      setLatestAIResult(aiResult);
+
+      if (aiResult.triggerAutoShift && aiResult.recommendedGrid !== gridSize) {
+        const fromG = gridSize;
+        const targetG = aiResult.recommendedGrid;
+        if (aiResult.action === 'EASE_DIFFICULTY') {
+          soundController.playChime(396, 0.7);
+        } else {
+          soundController.playChime(660, 0.6);
+        }
+
+        setAutoAdjustBanner({
+          show: true,
+          reason: aiResult.reasoning,
+          encouragement: aiResult.encouragement,
+          fromGrid: fromG,
+          toGrid: targetG,
+          timeTaken: testTime,
+          averageTime: testBaseline,
+          action: aiResult.action,
+          modelSource: aiResult.modelSource,
+        });
+
+        // Trigger subtle notification toast
+        setDifficultyToast({
+          show: true,
+          gameTitle: 'Photo Puzzle',
+          action: aiResult.action,
+          previousLevelName: GRID_LABELS[fromG]?.name || `${fromG}×${fromG}`,
+          newLevelName: GRID_LABELS[targetG]?.name || `${targetG}×${targetG}`,
+          encouragement: aiResult.encouragement,
+          reason: aiResult.reasoning,
+          timeTaken: testTime,
+          averageTime: testBaseline,
+          onUndo: () => handleSelectGridSize(fromG),
+          onDismiss: () => setDifficultyToast(null),
+        });
+
+        soundController.speak(aiResult.encouragement);
+        handleSelectGridSize(targetG);
+      }
+    } catch (e) {
+      console.error('Simulation test error:', e);
+    } finally {
+      setIsAnalyzingAI(false);
+    }
   };
 
   // Reset / Scramble game for the active image
@@ -413,16 +629,18 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
         const next = prev + 1;
 
         // In-round auto-adjustment:
-        // If current grid is 3x3 or 4x4, autoAdjust is enabled,
-        // and elapsed time is significantly longer than previous average (at least 45s and >= 1.8x average)
+        // Degrade rule: If taking 25 seconds MORE than the designated average time:
+        // - Medium (3×3, designated 45s): degrades at > 70s (45s + 25s) to Easy (2×2)
+        // - Tough (4×4, designated 120s): degrades at > 145s (120s + 25s) to Medium (3×3)
         if (
           autoAdjustEnabled &&
           gridSize > 2 &&
-          next >= Math.max(45, Math.round(previousAverageSeconds * 1.8))
+          !isShiftPendingRef.current &&
+          next > degradeThreshold
         ) {
           const correctCount = boardSlots.filter((p, i) => p === i).length;
-          if (correctCount < Math.ceil(totalPieces * 0.5)) {
-            triggerAutoAdjustment(gridSize, 2, next, previousAverageSeconds, 'in_game_struggle');
+          if (correctCount < totalPieces) {
+            handleAIPuzzleAnalysis(next, moves, 'in_game_struggle', 0);
           }
         }
 
@@ -435,10 +653,11 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     isComplete,
     autoAdjustEnabled,
     gridSize,
-    previousAverageSeconds,
+    degradeThreshold,
     boardSlots,
     totalPieces,
-    triggerAutoAdjustment,
+    moves,
+    handleAIPuzzleAnalysis,
   ]);
 
   // Check victory condition whenever boardSlots change
@@ -542,6 +761,27 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
 
     // Track time taken
     const timeTakenSeconds = Math.max(1, Math.round((Date.now() - startTime) / 1000));
+
+    // Evaluate consecutive quick solve streak (upgrade requires 3 consecutive solves within designated time)
+    const isEasySolve = timeTakenSeconds <= designatedTime + 5;
+    const isOvertimeDegrade = timeTakenSeconds > degradeThreshold;
+
+    let updatedConsecutive = consecutiveSolves;
+    if (isEasySolve) {
+      updatedConsecutive = consecutiveSolves + 1;
+    } else if (isOvertimeDegrade) {
+      updatedConsecutive = 0;
+    } else {
+      updatedConsecutive = 0;
+    }
+
+    setConsecutiveSolves(updatedConsecutive);
+    try {
+      localStorage.setItem('monor_puzzle_consecutive_solves', String(updatedConsecutive));
+    } catch {
+      // Ignore storage error
+    }
+
     const newHistory = [...completionHistory, timeTakenSeconds].slice(-10);
     setCompletionHistory(newHistory);
     try {
@@ -550,24 +790,8 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
       // Ignore storage error
     }
 
-    // Check if completion time was significantly longer than previous average on larger grid (e.g. 4x4 or 3x3)
-    const shouldAutoSimplify =
-      autoAdjustEnabled &&
-      gridSize > 2 &&
-      timeTakenSeconds >= Math.round(previousAverageSeconds * 1.6);
-
-    if (shouldAutoSimplify) {
-      const fromG = gridSize;
-      setGridSize(2);
-      setAutoAdjustBanner({
-        show: true,
-        reason: `Splendid job finishing! Because this puzzle took ${timeTakenSeconds}s (longer than your ${previousAverageSeconds}s average), we've automatically simplified your next puzzle to 2×2 for optimal relaxation!`,
-        fromGrid: fromG,
-        toGrid: 2,
-        timeTaken: timeTakenSeconds,
-        averageTime: previousAverageSeconds,
-      });
-    }
+    // Trigger AI Model difficulty analysis (evaluates pace vs average to degrade or advance difficulty by 1 step)
+    handleAIPuzzleAnalysis(timeTakenSeconds, currentMoves, 'round_complete', updatedConsecutive);
 
     // RULE:
     // After solving the puzzle successfully in personalized mode, the picture will be completed.
@@ -582,25 +806,6 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     setTimeout(() => {
       speakVictoryStory(victorySpeech);
     }, 550);
-
-    // Log metric
-    if (!hasLoggedMetric && onLogDDAMetric) {
-      setHasLoggedMetric(true);
-      onLogDDAMetric({
-        timestamp: Date.now(),
-        roundNumber: 1,
-        difficultyLevel: gridSize === 2 ? 1 : gridSize === 3 ? 2 : 3,
-        latencyMs: timeTakenSeconds * 1000,
-        mistakes: Math.max(0, currentMoves - totalPieces),
-        moves: currentMoves,
-        hintsUsed: showGhostGuide ? 1 : 0,
-        adaptiveAction: shouldAutoSimplify ? 'eased' : 'maintained',
-        aiReasoning: shouldAutoSimplify
-          ? `Auto-simplified puzzle grid from ${gridSize}x${gridSize} to 2x2: time (${timeTakenSeconds}s) significantly exceeded previous average (${previousAverageSeconds}s).`
-          : `Player successfully assembled ${currentPuzzle.title} in ${mode} mode (${gridSize}x${gridSize}) in ${timeTakenSeconds}s.`,
-        fatigueRisk: shouldAutoSimplify ? 'MODERATE' : 'LOW',
-      });
-    }
   };
 
   // Interactions: Selecting / placing pieces
@@ -783,7 +988,15 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
   };
 
   return (
-    <div className="p-4 pb-28 max-w-2xl mx-auto space-y-4 animate-fadeIn">
+    <div className="p-4 pb-28 max-w-2xl mx-auto space-y-4 animate-fadeIn relative">
+      {/* Subtle AI Difficulty Adjustment Toast Notification */}
+      {difficultyToast && (
+        <DifficultyToast
+          {...difficultyToast}
+          onDismiss={() => setDifficultyToast(null)}
+        />
+      )}
+
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between">
         <button
@@ -838,13 +1051,21 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             <h2 className="text-2xl font-black text-[#2D3A2F]">Puzzle: Put It Back</h2>
           </div>
 
-          <div className="flex items-center gap-2 sm:self-center">
+          <div className="flex items-center gap-2 sm:self-center flex-wrap">
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F8F6F0] border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F]">
               <Clock className="w-3.5 h-3.5 text-[#E8B25C]" />
               <span>⏱️ {formatSeconds(elapsedSeconds)}</span>
-              <span className="text-[#8A8070] text-[11px]">(Avg: {previousAverageSeconds}s)</span>
+              <span className="text-[#5A6E5D] text-[11px] font-semibold">
+                (Target: ~{designatedTime}s · Degrade at {degradeThreshold}s)
+              </span>
             </div>
-            <span className="text-xs font-bold text-[#5A6E5D] px-2">Moves: {moves}</span>
+            {consecutiveSolves > 0 && (
+              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#EAF1E8] border border-[#5B825B]/30 text-[11px] font-black text-[#5B825B]">
+                <Sparkles className="w-3 h-3 text-[#E8B25C]" />
+                <span>Streak: {consecutiveSolves}/3 to Level Up</span>
+              </div>
+            )}
+            <span className="text-xs font-bold text-[#5A6E5D] px-1">Moves: {moves}</span>
           </div>
         </div>
 
@@ -886,13 +1107,67 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
           </button>
         </div>
 
-        {/* Grid Sizing & Auto-Adjustment Adaptive Control Bar */}
-        <div className="bg-[#F8F6F0] p-3 rounded-2xl border border-[#EAE6DF] space-y-2.5">
+        {/* AI Adaptive Engine Status & Dynamic Difficulty Control */}
+        <div className="bg-[#F8F6F0] p-3.5 rounded-2xl border border-[#EAE6DF] space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setShowAIInfoModal(true)}
+                className="w-9 h-9 rounded-2xl bg-[#5B825B] text-white flex items-center justify-center shadow-2xs hover:scale-105 transition-transform shrink-0"
+                title="Inspect AI Cognitive Difficulty Model"
+              >
+                <Brain className="w-5 h-5" />
+              </button>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-black text-[#2D3A2F]">AI Difficulty Auto-Adjust</span>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full border border-[#5B825B]/20">
+                    <Sparkles className="w-2.5 h-2.5 text-[#E8B25C]" />
+                    {isAnalyzingAI ? 'Evaluating Recall Pace...' : 'Gemini 3.8 Flash Active'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#5A6E5D] font-medium leading-tight">
+                  {isAnalyzingAI
+                    ? 'AI model analyzing completion speed & time trends...'
+                    : autoAdjustEnabled
+                    ? `Designated Target: ~${designatedTime}s • 3 consecutive fast solves upgrades • Taking >${degradeThreshold}s degrades`
+                    : 'Auto-adjust paused (Manual Grid Mode)'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setAutoAdjustEnabled(!autoAdjustEnabled);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 border transition-all ${
+                  autoAdjustEnabled
+                    ? 'bg-[#EAF1E8] border-[#5B825B]/30 text-[#5B825B]'
+                    : 'bg-white border-[#E0DCD3] text-[#8A8070]'
+                }`}
+              >
+                <Brain className={`w-3.5 h-3.5 ${autoAdjustEnabled ? 'text-[#5B825B]' : 'text-[#8A8070]'}`} />
+                <span>Auto-Adjust: {autoAdjustEnabled ? 'ON' : 'OFF'}</span>
+              </button>
+
+              <button
+                onClick={() => setShowAIInfoModal(true)}
+                className="px-2.5 py-1.5 rounded-xl bg-white border border-[#E0DCD3] hover:bg-[#F8F6F0] text-xs font-bold text-[#5A6E5D] flex items-center gap-1 shadow-2xs"
+                title="How AI Auto-Adjustment Works"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-[#5B825B]" />
+                <span className="hidden sm:inline">How AI Works</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-[#EAE6DF]">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-black uppercase tracking-wider text-[#2D3A2F] flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-[#5B825B]" />
-                Grid:
+                Grid Level:
               </span>
               <div className="inline-flex rounded-xl bg-white p-1 border border-[#E0DCD3] shadow-2xs">
                 {([2, 3, 4] as GridDimension[]).map((size) => (
@@ -905,42 +1180,16 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
                         : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
                     }`}
                   >
-                    {size}×{size} {size === 2 ? '(Gentle · 4)' : size === 3 ? '(Medium · 9)' : '(Challenge · 16)'}
+                    {GRID_LABELS[size].name}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Auto-Adjustment Toggle & Historical Context */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => {
-                  soundController.playClick();
-                  setAutoAdjustEnabled(!autoAdjustEnabled);
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 border transition-all ${
-                  autoAdjustEnabled
-                    ? 'bg-[#EAF1E8] border-[#5B825B]/30 text-[#5B825B]'
-                    : 'bg-white border-[#E0DCD3] text-[#8A8070]'
-                }`}
-                title="Automatically simplifies grid to 2x2 if a puzzle takes significantly longer than your average"
-              >
-                <Brain className={`w-3.5 h-3.5 ${autoAdjustEnabled ? 'text-[#5B825B]' : 'text-[#8A8070]'}`} />
-                <span>Auto-Adjust: {autoAdjustEnabled ? 'ON' : 'OFF'}</span>
-              </button>
-
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[11px] font-bold text-[#5A6E5D]">
-                <span>{completionHistory.length} solved</span>
-              </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[11px] font-bold text-[#5A6E5D] self-start sm:self-auto">
+              <span>{completionHistory.length} solved history</span>
             </div>
           </div>
-          <p className="text-[11px] text-[#5A6E5D] leading-tight">
-            {autoAdjustEnabled
-              ? '✨ AI Auto-Adjustment active: If a puzzle takes significantly longer than your average (~' +
-                previousAverageSeconds +
-                's), the grid simplifies to 2×2 for a relaxed experience.'
-              : 'Auto-adjustment paused. You are in manual grid selection mode.'}
-          </p>
         </div>
 
         {/* Mode Selector Carousels */}
@@ -1154,20 +1403,38 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
         </button>
       </div>
 
-      {/* Auto-Adjustment Notification Banner (when simplified for comfort) */}
+      {/* Auto-Adjustment Notification Banner (Degrade 1 step or Advance 1 step based on AI analysis) */}
       {autoAdjustBanner?.show && (
-        <div className="bg-gradient-to-br from-[#EAF1E8] via-[#E4EFE1] to-[#D5E6D1] rounded-3xl p-4.5 border-2 border-[#5B825B]/30 shadow-md animate-scaleUp space-y-2.5">
+        <div
+          className={`rounded-3xl p-4.5 border-2 shadow-md animate-scaleUp space-y-2.5 ${
+            autoAdjustBanner.action === 'EASE_DIFFICULTY'
+              ? 'bg-gradient-to-br from-[#FDF0D5] via-[#FCF4E4] to-[#F7E5BD] border-[#E8B25C]'
+              : 'bg-gradient-to-br from-[#EAF1E8] via-[#E4EFE1] to-[#D5E6D1] border-[#5B825B]'
+          }`}
+        >
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-[#5B825B] text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Brain className="w-5 h-5" />
+              <div
+                className={`w-9 h-9 rounded-2xl text-white flex items-center justify-center shrink-0 shadow-xs ${
+                  autoAdjustBanner.action === 'EASE_DIFFICULTY' ? 'bg-[#E8B25C]' : 'bg-[#5B825B]'
+                }`}
+              >
+                {autoAdjustBanner.action === 'EASE_DIFFICULTY' ? (
+                  <TrendingDown className="w-5 h-5" />
+                ) : (
+                  <TrendingUp className="w-5 h-5" />
+                )}
               </div>
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-[#5B825B] bg-white/80 px-2 py-0.5 rounded-full border border-[#5B825B]/20">
-                  AI Adaptive Comfort
+                <span className="text-[10px] font-black uppercase tracking-wider bg-white/80 px-2 py-0.5 rounded-full border border-black/10">
+                  {autoAdjustBanner.action === 'EASE_DIFFICULTY'
+                    ? 'AI Comfort Shift (Degraded 1 Step)'
+                    : 'AI Cognitive Leap (Advanced 1 Step)'}
                 </span>
                 <h4 className="text-base font-black text-[#2D3A2F] mt-0.5">
-                  Puzzle Simplified to 2×2 Grid
+                  {autoAdjustBanner.action === 'EASE_DIFFICULTY'
+                    ? `Level Eased: ${GRID_LABELS[autoAdjustBanner.fromGrid]?.name} ➔ ${GRID_LABELS[autoAdjustBanner.toGrid]?.name}`
+                    : `Level Advanced: ${GRID_LABELS[autoAdjustBanner.fromGrid]?.name} ➔ ${GRID_LABELS[autoAdjustBanner.toGrid]?.name}`}
                 </h4>
               </div>
             </div>
@@ -1179,28 +1446,35 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             </button>
           </div>
 
-          <p className="text-xs text-[#2D3A2F]/90 leading-relaxed font-medium">
+          <p className="text-xs text-[#2D3A2F] leading-relaxed font-medium bg-white/70 p-3 rounded-2xl border border-black/5 italic">
+            "{autoAdjustBanner.encouragement}"
+          </p>
+
+          <p className="text-[11px] text-[#5A6E5D] leading-relaxed font-medium">
             {autoAdjustBanner.reason}
           </p>
 
-          <div className="flex items-center gap-2 flex-wrap pt-1">
-            <span className="px-2.5 py-1 rounded-xl bg-white/90 border border-[#5B825B]/20 text-[11px] font-black text-[#2D3A2F]">
-              ⏱️ Time: {autoAdjustBanner.timeTaken}s
-            </span>
-            <span className="px-2.5 py-1 rounded-xl bg-white/90 border border-[#5B825B]/20 text-[11px] font-black text-[#5A6E5D]">
-              📊 Your Average: {autoAdjustBanner.averageTime}s
-            </span>
-            <span className="px-2.5 py-1 rounded-xl bg-[#5B825B] text-white text-[11px] font-black">
-              ✨ Simplified: {autoAdjustBanner.fromGrid}×{autoAdjustBanner.fromGrid} ➔ 2×2
-            </span>
+          <div className="flex items-center justify-between gap-2 flex-wrap pt-1 text-[11px]">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2.5 py-1 rounded-xl bg-white/90 border border-black/10 font-black text-[#2D3A2F]">
+                ⏱️ Time: {autoAdjustBanner.timeTaken}s
+              </span>
+              <span className="px-2.5 py-1 rounded-xl bg-white/90 border border-black/10 font-black text-[#5A6E5D]">
+                📊 Baseline Avg: {autoAdjustBanner.averageTime}s
+              </span>
+              <span className="px-2 py-1 rounded-xl bg-white/90 border border-black/10 font-bold text-[#5B825B]">
+                Model: {autoAdjustBanner.modelSource === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : 'Adaptive ML'}
+              </span>
+            </div>
+
             <button
               onClick={() => {
                 soundController.playClick();
-                handleSelectGridSize(autoAdjustBanner.fromGrid as GridDimension);
+                handleSelectGridSize(autoAdjustBanner.fromGrid);
               }}
-              className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] hover:bg-[#F8F6F0] text-[11px] font-black text-[#2D3A2F] ml-auto transition-all"
+              className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] hover:bg-[#F8F6F0] text-[11px] font-black text-[#2D3A2F] transition-all"
             >
-              Try {autoAdjustBanner.fromGrid}×{autoAdjustBanner.fromGrid} again
+              Undo & Keep {GRID_LABELS[autoAdjustBanner.fromGrid]?.name}
             </button>
           </div>
         </div>
@@ -1472,6 +1746,38 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             </div>
           )}
 
+          {/* AI Cognitive Telemetry & Dynamic Difficulty Card */}
+          {latestAIResult && (
+            <div className="bg-white/95 rounded-2xl p-4 border border-[#5B825B]/25 shadow-xs text-left space-y-2.5 max-w-lg mx-auto">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#5B825B] flex items-center gap-1.5">
+                  <Brain className="w-4 h-4 text-[#5B825B]" />
+                  <span>AI Cognitive Difficulty Analysis</span>
+                </span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#F8F6F0] border border-[#E0DCD3] text-[#5A6E5D]">
+                  {latestAIResult.modelSource === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : 'Adaptive ML Heuristic'}
+                </span>
+              </div>
+
+              <p className="text-xs text-[#2D3A2F] font-medium leading-relaxed bg-[#F8F6F0] p-3 rounded-xl border border-[#EAE6DF]">
+                {latestAIResult.reasoning}
+              </p>
+
+              <div className="flex items-center justify-between text-[11px] font-bold text-[#5B825B] pt-0.5 flex-wrap gap-1">
+                <span>
+                  {latestAIResult.action === 'EASE_DIFFICULTY'
+                    ? `Level eased 1 step to ${GRID_LABELS[latestAIResult.recommendedGrid]?.name}`
+                    : latestAIResult.action === 'INCREASE_DIFFICULTY'
+                    ? `Level stepped up 1 step to ${GRID_LABELS[latestAIResult.recommendedGrid]?.name}`
+                    : `Level maintained at ${GRID_LABELS[gridSize]?.name}`}
+                </span>
+                <span className="text-[#8A8070]">
+                  ⏱️ {latestAIResult.timeTaken}s vs {latestAIResult.averageTime}s baseline avg
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
             <button
               onClick={() => {
@@ -1556,6 +1862,209 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
                 className="w-full py-3 rounded-2xl bg-[#5B825B] text-white font-black text-sm shadow-xs hover:bg-[#4a6d4a]"
               >
                 Back to Puzzle Board
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Cognitive Auto-Adjust Explanation & Interactive Simulator Modal */}
+      {showAIInfoModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full border border-[#E0DCD3] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-[#EAE6DF] flex items-center justify-between bg-[#F8F6F0]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-[#5B825B] text-white flex items-center justify-center shadow-xs">
+                  <Brain className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-base font-black text-[#2D3A2F]">AI Difficulty Auto-Adjust</h3>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#EAF1E8] text-[#5B825B] border border-[#5B825B]/20">
+                      Gemini 3.8 Flash
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#5A6E5D] font-medium">
+                    Dynamic Cognitive Difficulty Adjustment (DDA) Engine
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAIInfoModal(false)}
+                className="w-8 h-8 rounded-full bg-white text-[#2D3A2F] font-black flex items-center justify-center hover:bg-[#EAE6DF] border border-[#E0DCD3]"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4 text-xs text-[#2D3A2F] leading-relaxed">
+              <div className="bg-[#EAF1E8] p-3.5 rounded-2xl border border-[#5B825B]/20 space-y-1">
+                <div className="flex items-center gap-1.5 text-[#5B825B] font-black">
+                  <Sparkles className="w-4 h-4 text-[#E8B25C]" />
+                  <span>Personalized Cognitive Pacing & Calibration</span>
+                </div>
+                <p className="text-[#2D3A2F]/90 font-medium">
+                  The AI model monitors solving pace against clinically calibrated target averages for each level to maintain confidence, prevent cognitive overload, and celebrate mastery:
+                </p>
+                <div className="grid grid-cols-3 gap-1.5 pt-1 text-[11px] font-bold text-center">
+                  <div className="p-2 rounded-xl bg-white border border-[#E0DCD3]">
+                    <div className="text-[10px] text-[#8A8070]">Easy (2×2)</div>
+                    <div className="text-xs font-black text-[#5B825B]">~25s Target</div>
+                    <div className="text-[10px] text-[#8A8070]">Degrade: &gt;50s</div>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white border border-[#E0DCD3]">
+                    <div className="text-[10px] text-[#8A8070]">Medium (3×3)</div>
+                    <div className="text-xs font-black text-[#5B825B]">~45s Target</div>
+                    <div className="text-[10px] text-[#8A8070]">Degrade: &gt;70s</div>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white border border-[#E0DCD3]">
+                    <div className="text-[10px] text-[#8A8070]">Tough (4×4)</div>
+                    <div className="text-xs font-black text-[#5B825B]">~120s Target</div>
+                    <div className="text-[10px] text-[#8A8070]">Degrade: &gt;145s</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Case 1: Taking 25s More Than Designated Average (Degrade 1 step) */}
+              <div className="bg-white p-3.5 rounded-2xl border border-[#E8B25C]/40 bg-gradient-to-r from-[#FDF0D5]/50 to-transparent space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-[#E8B25C] text-white flex items-center justify-center font-black">
+                    <TrendingDown className="w-4 h-4" />
+                  </div>
+                  <h4 className="text-xs font-black text-[#2D3A2F]">
+                    1. Taking 25s More Than Designated Average (Degrade 1 Step)
+                  </h4>
+                </div>
+                <p className="text-[#5A6E5D] pl-8">
+                  If the player takes <strong>25 seconds more</strong> than the designated average time (e.g. &gt;70s on Medium or &gt;145s on Tough), the AI immediately softens difficulty by <strong>1 step</strong> with warm, reassuring encouragement:
+                </p>
+                <div className="pl-8 pt-1 flex items-center gap-2 flex-wrap font-black text-[11px]">
+                  <span className="px-2 py-1 rounded-lg bg-white border border-[#E0DCD3]">Tough (4×4) ➔ Medium (3×3)</span>
+                  <span className="text-[#8A8070]">or</span>
+                  <span className="px-2 py-1 rounded-lg bg-white border border-[#E0DCD3]">Medium (3×3) ➔ Easy (2×2)</span>
+                </div>
+              </div>
+
+              {/* Case 2: 3 Consecutive Solves Within Target (Upgrade 1 step) */}
+              <div className="bg-white p-3.5 rounded-2xl border border-[#5B825B]/40 bg-gradient-to-r from-[#EAF1E8]/50 to-transparent space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-[#5B825B] text-white flex items-center justify-center font-black">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                  <h4 className="text-xs font-black text-[#2D3A2F]">
+                    2. Three Consecutive Fast Solves (Upgrade 1 Step)
+                  </h4>
+                </div>
+                <p className="text-[#5A6E5D] pl-8">
+                  If the player easily solves the puzzle <strong>3 consecutive times</strong> within the designated average time, the AI advances difficulty by <strong>1 step</strong> to provide fresh cognitive engagement:
+                </p>
+                <div className="pl-8 pt-1 flex items-center gap-2 flex-wrap font-black text-[11px]">
+                  <span className="px-2 py-1 rounded-lg bg-white border border-[#E0DCD3]">Easy (2×2) ➔ Medium (3×3)</span>
+                  <span className="text-[#8A8070]">or</span>
+                  <span className="px-2 py-1 rounded-lg bg-white border border-[#E0DCD3]">Medium (3×3) ➔ Tough (4×4)</span>
+                </div>
+              </div>
+
+              {/* Current Live Stats */}
+              <div className="bg-[#F8F6F0] p-3.5 rounded-2xl border border-[#EAE6DF] space-y-1">
+                <div className="text-[11px] font-black uppercase tracking-wider text-[#5A6E5D]">
+                  Current Player Telemetry
+                </div>
+                <div className="grid grid-cols-4 gap-2 pt-1">
+                  <div className="bg-white p-2 rounded-xl border border-[#E0DCD3] text-center">
+                    <div className="text-[10px] text-[#8A8070] font-bold">Grid Level</div>
+                    <div className="text-xs font-black text-[#2D3A2F] truncate">{GRID_LABELS[gridSize].name}</div>
+                  </div>
+                  <div className="bg-white p-2 rounded-xl border border-[#E0DCD3] text-center">
+                    <div className="text-[10px] text-[#8A8070] font-bold">Designated Avg</div>
+                    <div className="text-xs font-black text-[#2D3A2F]">{designatedTime}s</div>
+                  </div>
+                  <div className="bg-white p-2 rounded-xl border border-[#E0DCD3] text-center">
+                    <div className="text-[10px] text-[#8A8070] font-bold">Degrade Point</div>
+                    <div className="text-xs font-black text-[#E8B25C]">&gt;{degradeThreshold}s</div>
+                  </div>
+                  <div className="bg-white p-2 rounded-xl border border-[#E0DCD3] text-center">
+                    <div className="text-[10px] text-[#8A8070] font-bold">Streak</div>
+                    <div className="text-xs font-black text-[#5B825B]">{consecutiveSolves}/3</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Interactive Test Simulator for Caregivers */}
+              <div className="bg-white p-3.5 rounded-2xl border border-[#E0DCD3] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-[#2D3A2F]">
+                    Caregiver / Clinician Test Simulator
+                  </span>
+                  <span className="text-[10px] text-[#8A8070] font-bold">Live Calibration</span>
+                </div>
+                <p className="text-[11px] text-[#5A6E5D]">
+                  Test both rules immediately to verify automatic level shifting:
+                </p>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    onClick={() => {
+                      setShowAIInfoModal(false);
+                      simulateAIDifficultyTest('slower');
+                    }}
+                    disabled={isAnalyzingAI}
+                    className="p-2.5 rounded-xl bg-[#FDF0D5] border border-[#E8B25C] text-[#332610] font-black text-[11px] flex flex-col items-center justify-center gap-1 hover:bg-[#fae6b8] active:scale-95 transition-all shadow-2xs text-center"
+                  >
+                    <div className="flex items-center gap-1 text-[#E8B25C]">
+                      <TrendingDown className="w-3.5 h-3.5" />
+                      <span>Simulate Slower ({degradeThreshold + 5}s)</span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-[#8A8070]">Takes &gt;25s over ➔ Degrades 1 step</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowAIInfoModal(false);
+                      simulateAIDifficultyTest('faster');
+                    }}
+                    disabled={isAnalyzingAI}
+                    className="p-2.5 rounded-xl bg-[#EAF1E8] border border-[#5B825B] text-[#1E3B1E] font-black text-[11px] flex flex-col items-center justify-center gap-1 hover:bg-[#d8e8d5] active:scale-95 transition-all shadow-2xs text-center"
+                  >
+                    <div className="flex items-center gap-1 text-[#5B825B]">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      <span>Simulate 3rd Quick Solve</span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-[#5B825B]">3 consecutive solves ➔ Upgrades 1 step</span>
+                  </button>
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    onClick={() => {
+                      setShowAIInfoModal(false);
+                      setDifficultyToast({
+                        show: true,
+                        gameTitle: 'Photo Puzzle',
+                        action: 'EASE_DIFFICULTY',
+                        previousLevelName: 'Tough (4×4)',
+                        newLevelName: 'Medium (3×3)',
+                        encouragement: "You're doing wonderfully, Anita! We've made the puzzle a little gentler so you can relax, take your time, and enjoy every piece.",
+                        timeTaken: 152,
+                        averageTime: 120,
+                        onUndo: () => handleSelectGridSize(4),
+                        onDismiss: () => setDifficultyToast(null),
+                      });
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-[#FFFDF8] hover:bg-[#FDFBF7] border border-[#E8B25C]/60 text-[#332610] font-black text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-2xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
+                    <span>Preview Notification Toast (Gentle Comfort Message)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-[#EAE6DF] bg-[#F8F6F0]">
+              <button
+                onClick={() => setShowAIInfoModal(false)}
+                className="w-full py-3 rounded-2xl bg-[#5B825B] text-white font-black text-sm shadow-xs hover:bg-[#4a6d4a] transition-all"
+              >
+                Got It
               </button>
             </div>
           </div>

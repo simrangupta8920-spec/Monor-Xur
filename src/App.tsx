@@ -165,22 +165,6 @@ export function App() {
               />
             )}
 
-            {/* Sub-view: Picture Pairs Game */}
-            {patientSubView === 'picture_pairs' && (
-              <MemoryMatchGame
-                onBack={() => setPatientSubView('none')}
-                onLogDDAMetric={handleLogDDAMetric}
-              />
-            )}
-
-            {/* Sub-view: Word Recall */}
-            {patientSubView === 'word_recall' && (
-              <MemoryMatchGame
-                onBack={() => setPatientSubView('none')}
-                onLogDDAMetric={handleLogDDAMetric}
-              />
-            )}
-
             {/* Sub-view: Relaxation Hub */}
             {patientSubView === 'relaxation' && (
               <RelaxationHub

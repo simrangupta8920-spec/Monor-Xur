@@ -24,6 +24,7 @@ interface DifficultyAnalysisRequest {
   totalPairs: number;
   elapsedSeconds: number;
   triggerEvent?: 'mistake' | 'round_complete' | 'periodic_check';
+  consecutiveWins?: number;
 }
 
 interface DifficultyAnalysisResponse {
@@ -39,38 +40,62 @@ interface DifficultyAnalysisResponse {
 
 // Cognitive ML Adaptive Rule Engine (Fallback & Local ML Evaluator)
 function evaluateLocalMLHeuristic(data: DifficultyAnalysisRequest): DifficultyAnalysisResponse {
-  const { currentLevel, moves, mistakes, consecutiveMistakes, matchedPairs, totalPairs, elapsedSeconds } = data;
+  const { currentLevel, moves, mistakes, consecutiveMistakes, matchedPairs, totalPairs, elapsedSeconds, consecutiveWins = 0 } = data;
   const playerName = data.playerName || 'Anita';
-
-  // Calculate mistake velocity and frustration index
   const errorRate = moves > 0 ? mistakes / moves : 0;
-  const isHighStruggle = 
-    consecutiveMistakes >= 3 || 
-    (mistakes >= 4 && matchedPairs <= 1 && elapsedSeconds > 25) ||
-    (mistakes >= 5 && currentLevel > 1);
 
-  if (isHighStruggle && currentLevel > 1) {
+  // RULE 1: UPGRADE BY 1 LEVEL ON 5-GAME WIN STREAK
+  // If player consecutively wins 5 games in Easy mode -> upgrade to Medium mode (Level 2).
+  // If player consecutively wins 5 games in Medium mode -> upgrade to Hard mode (Level 3).
+  if (consecutiveWins >= 5 && currentLevel < 3) {
+    const targetLevel = currentLevel + 1;
+    const targetName = targetLevel === 2 ? 'Medium (4 Pairs)' : 'Hard (6 Pairs)';
+    return {
+      action: 'INCREASE_DIFFICULTY',
+      recommendedLevel: targetLevel,
+      triggerAutoShift: true,
+      reasoning: `Player achieved ${consecutiveWins} consecutive wins at Level ${currentLevel}. Upgrading 1 level to ${targetName} to stimulate cognitive reserve.`,
+      encouragement: `Splendid job, ${playerName}! 5 wins in a row! You've unlocked ${targetName} for a fresh spark.`,
+      fatigueRisk: 'LOW',
+      modelSource: 'adaptive-ml-heuristic',
+      timestamp: Date.now(),
+    };
+  }
+
+  // RULE 2: DEGRADE STRICTLY BY 1 STEP BELOW (Never jump straight to Easy from Hard)
+  // On Hard (Level 3): Degrades to Medium (Level 2) if mistakes >= 10 OR consecutive mistakes >= 4
+  // On Medium (Level 2): Degrades to Easy (Level 1) if mistakes >= 5 OR consecutive mistakes >= 3
+  const isHardStruggle = currentLevel === 3 && (mistakes >= 10 || consecutiveMistakes >= 4 || (consecutiveMistakes >= 3 && matchedPairs === 0));
+  const isMediumStruggle = currentLevel === 2 && (mistakes >= 5 || consecutiveMistakes >= 3);
+
+  if ((isHardStruggle || isMediumStruggle) && currentLevel > 1) {
+    const targetLevel = currentLevel - 1; // Strictly 1 step below!
+    const targetName = targetLevel === 2 ? 'Medium (4 Pairs)' : 'Easy (3 Pairs)';
+    const mistakeLimit = currentLevel === 3 ? 10 : 5;
+
     return {
       action: 'EASE_DIFFICULTY',
-      recommendedLevel: Math.max(1, currentLevel - 1),
+      recommendedLevel: targetLevel,
       triggerAutoShift: true,
-      reasoning: `AI Model observed ${consecutiveMistakes} consecutive mismatches and high error rate (${Math.round(errorRate * 100)}%). Shifting to Level ${Math.max(1, currentLevel - 1)} (Easy) to ensure comfort and eliminate frustration.`,
-      encouragement: `You're doing wonderful, ${playerName}! Let's switch to a gentle 3-pair board so you can enjoy matching at an easy pace.`,
-      fatigueRisk: consecutiveMistakes >= 4 ? 'HIGH' : 'MODERATE',
+      reasoning: `Player reached difficulty threshold on Level ${currentLevel} (${mistakes}/${mistakeLimit} mistakes, ${consecutiveMistakes} consecutive wrong). Auto-shifting 1 step down to ${targetName} to eliminate stress and preserve joy.`,
+      encouragement: currentLevel === 3
+        ? `You're doing wonderfully, ${playerName}! Let's step down to a 4-pair Medium board so you can relax, take your time, and enjoy matching.`
+        : `You're doing wonderfully, ${playerName}! Let's step down to a gentle 3-pair Easy board so you can relax, take your time, and have fun.`,
+      fatigueRisk: consecutiveMistakes >= 4 || mistakes >= mistakeLimit ? 'HIGH' : 'MODERATE',
       modelSource: 'adaptive-ml-heuristic',
       timestamp: Date.now(),
     };
   }
 
   // Smooth play with high accuracy
-  const isExcelling = mistakes <= 1 && matchedPairs === totalPairs && elapsedSeconds < 25 && currentLevel < 3;
+  const isExcelling = mistakes <= 1 && matchedPairs === totalPairs && elapsedSeconds < 25 && currentLevel < 3 && consecutiveWins >= 4;
   if (isExcelling) {
     return {
       action: 'INCREASE_DIFFICULTY',
-      recommendedLevel: Math.min(3, currentLevel + 1),
-      triggerAutoShift: false,
-      reasoning: `Player achieved ${matchedPairs} matches with only ${mistakes} mistake in ${elapsedSeconds}s. High cognitive clarity detected.`,
-      encouragement: `Spectacular focus, ${playerName}! Your memory recall was quick and clear.`,
+      recommendedLevel: currentLevel + 1,
+      triggerAutoShift: true,
+      reasoning: `Player achieved ${matchedPairs} matches with only ${mistakes} mistake and high win streak. Cognitive recall is sharp.`,
+      encouragement: `Spectacular focus, ${playerName}! Ready for the next level!`,
       fatigueRisk: 'LOW',
       modelSource: 'adaptive-ml-heuristic',
       timestamp: Date.now(),
@@ -81,7 +106,7 @@ function evaluateLocalMLHeuristic(data: DifficultyAnalysisRequest): DifficultyAn
     action: 'MAINTAIN',
     recommendedLevel: currentLevel,
     triggerAutoShift: false,
-    reasoning: `Performance is well-balanced at Level ${currentLevel}. Error rate is manageable (${Math.round(errorRate * 100)}%) with ${matchedPairs}/${totalPairs} pairs completed.`,
+    reasoning: `Performance is well-balanced at Level ${currentLevel}. Streak: ${consecutiveWins}/5 towards next level. Error rate is manageable (${Math.round(errorRate * 100)}%).`,
     encouragement: `Steady pace, ${playerName}! Take your time and enjoy every card.`,
     fatigueRisk: 'LOW',
     modelSource: 'adaptive-ml-heuristic',
@@ -89,11 +114,19 @@ function evaluateLocalMLHeuristic(data: DifficultyAnalysisRequest): DifficultyAn
   };
 }
 
+const PUZZLE_DESIGNATED_TIMES: Record<2 | 3 | 4, number> = {
+  2: 25,  // Easy mode (2×2): 25 seconds
+  3: 45,  // Medium mode (3×3): 40 to 45 seconds
+  4: 120, // Tough round (4×4): 120 seconds
+};
+
 interface PuzzleDifficultyRequest {
   playerName?: string;
   currentGrid: 2 | 3 | 4;
   timeTaken: number;
   previousAverageSeconds: number;
+  designatedAverageSeconds?: number;
+  consecutiveSolves?: number;
   recentTimes?: number[];
   moves?: number;
   piecesPlaced?: number;
@@ -113,100 +146,133 @@ interface PuzzleDifficultyResponse {
   timestamp: number;
   timeTaken: number;
   averageTime: number;
+  designatedTime: number;
+  consecutiveSolves: number;
   deltaSeconds: number;
 }
 
 function evaluateLocalPuzzleMLHeuristic(data: PuzzleDifficultyRequest): PuzzleDifficultyResponse {
   const { currentGrid, timeTaken, previousAverageSeconds, triggerEvent } = data;
   const playerName = data.playerName || 'Anita';
-  const delta = timeTaken - previousAverageSeconds;
+  const designatedTime = data.designatedAverageSeconds || PUZZLE_DESIGNATED_TIMES[currentGrid] || 25;
+  const consecutiveSolves = data.consecutiveSolves || 0;
+  const delta = timeTaken - designatedTime;
+
   const gridNames: Record<number, string> = {
-    2: 'Gentle (2×2)',
+    2: 'Easy (2×2)',
     3: 'Medium (3×3)',
-    4: 'Challenge (4×4)',
+    4: 'Tough (4×4)',
   };
 
-  // 1. In-game struggle detected: took significantly longer while still assembling
-  if (triggerEvent === 'in_game_struggle' && currentGrid > 2) {
-    const nextGrid = (currentGrid - 1) as 2 | 3;
-    return {
-      action: 'EASE_DIFFICULTY',
-      currentGrid,
-      recommendedGrid: nextGrid,
-      triggerAutoShift: true,
-      reasoning: `AI Model detected in-game struggle (${timeTaken}s elapsed, well beyond baseline average of ${previousAverageSeconds}s). Downshifting 1 step from ${gridNames[currentGrid]} to ${gridNames[nextGrid]} for cognitive ease.`,
-      encouragement: `You're doing great, ${playerName}! Let's switch to ${gridNames[nextGrid]} so you can relax and finish with joy.`,
-      fatigueRisk: timeTaken >= previousAverageSeconds * 2.2 ? 'HIGH' : 'MODERATE',
-      modelSource: 'adaptive-ml-heuristic',
-      timestamp: Date.now(),
-      timeTaken,
-      averageTime: previousAverageSeconds,
-      deltaSeconds: delta,
-    };
+  // 1. Degrade rule:
+  // Patient is taking 25 seconds MORE than designated average time:
+  // Easy: 25s + 25s = 50s. Medium: 45s + 25s = 70s. Tough: 120s + 25s = 145s.
+  // Or in-game struggle triggered when exceeding designated + 25s
+  const degradeThreshold = designatedTime + 25;
+  const shouldDegrade = timeTaken > degradeThreshold || triggerEvent === 'in_game_struggle';
+
+  if (shouldDegrade) {
+    if (currentGrid > 2) {
+      const nextGrid = (currentGrid - 1) as 2 | 3;
+      return {
+        action: 'EASE_DIFFICULTY',
+        currentGrid,
+        recommendedGrid: nextGrid,
+        triggerAutoShift: true,
+        reasoning: `Patient took ${timeTaken}s on ${gridNames[currentGrid]} (exceeding designated baseline of ${designatedTime}s by ${timeTaken - designatedTime}s, past the +25s comfort threshold of ${degradeThreshold}s). Degraded difficulty 1 step to ${gridNames[nextGrid]} for relaxed, stress-free play.`,
+        encouragement: `You're doing wonderfully, ${playerName}! We've eased the puzzle to ${gridNames[nextGrid]} so you can relax, take your time, and enjoy every piece.`,
+        fatigueRisk: timeTaken >= degradeThreshold + 20 ? 'HIGH' : 'MODERATE',
+        modelSource: 'adaptive-ml-heuristic',
+        timestamp: Date.now(),
+        timeTaken,
+        averageTime: previousAverageSeconds,
+        designatedTime,
+        consecutiveSolves: 0,
+        deltaSeconds: delta,
+      };
+    } else {
+      return {
+        action: 'MAINTAIN',
+        currentGrid: 2,
+        recommendedGrid: 2,
+        triggerAutoShift: false,
+        reasoning: `Patient took ${timeTaken}s on Easy (2×2), exceeding designated ${designatedTime}s + 25s threshold (${degradeThreshold}s). Already on gentlest level; maintaining with soothing comfort.`,
+        encouragement: `Take all the time you need, ${playerName}. We will keep the puzzle nice and gentle.`,
+        fatigueRisk: 'MODERATE',
+        modelSource: 'adaptive-ml-heuristic',
+        timestamp: Date.now(),
+        timeTaken,
+        averageTime: previousAverageSeconds,
+        designatedTime,
+        consecutiveSolves: 0,
+        deltaSeconds: delta,
+      };
+    }
   }
 
-  // 2. Round Complete: Time took significantly more than average
-  // e.g. baseline is 30s, and taking 65s, 70s, 80s or >= 1.7x average, or delta >= 20s
-  const isSignificantlySlower =
-    timeTaken >= Math.max(48, previousAverageSeconds + 20) ||
-    timeTaken >= Math.round(previousAverageSeconds * 1.65) ||
-    (previousAverageSeconds <= 35 && timeTaken >= 65);
+  // 2. Upgrade rule:
+  // Patient solved the puzzle easily within designated time, 3 times consecutively!
+  const solvedEasily = timeTaken <= designatedTime + 5;
+  const hasThreeConsecutive = solvedEasily && consecutiveSolves >= 3;
 
-  if (isSignificantlySlower && currentGrid > 2) {
-    const nextGrid = (currentGrid - 1) as 2 | 3;
-    return {
-      action: 'EASE_DIFFICULTY',
-      currentGrid,
-      recommendedGrid: nextGrid,
-      triggerAutoShift: true,
-      reasoning: `AI Model analyzed completion time: took ${timeTaken}s, which is significantly longer than previous average of ${previousAverageSeconds}s (+${delta}s). Easing difficulty 1 step from ${gridNames[currentGrid]} to ${gridNames[nextGrid]} for comfortable recall.`,
-      encouragement: `Wonderful job completing the puzzle, ${playerName}! For our next puzzle, we'll relax with ${gridNames[nextGrid]}.`,
-      fatigueRisk: delta >= 35 ? 'HIGH' : 'MODERATE',
-      modelSource: 'adaptive-ml-heuristic',
-      timestamp: Date.now(),
-      timeTaken,
-      averageTime: previousAverageSeconds,
-      deltaSeconds: delta,
-    };
+  if (hasThreeConsecutive) {
+    if (currentGrid < 4) {
+      const nextGrid = (currentGrid + 1) as 3 | 4;
+      return {
+        action: 'INCREASE_DIFFICULTY',
+        currentGrid,
+        recommendedGrid: nextGrid,
+        triggerAutoShift: true,
+        reasoning: `Patient solved 3 consecutive puzzles easily on ${gridNames[currentGrid]} within the designated average time (${timeTaken}s vs ${designatedTime}s standard). Upgraded difficulty 1 step to ${gridNames[nextGrid]}.`,
+        encouragement: `Outstanding focus, ${playerName}! You've solved 3 puzzles in a row with such swiftness. Let's try ${gridNames[nextGrid]} together!`,
+        fatigueRisk: 'LOW',
+        modelSource: 'adaptive-ml-heuristic',
+        timestamp: Date.now(),
+        timeTaken,
+        averageTime: previousAverageSeconds,
+        designatedTime,
+        consecutiveSolves,
+        deltaSeconds: delta,
+      };
+    } else {
+      return {
+        action: 'MAINTAIN',
+        currentGrid: 4,
+        recommendedGrid: 4,
+        triggerAutoShift: false,
+        reasoning: `Masterful performance: 3+ consecutive solves on Tough (4×4) within designated time (${timeTaken}s vs ${designatedTime}s standard). Already at peak challenge level.`,
+        encouragement: `Magnificent mastery, ${playerName}! You've conquered our highest puzzle challenge consecutively with flying colors!`,
+        fatigueRisk: 'LOW',
+        modelSource: 'adaptive-ml-heuristic',
+        timestamp: Date.now(),
+        timeTaken,
+        averageTime: previousAverageSeconds,
+        designatedTime,
+        consecutiveSolves,
+        deltaSeconds: delta,
+      };
+    }
   }
 
-  // 3. Round Complete: Average time is decreasing significantly
-  // e.g. baseline was 30s, now down by 10s or 15s to 20s or faster
-  const isSignificantlyFaster =
-    (delta <= -10 || (timeTaken <= 20 && previousAverageSeconds >= 28) || (timeTaken <= 35 && currentGrid === 3 && previousAverageSeconds >= 50)) &&
-    timeTaken < previousAverageSeconds;
+  // 3. Stable balance / progression
+  const streakMessage = solvedEasily && currentGrid < 4
+    ? ` That's ${consecutiveSolves}/3 consecutive quick solves towards ${gridNames[currentGrid + 1]}!`
+    : '';
 
-  if (isSignificantlyFaster && currentGrid < 4) {
-    const nextGrid = (currentGrid + 1) as 3 | 4;
-    return {
-      action: 'INCREASE_DIFFICULTY',
-      currentGrid,
-      recommendedGrid: nextGrid,
-      triggerAutoShift: true,
-      reasoning: `AI Model observed sharp cognitive speedup! Solved in ${timeTaken}s (down ${Math.abs(delta)}s from previous average of ${previousAverageSeconds}s). Advancing difficulty 1 step from ${gridNames[currentGrid]} to ${gridNames[nextGrid]}.`,
-      encouragement: `Remarkable focus and agility, ${playerName}! Your recall is very quick today, so let's step up to ${gridNames[nextGrid]}!`,
-      fatigueRisk: 'LOW',
-      modelSource: 'adaptive-ml-heuristic',
-      timestamp: Date.now(),
-      timeTaken,
-      averageTime: previousAverageSeconds,
-      deltaSeconds: delta,
-    };
-  }
-
-  // 4. Stable balance
   return {
     action: 'MAINTAIN',
     currentGrid,
     recommendedGrid: currentGrid,
     triggerAutoShift: false,
-    reasoning: `Completion time (${timeTaken}s) is harmoniously aligned with baseline average (${previousAverageSeconds}s). Maintaining current grid ${gridNames[currentGrid]}.`,
-    encouragement: `Lovely work, ${playerName}! You're maintaining a steady, enjoyable rhythm.`,
+    reasoning: `Completed in ${timeTaken}s (designated baseline: ${designatedTime}s). Consecutive quick solves: ${consecutiveSolves}/3. Maintaining ${gridNames[currentGrid]}.`,
+    encouragement: `Lovely work, ${playerName}! You finished in ${timeTaken} seconds.${streakMessage}`,
     fatigueRisk: 'LOW',
     modelSource: 'adaptive-ml-heuristic',
     timestamp: Date.now(),
     timeTaken,
     averageTime: previousAverageSeconds,
+    designatedTime,
+    consecutiveSolves,
     deltaSeconds: delta,
   };
 }
@@ -249,14 +315,26 @@ Current Game State:
 - Matched Pairs So Far: ${data.matchedPairs} of ${data.totalPairs}
 - Elapsed Time: ${data.elapsedSeconds} seconds
 - Trigger Event: ${data.triggerEvent || 'in_game_play'}
+- Consecutive Wins Streak at Current Level: ${data.consecutiveWins || 0}
 
 Objective:
-Evaluate if the player is struggling, experiencing cognitive fatigue, or getting too many wrong answers.
-Rules:
-1. If consecutive mistakes >= 3 OR total mistakes > 3 at level 2 or 3, recommend 'EASE_DIFFICULTY' to level 1 (Easy), set triggerAutoShift to true, and provide warm, non-stigmatizing encouragement.
-2. If the player is finishing quickly with <= 1 mistake, you may recommend 'INCREASE_DIFFICULTY' (or 'MAINTAIN' if already comfortable).
-3. If performance is stable, recommend 'MAINTAIN'.
-4. Do NOT patronize or make the player feel inadequate. Never use the word "dementia" or "failure". Frame difficulty reduction as a relaxing, peaceful choice.
+Evaluate if difficulty should shift down by 1 step, shift up by 1 step, or be maintained.
+
+STRICT CLINICAL DDA RULES:
+1. DEGRADE STRICTLY BY 1 STEP BELOW (Never jump straight from Hard to Easy):
+   - On Hard (Level 3): If mistakes >= 10 OR consecutive mistakes >= 4 (or 3 consecutive if 0 pairs matched), recommend 'EASE_DIFFICULTY' with recommendedLevel: 2 (Medium 4-pairs) and triggerAutoShift: true.
+   - On Medium (Level 2): If mistakes >= 5 OR consecutive mistakes >= 3, recommend 'EASE_DIFFICULTY' with recommendedLevel: 1 (Easy 3-pairs) and triggerAutoShift: true.
+   - On Easy (Level 1): Do not ease below level 1; recommend 'MAINTAIN'.
+2. UPGRADE BY 1 STEP ON 5 CONSECUTIVE WINS:
+   - If Consecutive Wins Streak >= 5:
+     * On Easy (Level 1): Recommend 'INCREASE_DIFFICULTY' to Level 2 (Medium 4-pairs), recommendedLevel: 2, triggerAutoShift: true.
+     * On Medium (Level 2): Recommend 'INCREASE_DIFFICULTY' to Level 3 (Hard 6-pairs), recommendedLevel: 3, triggerAutoShift: true.
+     * On Hard (Level 3): Peak level; celebrate mastery, recommend 'MAINTAIN'.
+3. STABILITY:
+   - If neither degradation threshold nor 5-win streak is reached, recommend 'MAINTAIN'.
+4. TONE & DIGNITY:
+   - Warm, respectful, non-patronizing tone for Anita.
+   - NEVER use words like "dementia", "failure", or "struggling". Frame difficulty easing as a relaxing, gentle choice.
 
 Return structured JSON.`;
 
@@ -324,15 +402,17 @@ Return structured JSON.`;
   app.post("/api/ai/analyze-puzzle-difficulty", async (req, res) => {
     const data = req.body;
     const currentGrid: 2 | 3 | 4 = (data.currentGrid === 3 ? 3 : data.currentGrid === 4 ? 4 : 2);
-    const timeTaken = Number(data.timeTaken) || 30;
-    const previousAverageSeconds = Math.max(10, Number(data.previousAverageSeconds) || 30);
-    const delta = timeTaken - previousAverageSeconds;
+    const timeTaken = Number(data.timeTaken) || 25;
+    const designatedAverageSeconds = Number(data.designatedAverageSeconds) || PUZZLE_DESIGNATED_TIMES[currentGrid] || 25;
+    const previousAverageSeconds = Number(data.previousAverageSeconds) || designatedAverageSeconds;
+    const consecutiveSolves = Number(data.consecutiveSolves) || 0;
+    const delta = timeTaken - designatedAverageSeconds;
     const playerName = data.playerName || 'Anita';
 
     const gridNames: Record<number, string> = {
-      2: 'Gentle (2×2)',
+      2: 'Easy (2×2)',
       3: 'Medium (3×3)',
-      4: 'Challenge (4×4)',
+      4: 'Tough (4×4)',
     };
 
     const ai = getAIClient();
@@ -342,6 +422,8 @@ Return structured JSON.`;
         currentGrid,
         timeTaken,
         previousAverageSeconds,
+        designatedAverageSeconds,
+        consecutiveSolves,
         recentTimes: data.recentTimes,
         moves: data.moves,
         piecesPlaced: data.piecesPlaced,
@@ -352,37 +434,41 @@ Return structured JSON.`;
     }
 
     try {
+      const degradeThreshold = designatedAverageSeconds + 25;
       const prompt = `You are the adaptive cognitive AI companion for Monor Xur, analyzing photo puzzle performance for an older adult with mild cognitive impairment.
 Player: ${playerName}, 68 years old.
 
 Game State:
 - Current Puzzle Grid: ${currentGrid}x${currentGrid} (${gridNames[currentGrid]})
 - Current Attempt Time: ${timeTaken} seconds
-- Previous Baseline Average Time: ${previousAverageSeconds} seconds
-- Time Difference: ${delta} seconds (${delta > 0 ? `slower by ${delta}s` : `faster by ${Math.abs(delta)}s`})
-- Recent Times History: ${JSON.stringify(data.recentTimes || [])}
+- Designated Average Baseline Time for ${gridNames[currentGrid]}: ${designatedAverageSeconds} seconds (Standard: Easy 2x2 = 25s, Medium 3x3 = 40-45s, Tough 4x4 = 120s)
+- Degrade Threshold: > ${degradeThreshold} seconds (${designatedAverageSeconds}s + 25s)
+- Consecutive Easy Solves at Current Level: ${consecutiveSolves} (Upgrade triggers at 3 consecutive solves within designated time)
 - Trigger Event: ${data.triggerEvent || 'round_complete'}
 - Moves Count: ${data.moves ?? 'N/A'}
 - Correctly Placed Pieces: ${data.piecesPlaced ?? 'all'} / ${data.totalPieces ?? currentGrid * currentGrid}
 
-Objective:
-Evaluate whether to degrade difficulty by 1 step, increase difficulty by 1 step, or maintain based on time trends:
-1. Time Increasing Significantly (Degrade 1 step):
-   If time is taking much longer than average (e.g. baseline is 30s and taking 65s, 70s, 80s or >= 1.7x average, or struggle detected):
-   - If on Challenge (4x4), degrade 1 step to Medium (3x3).
-   - If on Medium (3x3), degrade 1 step to Gentle (2x2).
-   - If on Gentle (2x2), maintain Gentle (2x2) with calming warmth.
+Objective Rules:
+1. Degrade Level (EASE_DIFFICULTY):
+   If the player is not able to solve it within the designated average time and takes 25 seconds MORE than designated baseline (timeTaken > ${degradeThreshold}s), or struggle detected:
+   - If on Tough (4x4), degrade 1 step to Medium (3x3).
+   - If on Medium (3x3), degrade 1 step to Easy (2x2).
+   - If on Easy (2x2), maintain Easy (2x2) with calming, gentle warmth.
    - Action: 'EASE_DIFFICULTY', recommendedGrid: 1 step lower, triggerAutoShift: true.
-2. Time Decreasing Significantly (Increase 1 step):
-   If time is decreasing significantly over attempts (e.g. earlier average was 30s and down by 10s-15s to 20s or less):
-   - If on Gentle (2x2), advance 1 step to Medium (3x3).
-   - If on Medium (3x3), advance 1 step to Challenge (4x4).
-   - If on Challenge (4x4), maintain Challenge (4x4) with high praise.
+
+2. Upgrade Level (INCREASE_DIFFICULTY):
+   If the player easily solves the puzzle consecutively 3 times within designated average time (consecutiveSolves >= 3 and timeTaken <= ${designatedAverageSeconds + 5}s):
+   - If on Easy (2x2), upgrade 1 step to Medium (3x3).
+   - If on Medium (3x3), upgrade 1 step to Tough (4x4).
+   - If on Tough (4x4), maintain Tough (4x4) with high praise.
    - Action: 'INCREASE_DIFFICULTY', recommendedGrid: 1 step higher, triggerAutoShift: true.
-3. Stable Time (Maintain):
-   If time is within normal variance of baseline, maintain current grid.
-4. Voice:
-   Warm, dignified, encouraging. Never patronize or mention dementia or slowness.
+
+3. Stable Progress (MAINTAIN):
+   If timeTaken is within the comfortable range and consecutiveSolves < 3, maintain current grid level.
+   - Action: 'MAINTAIN', recommendedGrid: ${currentGrid}, triggerAutoShift: false.
+
+4. Voice Tone:
+   Warm, dignified, encouraging. Never patronize or mention dementia, slowness, or failure. Frame adjustments as relaxing and comfortable.
 
 Return structured JSON.`;
 
@@ -408,7 +494,7 @@ Return structured JSON.`;
               },
               reasoning: {
                 type: Type.STRING,
-                description: "Clinical reasoning citing specific completion time vs average time for telemetry",
+                description: "Clinical reasoning citing completion time vs designated baseline",
               },
               encouragement: {
                 type: Type.STRING,
@@ -432,18 +518,20 @@ Return structured JSON.`;
         targetGrid = parsed.recommendedGrid;
       }
 
-      const result = {
-        action: parsed.action || 'MAINTAIN',
+      const result: PuzzleDifficultyResponse = {
+        action: (parsed.action as any) || 'MAINTAIN',
         currentGrid,
         recommendedGrid: targetGrid,
         triggerAutoShift: Boolean(parsed.triggerAutoShift),
-        reasoning: parsed.reasoning || `AI evaluated time (${timeTaken}s) vs average (${previousAverageSeconds}s).`,
+        reasoning: parsed.reasoning || `AI evaluated time (${timeTaken}s) vs designated baseline (${designatedAverageSeconds}s).`,
         encouragement: parsed.encouragement || `Keep having fun at your comfortable pace, ${playerName}!`,
         fatigueRisk: parsed.fatigueRisk || 'LOW',
         modelSource: 'gemini-3.8-flash',
         timestamp: Date.now(),
         timeTaken,
         averageTime: previousAverageSeconds,
+        designatedTime: designatedAverageSeconds,
+        consecutiveSolves,
         deltaSeconds: delta,
       };
 
@@ -455,6 +543,8 @@ Return structured JSON.`;
         currentGrid,
         timeTaken,
         previousAverageSeconds,
+        designatedAverageSeconds,
+        consecutiveSolves,
         recentTimes: data.recentTimes,
         moves: data.moves,
         piecesPlaced: data.piecesPlaced,

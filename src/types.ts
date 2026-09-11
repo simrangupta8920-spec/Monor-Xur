@@ -16,8 +16,6 @@ export type PatientSubView =
   | 'daily_life' 
   | 'memory_viewer' 
   | 'memory_match' 
-  | 'picture_pairs' 
-  | 'word_recall'
   | 'puzzle';
 
 export type FamilyCaregiverTab = 
