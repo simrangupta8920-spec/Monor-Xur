@@ -69,6 +69,12 @@ export interface AshaAccount {
   passcode: string;
 }
 
+export interface GameDifficultyLevels {
+  memory_match?: number; // 1 (Easy 3 pairs), 2 (Medium 4 pairs), 3 (Hard 6 pairs)
+  puzzle?: number;       // 2 (Easy 2x2), 3 (Medium 3x3), 4 (Tough 4x4)
+  [gameKey: string]: number | undefined;
+}
+
 export interface PatientProfile {
   name: string;
   fullName: string;
@@ -89,6 +95,11 @@ export interface PatientProfile {
   assignedCaregiverUid?: string;
   assignedAshaUid?: string;
   authorizedUids?: string[];
+  // Dynamic Game Difficulty Progression (persists across sessions & devices)
+  gameDifficultyLevel?: number; // Primary/general difficulty (1: Easy, 2: Medium, 3: Hard)
+  gameDifficultyLevels?: GameDifficultyLevels; // Specific game difficulty level mapping
+  gameStreaks?: Record<string, number>; // Win streaks or solve streaks per game tier
+  updatedAt?: string;
 }
 
 export type AuditAction = 
@@ -141,6 +152,11 @@ export interface MedicalProfile {
   doctorPhone?: string;
   notes?: string;
   lastVisit?: string;
+  // Cognitive & Game difficulty progress tracking
+  cognitiveDifficultyLevel?: number;
+  gameDifficultyLevels?: GameDifficultyLevels;
+  lastCognitiveAssessment?: string;
+  updatedAt?: string;
 }
 
 export interface CalendarEvent {

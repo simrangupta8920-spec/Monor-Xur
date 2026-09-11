@@ -176,6 +176,77 @@ export async function saveMedicalProfile(patientId: string, profile: MedicalProf
   }
 }
 
+/**
+ * Persists the user's current game difficulty level and streak progression
+ * directly to the patient profile and medical profile in Firestore, ensuring
+ * progress is securely synchronized across sessions and devices.
+ */
+export async function updateGameDifficultyProgress(
+  patientId: string,
+  gameKey: 'memory_match' | 'puzzle',
+  level: number,
+  streaks?: Record<string, number>
+): Promise<void> {
+  const patientPath = `patients/${patientId}`;
+  try {
+    await ensureFirebaseAuth();
+    const nowIso = new Date().toISOString();
+
+    // Map difficulty: for memory match 1-3, for puzzle 2-4 -> normalized 1-3
+    const normalizedLevel = gameKey === 'puzzle'
+      ? (level === 2 ? 1 : level === 3 ? 2 : 3)
+      : level;
+
+    // 1. Update Patient Profile
+    const patientDocRef = doc(db, 'patients', patientId);
+    const patientSnap = await getDoc(patientDocRef);
+    const existingPatientData = patientSnap.exists() ? (patientSnap.data() as PatientProfile) : null;
+
+    const existingLevels = existingPatientData?.gameDifficultyLevels || {};
+    const existingStreaks = existingPatientData?.gameStreaks || {};
+
+    const updatedLevels = {
+      ...existingLevels,
+      [gameKey]: level,
+    };
+
+    const updatedStreaks = streaks ? { ...existingStreaks, ...streaks } : existingStreaks;
+
+    await setDoc(patientDocRef, {
+      gameDifficultyLevel: normalizedLevel,
+      gameDifficultyLevels: updatedLevels,
+      gameStreaks: updatedStreaks,
+      updatedAt: nowIso,
+    }, { merge: true });
+
+    // 2. Update Medical Profile with cognitive difficulty level target
+    const medicalDocRef = doc(db, 'patients', patientId, 'medical', 'default');
+    await setDoc(medicalDocRef, {
+      cognitiveDifficultyLevel: normalizedLevel,
+      gameDifficultyLevels: updatedLevels,
+      lastCognitiveAssessment: nowIso,
+      updatedAt: nowIso,
+    }, { merge: true });
+
+    // 3. Cache to localStorage for instant offline access
+    try {
+      localStorage.setItem(`monor_game_level_${gameKey}`, String(level));
+      if (gameKey === 'memory_match') {
+        localStorage.setItem('monor_memory_level', String(level));
+        if (streaks) {
+          localStorage.setItem('monor_memory_streaks_v2', JSON.stringify(streaks));
+        }
+      } else if (gameKey === 'puzzle') {
+        localStorage.setItem('monor_puzzle_grid_size', String(level));
+      }
+    } catch {
+      // ignore
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, patientPath);
+  }
+}
+
 // --- Memories Collection ---
 export function subscribeToMemories(
   patientId: string, 

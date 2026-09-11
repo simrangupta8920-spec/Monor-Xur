@@ -15,6 +15,9 @@
         "about": { "type": "string", "maxLength": 1000 },
         "majorCareIssue": { "type": "string", "maxLength": 500 },
         "avatar": { "type": "string", "maxLength": 5000 },
+        "gameDifficultyLevel": { "type": "number", "description": "Current cognitive game difficulty level (1-3) for adaptive progression" },
+        "gameDifficultyLevels": { "type": "object", "description": "Per-game difficulty tracking (memory_match, puzzle, etc.)" },
+        "gameStreaks": { "type": "object", "description": "Current win streak counts per game level" },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" }
       },
@@ -28,6 +31,9 @@
         "concerns": { "type": "array" },
         "careInfo": { "type": "string", "maxLength": 2000 },
         "consultations": { "type": "array" },
+        "cognitiveDifficultyLevel": { "type": "number", "description": "Current clinical cognitive difficulty target level" },
+        "gameDifficultyLevels": { "type": "object", "description": "Prescribed or current difficulty levels per cognitive exercise" },
+        "lastCognitiveAssessment": { "type": "string", "description": "Timestamp of most recent cognitive gameplay evaluation" },
         "updatedAt": { "type": "string" }
       }
     },
