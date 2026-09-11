@@ -1,0 +1,156 @@
+{
+  "app_name": "MONOR XUR",
+  "personality": "8 Hand-Drawn organic warmth fused with 4 Tactile / Playful structure for high accessibility",
+  "personality_one_liner": "A warm, natural, and highly accessible cognitive wellness space that feels like a supportive companion, not a clinical tool.",
+  "color": {
+    "surface": "#FDFBF7",
+    "onSurface": "#2D3A2F",
+    "surfaceSecondary": "#FFFFFF",
+    "onSurfaceSecondary": "#2D3A2F",
+    "surfaceTertiary": "#FDF0D5",
+    "onSurfaceTertiary": "#332610",
+    "surfaceInverse": "#2D3A2F",
+    "onSurfaceInverse": "#FDFBF7",
+    "brand": "#87A987",
+    "onBrand": "#FFFFFF",
+    "brandPrimary": "#5B825B",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#D4E4E6",
+    "onBrandSecondary": "#1C2A2D",
+    "brandTertiary": "#F0D8D6",
+    "onBrandTertiary": "#3D2423",
+    "success": "#6B8E6B",
+    "onSuccess": "#FFFFFF",
+    "warning": "#E8B25C",
+    "onWarning": "#332610",
+    "error": "#C46A66",
+    "onError": "#FFFFFF",
+    "info": "#7A9CA4",
+    "onInfo": "#FFFFFF",
+    "border": "#E0DCD3",
+    "borderStrong": "#C2BDB2",
+    "divider": "#EAE6DF",
+    "muted": "#5A6E5D"
+  },
+  "typography": {
+    "displayFontFamily": "Nunito",
+    "textFontFamily": "Nunito",
+    "scale": {
+      "sm": 14,
+      "base": 18,
+      "lg": 22,
+      "xl": 28,
+      "2xl": 36
+    }
+  },
+  "spacing": {
+    "rule": "Generous spacing is critical for elderly users to prevent accidental taps. Elements should never feel cramped.",
+    "xs": 8,
+    "sm": 12,
+    "md": 16,
+    "lg": 24,
+    "xl": 32,
+    "2xl": 48,
+    "3xl": 64
+  },
+  "radius_tokens": {
+    "sm": 8,
+    "md": 16,
+    "lg": 24,
+    "pill": 999
+  },
+  "shadow_tier": "1",
+  "navigation": "stack_only (Hub-and-spoke for Patient mode), bottom_tabs (for Caregiver & ASHA modes)",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": "false",
+    "do's": [],
+    "dont's": [
+      "Avoid glassmorphism completely. Seniors require solid, high-contrast surfaces without distracting visual layers or blurs."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Role Selection (Entry)",
+      "purpose": "Simple, large-touch-target screen to select Patient, Family Caregiver, or ASHA Health Worker.",
+      "states": {
+        "loading": "Centered loading spinner with botanical leaf icon.",
+        "empty": "N/A",
+        "error": "Cannot load roles, large 'Try Again' button."
+      },
+      "layout": "Vertical list of massive, padded cards (using surfaceSecondary) for each role. Each card has a distinct pastel tint (brandSecondary/brandTertiary) and large Phosphor icon. Stick a prominent Caregiver login option at the bottom."
+    },
+    {
+      "name": "Patient Home Dashboard",
+      "purpose": "Primary navigation hub for the patient, extremely simple and warm.",
+      "states": {
+        "loading": "Skeleton of 4 large grid tiles.",
+        "empty": "N/A",
+        "error": "Failed to load dashboard, gentle retry button."
+      },
+      "layout": "2x2 grid (or 1-column stack if needed for tap size) of oversized tiles taking up most of the screen: Memories, Games, Relaxation, Daily Life. Each tile uses a soft pastel background with a large, friendly image or icon, and very large text. Settings icon isolated at top right."
+    },
+    {
+      "name": "Caregiver Dashboard",
+      "purpose": "Functional dashboard for family caregivers or ASHA workers to monitor and manage patient engagement.",
+      "states": {
+        "loading": "Skeleton list of recent alerts and reports.",
+        "empty": "No recent patient activity.",
+        "error": "Could not sync data, retry button."
+      },
+      "layout": "Standard mobile layout. Quick stat summary at top (Reports, Patient Profile). Scrollable list of recent Alerts and Calendar events below. Bottom tab navigation for switching contexts."
+    }
+  ],
+  "images": {
+    "hero_patient": {
+      "url": "https://images.unsplash.com/photo-1656166071419-e4914f4e2d52?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzR8MHwxfHNlYXJjaHwzfHxoYXBweSUyMHNlbmlvciUyMGNvdXBsZSUyMHBsYXlpbmd8ZW58MHx8fHwxNzg5MTA3NzgzfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Happy senior couple playing in a field"
+    },
+    "hero_caregiver": {
+      "url": "https://images.unsplash.com/photo-1523705480679-b5d0cc17a656?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzZ8MHwxfHNlYXJjaHwyfHxtZWRpY2FsJTIwY2FyZWdpdmVyJTIwY2xpcGJvYXJkfGVufDB8fHx8MTc4OTEwNzc4M3ww&ixlib=rb-4.1.0&q=85",
+      "alt": "Caregiver clipboard with medical notes"
+    },
+    "tile_memories": {
+      "url": "https://images.unsplash.com/photo-1565893089337-4680bbb1f34e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwxfHx2aW50YWdlJTIwcGhvdG8lMjBhbGJ1bSUyMGhhbmRzfGVufDB8fHx8MTc4OTEwNzc5Mnww&ixlib=rb-4.1.0&q=85",
+      "alt": "Vintage photo album"
+    },
+    "tile_games": {
+      "url": "https://images.unsplash.com/photo-1730804518415-75297e8d2a41?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHwxfHxwdXp6bGUlMjBwaWVjZXN8ZW58MHx8fHwxNzg5MTA3NzkyfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Puzzle piece"
+    },
+    "tile_relaxation": {
+      "url": "https://images.unsplash.com/photo-1522075782449-e45a34f1ddfb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwxfHxjYWxtJTIwbWVkaXRhdGlvbiUyMG5hdHVyZXxlbnwwfHx8fDE3ODkxMDc3OTJ8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Person looking at a calm sunset in nature"
+    },
+    "tile_daily_life": {
+      "url": "https://images.unsplash.com/photo-1662038271111-5b1c0b4157e8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBtdWclMjBtb3JuaW5nJTIwc3VufGVufDB8fHx8MTc4OTEwNzc5Mnww&ixlib=rb-4.1.0&q=85",
+      "alt": "Coffee mug in morning sun"
+    },
+    "botanical_decoration": {
+      "url": "https://images.unsplash.com/photo-1562619227-71c891fd2799?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDV8MHwxfHNlYXJjaHwzfHxib3RhbmljYWwlMjBsZWFmJTIwaWxsdXN0cmF0aW9ufGVufDB8fHx8MTc4OTEwNzc4M3ww&ixlib=rb-4.1.0&q=85",
+      "alt": "Soft green botanical leaves"
+    }
+  },
+  "instructions_to_main_agent": [
+    "ACCESSIBILITY OVERRIDE: The typography scale is significantly larger than standard defaults. Base text is 18pt, and all UI elements must accommodate this without clipping.",
+    "TOUCH TARGETS: All clickable elements (buttons, cards, icons) must have a minimum hit area of 60x60pt to support older adults. Use padding and hitSlop aggressively.",
+    "PATIENT NAVIGATION: Avoid bottom tabs for Patient Mode. Use a 'hub-and-spoke' architecture where the Patient Home contains large tiles, and all sub-screens have a prominent, oversized 'Back' or 'Home' button at the top.",
+    "CAREGIVER NAVIGATION: Caregiver and ASHA modes should use standard bottom tab navigation, as they are used by more digitally literate users.",
+    "COLOR USAGE: Use the muted botanical green (brand) and cream (surface) heavily to create a calming, non-clinical environment. Rely on the darker sage (brandPrimary) for primary text/buttons to ensure WCAG AAA contrast.",
+    "NO GLASSMORPHISM: Seniors need solid, distinct separation of elements. Do not use blurs or translucent sheets.",
+    "GENTLE ANIMATIONS: Use React Native Reanimated for soft, slow transitions (e.g., 300-400ms fades or springs), avoiding fast snapping which can be disorienting.",
+    "FONT WEIGHTS: Avoid thin fonts entirely; stick to 400 and 500 weights for `Nunito`, ensuring readability."
+  ]
+}
