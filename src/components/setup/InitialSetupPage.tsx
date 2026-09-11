@@ -137,6 +137,11 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
     initialPatient?.asha?.passcode || 'asha123'
   );
 
+  // Security & DPDP Act 2023 Consent
+  const [consentGiven, setConsentGiven] = useState<boolean>(
+    initialPatient?.consentGiven ?? true
+  );
+
   const [formError, setFormError] = useState<string | null>(null);
 
   // Add Prescription item
@@ -203,6 +208,12 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
       return;
     }
 
+    if (!consentGiven) {
+      setFormError('Digital Personal Data Protection (DPDP) Act 2023 consent is required to coordinate care and telemetry.');
+      setStep(4);
+      return;
+    }
+
     soundController.playSuccess();
 
     const caregiverAccount: CaregiverAccount = {
@@ -235,6 +246,8 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
       caregiver: caregiverAccount,
       asha: ashaAccount,
       isConfigured: true,
+      consentGiven: true,
+      consentDate: initialPatient?.consentDate || new Date().toISOString(),
     };
 
     const medicalData: MedicalProfile = {
@@ -1013,6 +1026,31 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
               <p className="text-[11px] text-[#556657]">
                 Player: <strong>{name || 'Player'}</strong> ({age} yrs, {region}) • Caregiver PIN: <strong>••••</strong>
               </p>
+            </div>
+
+            {/* DPDP Act 2023 Consent Checkbox Card */}
+            <div className="p-4 rounded-2xl border-2 border-[#5B825B]/40 bg-[#F4F8F4] space-y-2.5">
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  id="dpdp-consent-checkbox"
+                  checked={consentGiven}
+                  onChange={(e) => {
+                    setConsentGiven(e.target.checked);
+                    if (e.target.checked) setFormError(null);
+                  }}
+                  className="mt-0.5 w-4 h-4 text-[#5B825B] rounded border-[#C2BDB2] focus:ring-[#5B825B] cursor-pointer"
+                />
+                <div className="text-xs text-[#2D3A2F] leading-relaxed">
+                  <span className="font-extrabold text-[#2D3A2F] flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#3D663D]" />
+                    <span>DPDP Act 2023 Consent & Care Coordination Authorization *</span>
+                  </span>
+                  <p className="mt-1 text-[11px] text-[#4A5D4C]">
+                    I grant verifiable digital consent under India's <strong>Digital Personal Data Protection (DPDP) Act, 2023</strong> to securely process and store routine medication schedules, elder well-being logs, and cognitive telemetry strictly for the care of {name || 'the player'}. Access is strictly scoped to designated family caregivers and accredited ASHA workers.
+                  </p>
+                </div>
+              </label>
             </div>
 
             {/* Finish & Launch Buttons */}

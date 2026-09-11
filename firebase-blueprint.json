@@ -130,6 +130,20 @@
         "createdAt": { "type": "string" }
       },
       "required": ["gameTitle", "level", "mistakes", "timestamp"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable security and access audit trail recording caregiver and ASHA activities (DPDP Act 2023)",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string", "maxLength": 100 },
+        "actorRole": { "type": "string", "enum": ["family", "asha", "patient", "system"] },
+        "actorName": { "type": "string", "maxLength": 100 },
+        "actorId": { "type": "string", "maxLength": 100 },
+        "details": { "type": "string", "maxLength": 1000 },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["action", "actorRole", "timestamp"]
     }
   },
   "firestore": {
@@ -168,6 +182,10 @@
     "/patients/{patientId}/dda_logs/{logId}": {
       "schema": "DDAMetric",
       "description": "Clinical cognitive performance and difficulty adjustment logs"
+    },
+    "/patients/{patientId}/auditLogs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Compliance and operational security audit trail logs"
     }
   }
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   AppRole, PatientTab, PatientSubView, FamilyCaregiverTab, AshaTab, Memory, 
   DDAMetric, CalendarEvent, Reminder, AlertItem, EmergencyContact, 
-  PatientProfile, MedicalProfile, CaregiverAccount, AshaAccount, CareTask 
+  PatientProfile, MedicalProfile, CaregiverAccount, AshaAccount, CareTask, AuditLog 
 } from './types';
 import { 
   INITIAL_PATIENT_PROFILE, INITIAL_MEDICAL_PROFILE, INITIAL_MEMORIES, INITIAL_REMINDERS, 
@@ -62,6 +62,8 @@ import {
   saveCareTaskToDb,
   subscribeToContacts,
   saveContactToDb,
+  subscribeToAuditLogs,
+  logAuditEvent,
 } from './services/firebase';
 
 export function App() {
@@ -155,6 +157,9 @@ export function App() {
     return EMERGENCY_CONTACTS;
   });
 
+  // DPDP Act 2023 Audit Trail state
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+
   // Calling simulation modal
   const [callingContact, setCallingContact] = useState<EmergencyContact | null>(null);
 
@@ -246,6 +251,11 @@ export function App() {
       }
     });
 
+    // 9. DPDP Act 2023 Audit Trail
+    const unsubAudit = subscribeToAuditLogs(DEFAULT_PATIENT_ID, (data) => {
+      setAuditLogs(data);
+    });
+
     return () => {
       unsubPatient();
       unsubMedical();
@@ -255,6 +265,7 @@ export function App() {
       unsubAlerts();
       unsubTasks();
       unsubContacts();
+      unsubAudit();
     };
   }, []);
 
@@ -268,8 +279,20 @@ export function App() {
       setSelectedMemory(null);
     } else if (newRole === 'family') {
       setFamilyTab('home');
+      logAuditEvent(DEFAULT_PATIENT_ID, {
+        action: 'viewed_patient',
+        actorRole: 'family',
+        actorName: patientProfile.caregiver?.name || 'Family Caregiver',
+        details: `Family caregiver accessed dashboard for ${patientProfile.name}`,
+      });
     } else if (newRole === 'asha') {
       setAshaTab('home');
+      logAuditEvent(DEFAULT_PATIENT_ID, {
+        action: 'viewed_patient',
+        actorRole: 'asha',
+        actorName: patientProfile.asha?.name || 'ASHA Community Worker',
+        details: `ASHA health worker opened care summary for ${patientProfile.name}`,
+      });
     }
   };
 
@@ -299,6 +322,13 @@ export function App() {
       await savePatientProfile(DEFAULT_PATIENT_ID, data.patient);
       await saveMedicalProfile(DEFAULT_PATIENT_ID, data.medical);
       await saveContactToDb(DEFAULT_PATIENT_ID, data.emergencyContact);
+
+      await logAuditEvent(DEFAULT_PATIENT_ID, {
+        action: 'consent_granted',
+        actorRole: 'caregiver',
+        actorName: data.caregiver.name,
+        details: `Initial setup consent confirmed under DPDP Act 2023 on ${data.patient.consentDate || new Date().toISOString()}`,
+      });
 
       // Create reminders based on prescriptions if user has no reminders yet
       if (data.medical.prescriptions && data.medical.prescriptions.length > 0 && reminders.length === 0) {
@@ -346,6 +376,12 @@ export function App() {
         queueOfflineMutation({ type: 'toggle_reminder', payload: updated });
       } else {
         await saveReminderToDb(DEFAULT_PATIENT_ID, updated);
+        await logAuditEvent(DEFAULT_PATIENT_ID, {
+          action: 'toggled_reminder',
+          actorRole: role === 'asha' ? 'asha' : 'caregiver',
+          actorName: role === 'asha' ? (patientProfile.asha?.name || 'ASHA Worker') : (patientProfile.caregiver?.name || 'Family Caregiver'),
+          details: `Toggled status of daily reminder "${updated.title}" to ${updated.completed ? 'completed' : 'pending'}`,
+        });
       }
     }
   };
@@ -359,6 +395,12 @@ export function App() {
       queueOfflineMutation({ type: 'add_reminder', payload: reminder });
     } else {
       await saveReminderToDb(DEFAULT_PATIENT_ID, reminder);
+      await logAuditEvent(DEFAULT_PATIENT_ID, {
+        action: 'added_reminder',
+        actorRole: role === 'asha' ? 'asha' : 'caregiver',
+        actorName: role === 'asha' ? (patientProfile.asha?.name || 'ASHA Worker') : (patientProfile.caregiver?.name || 'Family Caregiver'),
+        details: `Created new daily routine reminder: "${reminder.title}"`,
+      });
     }
   };
 
@@ -368,6 +410,12 @@ export function App() {
     setReminders(updatedList);
     saveOfflineSnapshot({ reminders: updatedList });
     await deleteReminderFromDb(DEFAULT_PATIENT_ID, id);
+    await logAuditEvent(DEFAULT_PATIENT_ID, {
+      action: 'deleted_reminder',
+      actorRole: role === 'asha' ? 'asha' : 'caregiver',
+      actorName: role === 'asha' ? (patientProfile.asha?.name || 'ASHA Worker') : (patientProfile.caregiver?.name || 'Family Caregiver'),
+      details: `Removed reminder entry`,
+    });
   };
 
   const handleAddCalendarEvent = async (event: CalendarEvent) => {
@@ -399,6 +447,12 @@ export function App() {
         queueOfflineMutation({ type: 'update_task', payload: updated });
       } else {
         await saveCareTaskToDb(DEFAULT_PATIENT_ID, updated);
+        await logAuditEvent(DEFAULT_PATIENT_ID, {
+          action: 'completed_task',
+          actorRole: 'asha',
+          actorName: patientProfile.asha?.name || 'ASHA Community Worker',
+          details: `Community task "${updated.title}" marked as ${updated.done ? 'completed' : 'pending'}`,
+        });
       }
     }
   };
@@ -416,6 +470,12 @@ export function App() {
     setMemories(updated);
     saveOfflineSnapshot({ memories: updated });
     await addMemoryToDb(DEFAULT_PATIENT_ID, memory);
+    await logAuditEvent(DEFAULT_PATIENT_ID, {
+      action: 'added_memory',
+      actorRole: 'family',
+      actorName: patientProfile.caregiver?.name || 'Family Caregiver',
+      details: `Added new memory snapshot: "${memory.title}"`,
+    });
   };
 
   const handleDeleteMemory = async (id: string) => {
@@ -424,6 +484,12 @@ export function App() {
     setMemories(updated);
     saveOfflineSnapshot({ memories: updated });
     await deleteMemoryFromDb(DEFAULT_PATIENT_ID, id);
+    await logAuditEvent(DEFAULT_PATIENT_ID, {
+      action: 'deleted_memory',
+      actorRole: 'family',
+      actorName: patientProfile.caregiver?.name || 'Family Caregiver',
+      details: `Removed memory entry`,
+    });
   };
 
   const handleUpdatePatientProfile = async (updated: PatientProfile) => {
@@ -435,6 +501,12 @@ export function App() {
       queueOfflineMutation({ type: 'update_profile', payload: updated });
     } else {
       await savePatientProfile(DEFAULT_PATIENT_ID, updated);
+      await logAuditEvent(DEFAULT_PATIENT_ID, {
+        action: 'updated_patient_profile',
+        actorRole: 'caregiver',
+        actorName: updated.caregiver?.name || 'Family Caregiver',
+        details: `Updated personal & cognitive care details for ${updated.name}`,
+      });
     }
   };
 
@@ -443,6 +515,12 @@ export function App() {
     localStorage.setItem('monor_xur_medical', JSON.stringify(updated));
     saveOfflineSnapshot({ medicalProfile: updated });
     await saveMedicalProfile(DEFAULT_PATIENT_ID, updated);
+    await logAuditEvent(DEFAULT_PATIENT_ID, {
+      action: 'updated_medical_profile',
+      actorRole: 'caregiver',
+      actorName: patientProfile.caregiver?.name || 'Family Caregiver',
+      details: `Updated physician care guidance and clinical notes`,
+    });
   };
 
   const triggerCallFamily = () => {
@@ -641,6 +719,7 @@ export function App() {
             medicalProfile={medicalProfile}
             onUpdateMedicalProfile={handleUpdateMedicalProfile}
             onOpenSetup={() => handleSwitchRole('setup')}
+            auditLogs={auditLogs}
           />
         )}
 
@@ -657,6 +736,7 @@ export function App() {
             medicalProfile={medicalProfile}
             onOpenSetup={() => handleSwitchRole('setup')}
             ddaLogs={ddaLogs}
+            auditLogs={auditLogs}
           />
         )}
       </main>

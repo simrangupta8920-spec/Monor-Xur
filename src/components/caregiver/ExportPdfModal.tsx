@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { 
   FileText, Download, Check, X, ShieldAlert, Sparkles, Brain, Stethoscope, 
-  Calendar, CheckSquare, Square, AlertCircle, Printer, Puzzle
+  Calendar, CheckSquare, Square, AlertCircle, Printer, Puzzle, Lock, KeyRound, ShieldCheck
 } from 'lucide-react';
 import { PatientProfile, MedicalProfile, DDAMetric, Reminder } from '../../types';
 import { generateMedicalProgressPdf } from '../../utils/pdfReportGenerator';
 import { soundController } from '../../utils/audio';
 import { GameFilterType, getGameBreakdown, BASELINE_GAME_SESSIONS } from '../../utils/gameAnalytics';
+import { encryptData } from '../../utils/crypto';
+import { logAuditEvent, DEFAULT_PATIENT_ID } from '../../services/firebase';
 
 interface ExportPdfModalProps {
   isOpen: boolean;
@@ -31,6 +33,8 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
   const [includeReminders, setIncludeReminders] = useState(true);
   const [gameFilter, setGameFilter] = useState<GameFilterType>('all');
   const [caregiverNotes, setCaregiverNotes] = useState('');
+  const [enableAesEncryption, setEnableAesEncryption] = useState(false);
+  const [encryptionPin, setEncryptionPin] = useState(patientProfile.caregiver?.pin || '2468');
   const [isGenerating, setIsGenerating] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
@@ -44,38 +48,75 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleGeneratePdf = () => {
+  const handleGeneratePdf = async () => {
     setIsGenerating(true);
     soundController.playClick();
 
-    setTimeout(() => {
-      try {
-        generateMedicalProgressPdf(
-          patientProfile,
-          medicalProfile,
-          ddaLogs,
-          reminders,
-          {
-            includeDemographics,
-            includeCognitiveTrends,
-            includeMedicalConsultations,
-            includeReminders,
-            caregiverNotes,
-            gameFilter,
-          }
+    try {
+      // 1. Generate Standard Clinical PDF
+      generateMedicalProgressPdf(
+        patientProfile,
+        medicalProfile,
+        ddaLogs,
+        reminders,
+        {
+          includeDemographics,
+          includeCognitiveTrends,
+          includeMedicalConsultations,
+          includeReminders,
+          caregiverNotes,
+          gameFilter,
+        }
+      );
+
+      // 2. Optional: Generate AES-256-GCM Encrypted Clinical Dossier Archive
+      if (enableAesEncryption) {
+        const dossierPayload = {
+          exportType: 'CLINICAL_DOSSIER_ARCHIVE',
+          dpdpCompliance: 'Digital Personal Data Protection Act 2023',
+          patientProfile: includeDemographics ? patientProfile : { name: patientProfile.name },
+          medicalProfile: includeMedicalConsultations ? medicalProfile : null,
+          cognitiveLogs: includeCognitiveTrends ? (ddaLogs.length > 0 ? ddaLogs : BASELINE_GAME_SESSIONS) : [],
+          routineReminders: includeReminders ? reminders : [],
+          caregiverObservation: caregiverNotes || undefined,
+          exportedAt: new Date().toISOString(),
+        };
+
+        const encryptedString = await encryptData(
+          JSON.stringify(dossierPayload, null, 2),
+          encryptionPin || '2468'
         );
-        soundController.playSuccess();
-        setIsGenerating(false);
-        setDownloadSuccess(true);
-        setTimeout(() => {
-          setDownloadSuccess(false);
-          onClose();
-        }, 1800);
-      } catch (err) {
-        console.error('Failed to generate PDF:', err);
-        setIsGenerating(false);
+
+        const blob = new Blob([encryptedString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${patientProfile.name.toLowerCase().replace(/\s+/g, '_')}_encrypted_clinical_dossier.mxe`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       }
-    }, 400);
+
+      // 3. Log Immutable Compliance Audit Event to Firestore
+      await logAuditEvent(DEFAULT_PATIENT_ID, {
+        action: 'exported_pdf',
+        actorRole: 'family',
+        actorName: patientProfile.caregiver?.name || 'Family Caregiver',
+        details: `Exported clinical dossier for ${patientProfile.name}. AES-256 encrypted container: ${enableAesEncryption ? 'YES' : 'NO'}.`,
+      });
+
+      soundController.playSuccess();
+      setIsGenerating(false);
+      setDownloadSuccess(true);
+      setTimeout(() => {
+        setDownloadSuccess(false);
+        onClose();
+      }, 1800);
+    } catch (err) {
+      console.error('Failed to generate PDF or encrypted export:', err);
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -301,6 +342,46 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
               placeholder="e.g., Patient showed elevated recall when solving nostalgic puzzles. Sleeping well, morning appetite normal..."
               className="w-full p-3 rounded-2xl bg-white border border-[#E0DCD3] text-xs focus:outline-hidden focus:border-[#5B825B] resize-none h-20 placeholder:text-gray-400"
             />
+          </div>
+
+          {/* DPDP Act 2023: AES-256-GCM Encrypted Container Option */}
+          <div className="p-3.5 rounded-2xl bg-[#F4F8F4] border border-[#5B825B]/30 space-y-3">
+            <button
+              type="button"
+              onClick={() => setEnableAesEncryption(!enableAesEncryption)}
+              className="w-full flex items-center justify-between text-left"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-xl bg-[#5B825B]/15 text-[#3D663D] flex items-center justify-center">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="font-black text-xs text-[#2D3A2F]">Encrypt Export (AES-256-GCM)</p>
+                  <p className="text-[10px] text-[#5A6E5D]">
+                    DPDP Act 2023 compliant encrypted payload (.mxe) alongside PDF
+                  </p>
+                </div>
+              </div>
+              {enableAesEncryption ? (
+                <CheckSquare className="w-4 h-4 text-[#5B825B]" />
+              ) : (
+                <Square className="w-4 h-4 text-[#8C9B8E]" />
+              )}
+            </button>
+
+            {enableAesEncryption && (
+              <div className="pt-2 border-t border-[#DDE7DC] flex items-center gap-2">
+                <Lock className="w-3.5 h-3.5 text-[#5B825B] shrink-0" />
+                <label className="text-[11px] font-bold text-[#2D3A2F] shrink-0">Passphrase / PIN:</label>
+                <input
+                  type="password"
+                  value={encryptionPin}
+                  onChange={(e) => setEncryptionPin(e.target.value)}
+                  placeholder="PIN"
+                  className="flex-1 px-2.5 py-1.5 text-xs font-bold rounded-lg border border-[#C6D8C5] bg-white focus:outline-hidden focus:border-[#5B825B]"
+                />
+              </div>
+            )}
           </div>
 
           {/* Clinical Format Notice */}

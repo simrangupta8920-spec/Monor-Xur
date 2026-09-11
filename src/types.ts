@@ -83,6 +83,43 @@ export interface PatientProfile {
   caregiver?: CaregiverAccount;
   asha?: AshaAccount;
   isConfigured?: boolean;
+  // Security, Consent & DPDP Act 2023 Compliance
+  consentGiven?: boolean;
+  consentDate?: string;
+  assignedCaregiverUid?: string;
+  assignedAshaUid?: string;
+  authorizedUids?: string[];
+}
+
+export type AuditAction = 
+  | 'viewed_patient'
+  | 'updated_patient_profile'
+  | 'viewed_medical_profile'
+  | 'updated_medical_profile'
+  | 'viewed_reminders'
+  | 'updated_reminder'
+  | 'added_reminder'
+  | 'deleted_reminder'
+  | 'toggled_reminder'
+  | 'viewed_care_tasks'
+  | 'completed_task'
+  | 'updated_care_task'
+  | 'exported_pdf'
+  | 'viewed_memories'
+  | 'added_memory'
+  | 'deleted_memory'
+  | 'viewed_dda_progress'
+  | 'logged_in'
+  | 'consent_granted';
+
+export interface AuditLog {
+  id?: string;
+  action: AuditAction | string;
+  actorRole: 'family' | 'asha' | 'patient' | 'system' | 'caregiver';
+  actorName: string;
+  actorId?: string;
+  details?: string;
+  timestamp: string;
 }
 
 export interface MedicalConsultation {

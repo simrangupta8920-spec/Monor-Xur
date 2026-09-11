@@ -43,6 +43,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6 MiB for rich assets & bundles
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,svg,woff,woff2}'],
         runtimeCaching: [
           {
@@ -80,6 +81,18 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          recharts: ['recharts'],
+          firebase: ['firebase/app', 'firebase/firestore', 'firebase/auth'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1500,
+  },
   server: {
     host: '0.0.0.0',
     port: 3000,

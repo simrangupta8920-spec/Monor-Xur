@@ -2,6 +2,37 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import { z } from "zod";
+
+// Zod Input Validation Schemas for API routes
+const DifficultyAnalysisSchema = z.object({
+  playerName: z.string().trim().max(100).optional().default("Anita Sharma"),
+  currentLevel: z.number().int().min(1).max(3),
+  moves: z.number().int().min(0).max(10000),
+  mistakes: z.number().int().min(0).max(10000),
+  consecutiveMistakes: z.number().int().min(0).max(1000),
+  matchedPairs: z.number().int().min(0).max(50),
+  totalPairs: z.number().int().min(1).max(50),
+  elapsedSeconds: z.number().min(0).max(86400),
+  triggerEvent: z.enum(["mistake", "round_complete", "periodic_check", "in_game_play"]).optional(),
+  consecutiveWins: z.number().int().min(0).max(1000).optional().default(0),
+});
+
+const PuzzleDifficultySchema = z.object({
+  playerName: z.string().trim().max(100).optional().default("Anita Sharma"),
+  currentGrid: z.union([z.literal(2), z.literal(3), z.literal(4)]),
+  timeTaken: z.number().min(0).max(86400),
+  previousAverageSeconds: z.number().min(0).max(86400).optional().default(25),
+  designatedAverageSeconds: z.number().min(5).max(600).optional(),
+  consecutiveSolves: z.number().int().min(0).max(1000).optional().default(0),
+  recentTimes: z.array(z.number().min(0).max(86400)).max(50).optional(),
+  moves: z.number().int().min(0).max(10000).optional(),
+  piecesPlaced: z.number().int().min(0).max(100).optional(),
+  totalPieces: z.number().int().min(1).max(100).optional(),
+  triggerEvent: z.enum(["round_complete", "in_game_struggle", "periodic_check", "in_game_play"]).optional(),
+});
 
 // Lazy initialization for Gemini client
 let aiClient: GoogleGenAI | null = null;
@@ -281,21 +312,89 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Trust proxy for reverse proxy architectures (Cloud Run, Nginx)
+  app.set("trust proxy", 1);
+
+  // 1. Data in Transit: Enforce HTTPS-only in production environments
+  if (process.env.NODE_ENV === "production") {
+    app.use((req, res, next) => {
+      const proto = req.headers["x-forwarded-proto"];
+      if (proto && proto !== "https") {
+        return res.redirect(301, `https://${req.headers.host}${req.url}`);
+      }
+      next();
+    });
+  }
+
+  // 2. Helmet.js: Configure strict HTTP security headers
+  app.use(
+    helmet({
+      contentSecurityPolicy: false, // Prevents blocking dynamic Vite and SPA inline assets
+      crossOriginEmbedderPolicy: false,
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+      frameguard: { action: "sameorigin" },
+      noSniff: true,
+      xssFilter: true,
+    })
+  );
+
+  // 3. Express Rate Limit: Global API rate limiter + AI assessment limiter
+  const globalApiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 300, // Limit each IP to 300 requests per 15 minutes
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+      error: "Rate limit exceeded. Too many requests to Monor Xur API.",
+      status: 429,
+    },
+  });
+  app.use("/api", globalApiLimiter);
+
+  const aiRateLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    limit: 60, // Limit each IP to 60 evaluations per minute
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+      error: "AI evaluation rate limit exceeded. Please wait a moment before sending another evaluation request.",
+      status: 429,
+    },
+  });
+
   app.use(express.json());
 
-  // Health check endpoint
+  // Health check endpoint with security status
   app.get("/api/health", (_req, res) => {
     res.json({ 
       status: "ok", 
       app: "Monor Xur", 
+      security: {
+        helmet: true,
+        rateLimiting: true,
+        hsts: true,
+        httpsEnforced: process.env.NODE_ENV === "production",
+        dpdpActCompliant: true,
+      },
       aiAvailable: !!process.env.GEMINI_API_KEY 
     });
   });
 
-  // AI Cognitive Difficulty Analysis Endpoint
-  app.post("/api/ai/analyze-difficulty", async (req, res) => {
+  // AI Cognitive Difficulty Analysis Endpoint (with Zod validation)
+  app.post("/api/ai/analyze-difficulty", aiRateLimiter, async (req, res) => {
     try {
-      const data: DifficultyAnalysisRequest = req.body;
+      const parseResult = DifficultyAnalysisSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({
+          error: "Input validation failed on difficulty analysis payload",
+          issues: parseResult.error.issues,
+        });
+      }
+      const data = parseResult.data as DifficultyAnalysisRequest;
       const ai = getAIClient();
 
       if (!ai) {
@@ -398,14 +497,21 @@ Return structured JSON.`;
     }
   });
 
-  // AI Puzzle Difficulty Analysis Endpoint
-  app.post("/api/ai/analyze-puzzle-difficulty", async (req, res) => {
-    const data = req.body;
-    const currentGrid: 2 | 3 | 4 = (data.currentGrid === 3 ? 3 : data.currentGrid === 4 ? 4 : 2);
-    const timeTaken = Number(data.timeTaken) || 25;
-    const designatedAverageSeconds = Number(data.designatedAverageSeconds) || PUZZLE_DESIGNATED_TIMES[currentGrid] || 25;
-    const previousAverageSeconds = Number(data.previousAverageSeconds) || designatedAverageSeconds;
-    const consecutiveSolves = Number(data.consecutiveSolves) || 0;
+  // AI Puzzle Difficulty Analysis Endpoint (with Zod validation)
+  app.post("/api/ai/analyze-puzzle-difficulty", aiRateLimiter, async (req, res) => {
+    const parseResult = PuzzleDifficultySchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Input validation failed on puzzle difficulty analysis payload",
+        issues: parseResult.error.issues,
+      });
+    }
+    const data = parseResult.data;
+    const currentGrid: 2 | 3 | 4 = data.currentGrid;
+    const timeTaken = data.timeTaken;
+    const designatedAverageSeconds = data.designatedAverageSeconds || PUZZLE_DESIGNATED_TIMES[currentGrid] || 25;
+    const previousAverageSeconds = data.previousAverageSeconds || designatedAverageSeconds;
+    const consecutiveSolves = data.consecutiveSolves || 0;
     const delta = timeTaken - designatedAverageSeconds;
     const playerName = data.playerName || 'Anita';
 

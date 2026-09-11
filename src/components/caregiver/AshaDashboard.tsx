@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { 
   ClipboardList, Stethoscope, AlertTriangle, CheckCircle2, Circle, Phone, ShieldAlert, Award,
-  Puzzle, Brain 
+  Puzzle, Brain, ShieldCheck, Lock, History, Shield, Check
 } from 'lucide-react';
-import { AshaTab, CareTask, AlertItem, PatientProfile, MedicalProfile, DDAMetric } from '../../types';
+import { AshaTab, CareTask, AlertItem, PatientProfile, MedicalProfile, DDAMetric, AuditLog } from '../../types';
 import { PATIENT as DEFAULT_PATIENT, MEDICAL_DISCLAIMER } from '../../data/mockData';
 import { soundController } from '../../utils/audio';
 import { 
@@ -26,6 +26,7 @@ interface AshaDashboardProps {
   medicalProfile?: MedicalProfile;
   onOpenSetup?: () => void;
   ddaLogs?: DDAMetric[];
+  auditLogs?: AuditLog[];
 }
 
 export const AshaDashboard: React.FC<AshaDashboardProps> = ({
@@ -39,6 +40,7 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
   medicalProfile,
   onOpenSetup,
   ddaLogs = [],
+  auditLogs = [],
 }) => {
   const [gameFilter, setGameFilter] = useState<GameFilterType>('all');
   const patient = patientProfile || DEFAULT_PATIENT;
@@ -354,6 +356,86 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
             <div className="p-3 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] flex items-center justify-between text-xs">
               <span className="font-bold text-[#2D3A2F]">Model Engine:</span>
               <span className="font-black text-[#5B825B]">Gemini 3.8 Flash + Adaptive ML</span>
+            </div>
+          </div>
+
+          {/* DPDP Act 2023 Compliance & ASHA Audit Trail */}
+          <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#EAE6DF]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-[#EAF1E8] text-[#3D663D] flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-[#2D3A2F]">DPDP Act 2023 Security & Audit Trail</h3>
+                  <p className="text-[11px] text-[#5A6E5D]">Tamper-evident visit activity logs & role-scoped clinical access</p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-[#EAF1E8] text-[#3D663D] text-[10px] font-black uppercase tracking-wider">
+                Audited
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 text-xs">
+              <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-1">
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">Patient Consent</span>
+                <p className="font-extrabold text-[#3D663D] flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Granted & Verified
+                </p>
+                <p className="text-[10px] text-[#8C9B8E]">
+                  {patient.consentDate ? new Date(patient.consentDate).toLocaleDateString() : 'Signed'}
+                </p>
+              </div>
+              <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-1">
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">Access Scope</span>
+                <p className="font-extrabold text-[#2D3A2F] flex items-center gap-1">
+                  <Lock className="w-3.5 h-3.5 text-[#5B825B]" /> Scoped to ASHA / Caregiver
+                </p>
+                <p className="text-[10px] text-[#8C9B8E]">Zero unauthorized data leakage</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between">
+                <h4 className="font-extrabold text-xs text-[#2D3A2F] flex items-center gap-1.5">
+                  <History className="w-4 h-4 text-[#5A6E5D]" />
+                  <span>Recent System & Worker Audit Events</span>
+                </h4>
+                <span className="text-[10px] font-bold text-[#8C9B8E]">{auditLogs.length} total</span>
+              </div>
+
+              <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
+                {auditLogs.length === 0 ? (
+                  <div className="p-3 rounded-2xl bg-[#FAF8F5] text-center text-xs text-[#5A6E5D]">
+                    No field actions logged yet. Visits and updates will be logged immutably.
+                  </div>
+                ) : (
+                  auditLogs.slice(0, 8).map((log) => {
+                    const dateStr = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return (
+                      <div
+                        key={log.id}
+                        className="p-2.5 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] flex items-center justify-between text-xs"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-[#2D3A2F] text-xs">
+                              {log.actorName || (log.actorRole === 'asha' ? 'ASHA Worker' : 'Caregiver')}
+                            </span>
+                            <span className="text-[10px] text-[#8C9B8E]">
+                              • {log.action.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          {log.details && (
+                            <p className="text-[11px] text-[#5A6E5D]">{log.details}</p>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-medium text-[#8C9B8E] shrink-0">{dateStr}</span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
 

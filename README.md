@@ -24,10 +24,11 @@
 7. [API Reference](#-api-reference)
 8. [Vector Clinical PDF Report Generator](#-vector-clinical-pdf-report-generator)
 9. [Auditory & Relaxation Engineering](#-auditory--relaxation-engineering)
-10. [Project Directory Structure](#-project-directory-structure)
-11. [Getting Started & Local Development](#-getting-started--local-development)
-12. [Production Deployment & Containerization](#-production-deployment--containerization)
-13. [Accessibility & Ethical AI Principles](#-accessibility--ethical-ai-principles)
+10. [Security, Privacy & DPDP Act 2023 Compliance](#-security-privacy--dpdp-act-2023-compliance)
+11. [Project Directory Structure](#-project-directory-structure)
+12. [Getting Started & Local Development](#-getting-started--local-development)
+13. [Production Deployment & Containerization](#-production-deployment--containerization)
+14. [Accessibility & Ethical AI Principles](#-accessibility--ethical-ai-principles)
 
 ---
 
@@ -416,6 +417,66 @@ All audio components are built on the browser's native **Web Audio API**:
   - **Raga Melodies**: Soft pentatonic intervals suited to South Asian cultural reminiscence.
 - **Card Flip Chimes**: Discrete, pentatonic chime bursts ($440\text{Hz} \rightarrow 880\text{Hz}$) confirming card selections without jarring or loud transients.
 - **No External Sound Assets Required**: Works completely offline without loading remote MP3 or WAV files.
+
+---
+
+## 🔒 Security, Privacy & DPDP Act 2023 Compliance
+
+Monor Xur is engineered specifically for vulnerable elderly individuals navigating memory and cognitive challenges. To protect patient dignity and clinical privacy, the application strictly adheres to the principles of India's **Digital Personal Data Protection (DPDP) Act, 2023**, international healthcare privacy standards, and zero-trust engineering.
+
+### 1. DPDP Act 2023 Statutory Compliance Framework
+
+| Principle | Monor Xur Architectural Implementation |
+| :--- | :--- |
+| **Lawful Basis & Explicit Consent** | Mandatory, affirmative opt-in consent checkbox during initial setup (`consentGiven: true`, `consentDate: ISO_TIMESTAMP`). Consent details are permanently recorded in the patient profile and cannot be bypassed. |
+| **Purpose Limitation & Data Minimization** | Collects strictly what is clinically necessary: daily routine habits, reminiscence photos/stories, and game engagement telemetry (latency and accuracy) used for adaptive pacing. |
+| **Right to Access & Correction** | Caregivers and patients have full self-service rights in the Family Portal to inspect, edit, or purge personal photos, diary audio notes, emergency contacts, and medical profiles. |
+| **Protection of Vulnerable Principals** | Older adults with Mild Cognitive Impairment (MCI) or early dementia are protected through authorized family guardianship (`authorizedUids` & caregiver PIN security) and direct emergency dispatch. |
+| **Tamper-Evident Accountability** | Every read and modification by ASHA workers or caregivers is logged to an append-only audit trail (`patients/{patientId}/auditLogs`) to guarantee transparency. |
+
+### 2. Encryption & Data Protection Standards
+
+- **Data in Transit (HTTPS-Only Enforcement)**:
+  - Production deployments enforce HTTPS redirection across all routes.
+  - Reverse proxy awareness (`app.set("trust proxy", 1)`) detects non-secure protocol headers (`x-forwarded-proto`) and permanently redirects HTTP requests to secure HTTPS endpoints.
+  - **Helmet.js Security Headers**: Integrates strict HTTP headers including Content-Security-Policy (CSP), HTTP Strict Transport Security (HSTS), `X-Content-Type-Options: nosniff`, and DNS prefetch controls.
+
+- **Data at Rest (Dual-Layer Encryption)**:
+  - **Cloud Firestore**: All patient profile documents, routine plans, memories, and telemetry logs are encrypted server-side with AES-256 by Google Cloud infrastructure.
+  - **Client-Side AES-256-GCM Export Security**: Exported clinical dossier PDFs and local storage caches can be encrypted on-device using Web Crypto API (`AES-256-GCM` with PBKDF2 100,000-iteration key derivation and unique 12-byte initialization vectors) before saving or printing.
+
+### 3. Role-Based Access Control (RBAC) & Security Rules
+
+Firestore Security Rules enforce strict scoping:
+```javascript
+// Scopes all patient documents & subcollections to authorized caregivers and ASHA workers
+function isAssignedCaregiverOrAsha(patientId) {
+  let profile = get(/databases/$(database)/documents/patients/$(patientId)).data;
+  return request.auth != null && (
+    request.auth.uid == patientId ||
+    request.auth.uid == profile.caregiver.id ||
+    request.auth.uid in profile.authorizedUids ||
+    request.auth.token.role == "caregiver" ||
+    request.auth.token.role == "asha"
+  );
+}
+```
+
+### 4. Immutable Clinical Audit Trail
+
+The system logs all critical clinical and caregiver operations to `patients/{patientId}/auditLogs`:
+- `viewed_patient`: Logged when an ASHA worker or family caregiver accesses the patient summary.
+- `consent_granted`: Recorded when the DPDP Act 2023 consent is formally registered during onboarding.
+- `updated_patient_profile` & `updated_medical_profile`: Logged upon changes to medical concerns or care notes.
+- `toggled_reminder` & `added_reminder`: Records daily medicine and routine modifications.
+- `exported_pdf`: Audits whenever a clinical PDF summary is generated or encrypted.
+
+### 5. API Hardening & Rate Limiting
+
+- **Runtime Schema Validation**: All incoming payloads to `/api/ai/*` routes are strictly validated using **Zod** (`analyzeDifficultySchema`, `analyzePuzzleSchema`). Malformed inputs are rejected with `400 Bad Request` prior to execution.
+- **Express Rate Limiting**:
+  - Global API limiter: 100 requests per 15 minutes per IP.
+  - AI analysis limiter: 25 requests per 15 minutes to eliminate abuse, credential scraping, and model exhaustion.
 
 ---
 

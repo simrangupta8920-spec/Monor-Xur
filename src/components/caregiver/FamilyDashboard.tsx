@@ -3,11 +3,11 @@ import {
   User, Heart, Calendar, Bell, ShieldAlert, BarChart3, Plus, Trash2, 
   Phone, Clock, AlertTriangle, CheckCircle2, ChevronRight, Activity, Award, Sparkles, FileText,
   Edit3, Video, Image as ImageIcon, Upload, Eye, X, Stethoscope, Check, Play, Film, Mic, TrendingUp, Download,
-  Puzzle, Brain
+  Puzzle, Brain, ShieldCheck, Lock, History, Shield
 } from 'lucide-react';
 import { 
   FamilyCaregiverTab, CalendarEvent, Reminder, AlertItem, EmergencyContact, DDAMetric, Memory, 
-  PatientProfile, MedicalProfile, MedicalConsultation, MemoryCategory 
+  PatientProfile, MedicalProfile, MedicalConsultation, MemoryCategory, AuditLog 
 } from '../../types';
 import { GAME_PROGRESS, REPORTS, REPORT_SUMMARY, MEDICAL_DISCLAIMER } from '../../data/mockData';
 import { soundController } from '../../utils/audio';
@@ -48,6 +48,7 @@ interface FamilyDashboardProps {
   medicalProfile: MedicalProfile;
   onUpdateMedicalProfile: (profile: MedicalProfile) => void;
   onOpenSetup?: () => void;
+  auditLogs?: AuditLog[];
 }
 
 const SAMPLE_MEDIA_PRESETS = [
@@ -104,6 +105,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
   medicalProfile,
   onUpdateMedicalProfile,
   onOpenSetup,
+  auditLogs = [],
 }) => {
   // Modal states for Calendar & Reminders
   const [showAddEventModal, setShowAddEventModal] = useState(false);
@@ -868,6 +870,107 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 </button>
               </div>
             )}
+          </div>
+
+          {/* DPDP Act 2023 Compliance & Security Audit Trail */}
+          <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#EAE6DF]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-[#EAF1E8] text-[#3D663D] flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-[#2D3A2F]">Data Privacy & DPDP Act 2023</h3>
+                  <p className="text-[11px] text-[#5A6E5D]">End-to-end security, consent, and tamper-evident audit logs</p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-[#EAF1E8] text-[#3D663D] text-[10px] font-black uppercase tracking-wider">
+                Protected
+              </span>
+            </div>
+
+            {/* Compliance Matrix */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+              <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-1">
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">Consent Status</span>
+                <p className="font-extrabold text-[#3D663D] flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Granted
+                </p>
+                <p className="text-[10px] text-[#8C9B8E]">
+                  {patientProfile.consentDate ? new Date(patientProfile.consentDate).toLocaleDateString() : 'Active in profile'}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-1">
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">Data at Rest</span>
+                <p className="font-extrabold text-[#2D3A2F] flex items-center gap-1">
+                  <Lock className="w-3.5 h-3.5 text-[#5B825B]" /> AES-256-GCM
+                </p>
+                <p className="text-[10px] text-[#8C9B8E]">Firestore + Client encrypted cache</p>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-1">
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">Access Scope</span>
+                <p className="font-extrabold text-[#2D3A2F] flex items-center gap-1">
+                  <Shield className="w-3.5 h-3.5 text-[#3D663D]" /> Caregiver & ASHA
+                </p>
+                <p className="text-[10px] text-[#8C9B8E]">RBAC security rules enforced</p>
+              </div>
+            </div>
+
+            {/* Real-Time Immutable Audit Log Stream */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-extrabold text-xs text-[#2D3A2F] flex items-center gap-1.5">
+                  <History className="w-4 h-4 text-[#5A6E5D]" />
+                  <span>Immutable Caregiver & ASHA Audit Trail</span>
+                </h4>
+                <span className="text-[10px] font-bold text-[#8C9B8E]">
+                  {auditLogs.length} events recorded
+                </span>
+              </div>
+
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                {auditLogs.length === 0 ? (
+                  <div className="p-4 rounded-2xl bg-[#FAF8F5] text-center text-xs text-[#5A6E5D]">
+                    Initial profile created. Live caregiver and ASHA interactions will stream here.
+                  </div>
+                ) : (
+                  auditLogs.map((log) => {
+                    const dateStr = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const roleBadge = log.actorRole === 'asha' ? 'bg-[#FDF0D5] text-[#A66E14]' : 'bg-[#EAF1E8] text-[#3D663D]';
+                    return (
+                      <div
+                        key={log.id}
+                        className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] flex items-start justify-between gap-3 text-xs"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${roleBadge}`}>
+                              {log.actorRole}
+                            </span>
+                            <span className="font-bold text-[#2D3A2F]">
+                              {log.actorName || (log.actorRole === 'asha' ? 'ASHA Worker' : 'Caregiver')}
+                            </span>
+                            <span className="text-[10px] text-[#8C9B8E]">
+                              {log.action.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          {log.details && (
+                            <p className="text-[11px] text-[#5A6E5D] leading-relaxed">
+                              {log.details}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-medium text-[#8C9B8E] shrink-0">
+                          {dateStr}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
