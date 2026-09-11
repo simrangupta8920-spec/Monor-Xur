@@ -9,6 +9,7 @@ import { soundController } from '../../utils/audio';
 import { GameFilterType, getGameBreakdown } from '../../utils/gameAnalytics';
 import { encryptData } from '../../utils/crypto';
 import { logAuditEvent, DEFAULT_PATIENT_ID } from '../../services/firebase';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ExportPdfModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
   ddaLogs,
   reminders,
 }) => {
+  const { tx } = useLanguage();
   const [includeDemographics, setIncludeDemographics] = useState(true);
   const [includeCognitiveTrends, setIncludeCognitiveTrends] = useState(true);
   const [includeMedicalConsultations, setIncludeMedicalConsultations] = useState(true);
@@ -129,8 +131,12 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black text-[#2D3A2F]">Generate Clinical PDF Summary</h3>
-              <p className="text-xs text-[#5A6E5D]">Download printable report for doctors, ASHA workers, & family</p>
+              <h3 className="text-base font-black text-[#2D3A2F]">
+                {tx('Generate Clinical PDF Summary', 'क्लीनिकल पीडीएफ (PDF) सारांश बनाएं')}
+              </h3>
+              <p className="text-xs text-[#5A6E5D]">
+                {tx('Download printable report for doctors, ASHA workers, & family', 'डॉक्टरों, आशा कार्यकर्ताओं और परिवार के लिए मुद्रण योग्य रिपोर्ट')}
+              </p>
             </div>
           </div>
           <button
@@ -139,6 +145,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
               onClose();
             }}
             className="w-8 h-8 rounded-full bg-[#F5F2EB] text-[#5A6E5D] hover:text-[#2D3A2F] flex items-center justify-center transition-colors"
+            title={tx('Close', 'बंद करें')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -149,15 +156,19 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
           {/* Patient Overview Badge */}
           <div className="p-3.5 rounded-2xl bg-[#EAF1E8]/70 border border-[#5B825B]/30 flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#5B825B]">Patient File</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#5B825B]">
+                {tx('Patient File', 'मरीज़ फ़ाइल')}
+              </span>
               <h4 className="font-extrabold text-sm text-[#2D3A2F]">{patientProfile.fullName}</h4>
               <p className="text-[11px] text-[#5A6E5D]">
-                Age {patientProfile.age} • {patientProfile.majorCareIssue || 'Cognitive Support'} • Blood: {patientProfile.bloodGroup || 'O+'}
+                {tx(`Age ${patientProfile.age} • ${patientProfile.majorCareIssue || 'Cognitive Support'} • Blood: ${patientProfile.bloodGroup || 'O+'}`, `आयु ${patientProfile.age} वर्ष • ${patientProfile.majorCareIssue || 'संज्ञानात्मक सहायता'} • ब्लड: ${patientProfile.bloodGroup || 'O+'}`)}
               </p>
             </div>
             <div className="text-right">
               <span className="px-2.5 py-1 rounded-xl bg-white border border-[#5B825B]/20 text-[#5B825B] text-[10px] font-black">
-                {ddaLogs.length > 0 ? `${ddaLogs.length} DDA Sessions` : 'Baseline Telemetry'}
+                {ddaLogs.length > 0 
+                  ? tx(`${ddaLogs.length} DDA Sessions`, `${ddaLogs.length} डीडीए सत्र`) 
+                  : tx('Baseline Telemetry', 'आरंभिक टेलीमेट्री')}
               </span>
             </div>
           </div>
@@ -166,10 +177,14 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
           <div className="space-y-2 bg-[#F9F7F2] p-3.5 rounded-2xl border border-[#E0DCD3]">
             <div className="flex items-center justify-between">
               <label className="font-black text-xs uppercase tracking-wider text-[#2D3A2F] block">
-                Game Analytics Scope
+                {tx('Game Analytics Scope', 'गेम एनालिटिक्स दायरा')}
               </label>
               <span className="text-[10px] font-bold text-[#5A6E5D]">
-                {gameFilter === 'all' ? 'Combined Assessment' : gameFilter === 'puzzle' ? 'Photo Puzzle Only' : 'Memory Match Only'}
+                {gameFilter === 'all' 
+                  ? tx('Combined Assessment', 'संयुक्त मूल्यांकन') 
+                  : gameFilter === 'puzzle' 
+                  ? tx('Photo Puzzle Only', 'केवल फोटो पहेली') 
+                  : tx('Memory Match Only', 'केवल मेमोरी मैच')}
               </span>
             </div>
 
@@ -186,8 +201,8 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
                     : 'bg-white text-[#5A6E5D] border-[#E0DCD3] hover:bg-[#EAF1E8]'
                 }`}
               >
-                <span className="font-black text-xs">All Games</span>
-                <span className="text-[10px] opacity-80 mt-0.5">Dual Comparison</span>
+                <span className="font-black text-xs">{tx('All Games', 'सभी खेल')}</span>
+                <span className="text-[10px] opacity-80 mt-0.5">{tx('Dual Comparison', 'तुलनात्मक रिपोर्ट')}</span>
               </button>
 
               <button
@@ -204,9 +219,9 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
               >
                 <div className="flex items-center justify-center gap-1">
                   <Brain className="w-3 h-3" />
-                  <span className="font-black text-xs">Memory Match</span>
+                  <span className="font-black text-xs">{tx('Memory Match', 'मेमोरी मैच')}</span>
                 </div>
-                <span className="text-[10px] opacity-80 mt-0.5">{breakdown.memoryMatch.sessions} sessions</span>
+                <span className="text-[10px] opacity-80 mt-0.5">{breakdown.memoryMatch.sessions} {tx('sessions', 'सत्र')}</span>
               </button>
 
               <button
@@ -223,9 +238,9 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
               >
                 <div className="flex items-center justify-center gap-1">
                   <Puzzle className="w-3 h-3" />
-                  <span className="font-black text-xs">Photo Puzzle</span>
+                  <span className="font-black text-xs">{tx('Photo Puzzle', 'फोटो पहेली')}</span>
                 </div>
-                <span className="text-[10px] opacity-80 mt-0.5">{breakdown.puzzle.sessions} sessions</span>
+                <span className="text-[10px] opacity-80 mt-0.5">{breakdown.puzzle.sessions} {tx('sessions', 'सत्र')}</span>
               </button>
             </div>
           </div>
@@ -233,7 +248,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
           {/* Section Selection */}
           <div className="space-y-2">
             <label className="font-black text-xs uppercase tracking-wider text-[#5A6E5D] block">
-              Include In Report
+              {tx('Include In Report', 'रिपोर्ट में शामिल करें')}
             </label>
 
             {/* Option 1: Demographics */}
@@ -247,8 +262,8 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
                   <Printer className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-left">
-                  <p className="font-extrabold text-xs">Patient Profile & Clinical Baseline</p>
-                  <p className="text-[10px] text-[#5A6E5D]">Demographics, emergency contacts, attending caregiver</p>
+                  <p className="font-extrabold text-xs">{tx('Patient Profile & Clinical Baseline', 'मरीज़ प्रोफ़ाइल व क्लीनिकल विवरण')}</p>
+                  <p className="text-[10px] text-[#5A6E5D]">{tx('Demographics, emergency contacts, attending caregiver', 'जनसांख्यिकी, आपातकालीन संपर्क, देखभालकर्ता')}</p>
                 </div>
               </div>
               {includeDemographics ? (
@@ -269,9 +284,9 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
                   <Brain className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-left">
-                  <p className="font-extrabold text-xs">Cognitive Engagement Trends & DDA Telemetry</p>
+                  <p className="font-extrabold text-xs">{tx('Cognitive Engagement Trends & DDA Telemetry', 'संज्ञानात्मक रुझान व डीडीए टेलीमेट्री')}</p>
                   <p className="text-[10px] text-[#5A6E5D]">
-                    Engagement scores, latency trajectory, mistake rates, AI adaptive rationales
+                    {tx('Engagement scores, latency trajectory, mistake rates, AI adaptive rationales', 'स्कोर, प्रतिक्रिया समय, गलती दर व एआई अनुकूली तर्क')}
                   </p>
                 </div>
               </div>
@@ -293,9 +308,12 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
                   <Stethoscope className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-left">
-                  <p className="font-extrabold text-xs">Medical Concerns & Doctor Consultations</p>
+                  <p className="font-extrabold text-xs">{tx('Medical Concerns & Doctor Consultations', 'चिकित्सा चिंताएं व डॉक्टर परामर्श')}</p>
                   <p className="text-[10px] text-[#5A6E5D]">
-                    Primary conditions, clinical care guidance, visit logs ({medicalProfile.consultations?.length || 0} recorded)
+                    {tx(
+                      `Primary conditions, clinical care guidance, visit logs (${medicalProfile.consultations?.length || 0} recorded)`,
+                      `प्रमुख स्थितियां, देखभाल मार्गदर्शन, परामर्श लॉग (${medicalProfile.consultations?.length || 0} दर्ज)`
+                    )}
                   </p>
                 </div>
               </div>
@@ -317,9 +335,9 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
                   <Calendar className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-left">
-                  <p className="font-extrabold text-xs">Daily Routine & Medication Adherence</p>
+                  <p className="font-extrabold text-xs">{tx('Daily Routine & Medication Adherence', 'दैनिक दिनचर्या व दवाइयों की सूची')}</p>
                   <p className="text-[10px] text-[#5A6E5D]">
-                    Scheduled tasks, medication compliance ({reminders.length} items)
+                    {tx(`Scheduled tasks, medication compliance (${reminders.length} items)`, `निर्धारित कार्य व दवाइयां (${reminders.length} कार्य)`)}
                   </p>
                 </div>
               </div>
@@ -334,12 +352,15 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
           {/* Caregiver Observation Notes */}
           <div className="space-y-1.5">
             <label className="font-black text-xs uppercase tracking-wider text-[#5A6E5D] block">
-              Caregiver Observation / Physician Note (Optional)
+              {tx('Caregiver Observation / Physician Note (Optional)', 'देखभालकर्ता अवलोकन / डॉक्टर नोट (वैकल्पिक)')}
             </label>
             <textarea
               value={caregiverNotes}
               onChange={(e) => setCaregiverNotes(e.target.value)}
-              placeholder="e.g., Patient showed elevated recall when solving nostalgic puzzles. Sleeping well, morning appetite normal..."
+              placeholder={tx(
+                'e.g., Patient showed elevated recall when solving nostalgic puzzles. Sleeping well, morning appetite normal...',
+                'उदा. पुरानी यादों की पहेलियों को हल करते समय अच्छी प्रतिक्रिया। नींद अच्छी, सुबह की भूख सामान्य...'
+              )}
               className="w-full p-3 rounded-2xl bg-white border border-[#E0DCD3] text-xs focus:outline-hidden focus:border-[#5B825B] resize-none h-20 placeholder:text-gray-400"
             />
           </div>
@@ -356,9 +377,9 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="font-black text-xs text-[#2D3A2F]">Encrypt Export (AES-256-GCM)</p>
+                  <p className="font-black text-xs text-[#2D3A2F]">{tx('Encrypt Export (AES-256-GCM)', 'निर्यात एन्क्रिप्ट करें (AES-256-GCM)')}</p>
                   <p className="text-[10px] text-[#5A6E5D]">
-                    DPDP Act 2023 compliant encrypted payload (.mxe) alongside PDF
+                    {tx('DPDP Act 2023 compliant encrypted payload (.mxe) alongside PDF', 'डीपीडीपी अधिनियम 2023 के अनुरूप सुरक्षित एन्क्रिप्टेड फ़ाइल (.mxe)')}
                   </p>
                 </div>
               </div>
@@ -372,7 +393,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
             {enableAesEncryption && (
               <div className="pt-2 border-t border-[#DDE7DC] flex items-center gap-2">
                 <Lock className="w-3.5 h-3.5 text-[#5B825B] shrink-0" />
-                <label className="text-[11px] font-bold text-[#2D3A2F] shrink-0">Passphrase / PIN:</label>
+                <label className="text-[11px] font-bold text-[#2D3A2F] shrink-0">{tx('Passphrase / PIN:', 'पासफ़्रेज़ / पिन:')}</label>
                 <input
                   type="password"
                   value={encryptionPin}
@@ -388,7 +409,10 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
           <div className="p-3 rounded-xl bg-[#FDF0D5]/70 border border-[#EADBBD] flex items-start gap-2 text-[11px] text-[#5E4416]">
             <AlertCircle className="w-4 h-4 text-[#C98A2C] shrink-0 mt-0.5" />
             <span>
-              Formatted for medical consultations, clinical reviews, or ASHA home visits. Contains standardized cognitive progression metrics and disclaimer.
+              {tx(
+                'Formatted for medical consultations, clinical reviews, or ASHA home visits. Contains standardized cognitive progression metrics and disclaimer.',
+                'चिकित्सा परामर्श, क्लिनिकल समीक्षा या आशा गृह भेंट के लिए प्रारूपित। मानकीकृत संज्ञानात्मक मीट्रिक्स शामिल हैं।'
+              )}
             </span>
           </div>
         </div>
@@ -403,7 +427,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
             }}
             className="px-4 py-2.5 rounded-xl border border-[#E0DCD3] text-xs font-bold text-[#5A6E5D] hover:bg-[#F5F2EB]"
           >
-            Cancel
+            {tx('Cancel', 'रद्द करें')}
           </button>
 
           <button
@@ -421,17 +445,17 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
             {downloadSuccess ? (
               <>
                 <Check className="w-4 h-4" />
-                <span>PDF Downloaded Successfully!</span>
+                <span>{tx('PDF Downloaded Successfully!', 'पीडीएफ सफलतापूर्वक डाउनलोड हो गई!')}</span>
               </>
             ) : isGenerating ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Compiling Clinical PDF...</span>
+                <span>{tx('Compiling Clinical PDF...', 'क्लीनिकल पीडीएफ तैयार की जा रही है...')}</span>
               </>
             ) : (
               <>
                 <Download className="w-4 h-4" />
-                <span>Download Clinical PDF Summary</span>
+                <span>{tx('Download Clinical PDF Summary', 'क्लीनिकल पीडीएफ सारांश डाउनलोड करें')}</span>
               </>
             )}
           </button>

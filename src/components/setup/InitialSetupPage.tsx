@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { PatientProfile, MedicalProfile, CaregiverAccount, AshaAccount, EmergencyContact } from '../../types';
 import { soundController } from '../../utils/audio';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface InitialSetupPageProps {
   initialPatient?: PatientProfile;
@@ -60,6 +61,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
   onCancel,
   isEditing = false,
 }) => {
+  const { tx } = useLanguage();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   // STEP 1: Player / Patient Details
@@ -171,7 +173,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
   // Step 1 Validation
   const validateStep1 = () => {
     if (!name.trim()) {
-      setFormError('Please enter the player\'s familiar calling name.');
+      setFormError(tx('Please enter the player\'s familiar calling name.', 'कृपया खिलाड़ी का घरेलू/बोलने वाला नाम दर्ज करें।'));
       return false;
     }
     setFormError(null);
@@ -181,15 +183,15 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
   // Step 3 Validation
   const validateStep3 = () => {
     if (!caregiverName.trim()) {
-      setFormError('Please enter the caregiver\'s name.');
+      setFormError(tx('Please enter the caregiver\'s name.', 'कृपया देखभालकर्ता का नाम दर्ज करें।'));
       return false;
     }
     if (!caregiverPin || caregiverPin.length !== 4 || !/^\d{4}$/.test(caregiverPin)) {
-      setFormError('Please create a 4-digit numeric security PIN for caregiver access.');
+      setFormError(tx('Please create a 4-digit numeric security PIN for caregiver access.', 'कृपया देखभालकर्ता के लिए 4-अंकों का सुरक्षा पिन बनाएं।'));
       return false;
     }
     if (caregiverPin !== confirmPin) {
-      setFormError('The confirmed PIN does not match. Please re-enter.');
+      setFormError(tx('The confirmed PIN does not match. Please re-enter.', 'पुष्टि किया गया पिन मेल नहीं खाता। कृपया पुनः दर्ज करें।'));
       return false;
     }
     setFormError(null);
@@ -209,7 +211,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
     }
 
     if (!consentGiven) {
-      setFormError('Digital Personal Data Protection (DPDP) Act 2023 consent is required to coordinate care and telemetry.');
+      setFormError(tx('Digital Personal Data Protection (DPDP) Act 2023 consent is required to coordinate care and telemetry.', 'देखभाल और टेलीमेट्री के समन्वय के लिए DPDP अधिनियम 2023 की सहमति आवश्यक है।'));
       setStep(4);
       return;
     }
@@ -295,17 +297,17 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="px-2 py-0.5 rounded-full bg-[#EAF1E8] text-[#5B825B] text-[10px] font-black uppercase tracking-wider">
-                {isEditing ? 'Profile Settings' : 'Initial Setup'}
+                {isEditing ? tx('Profile Settings', 'प्रोफ़ाइल सेटिंग्स') : tx('Initial Setup', 'प्रारंभिक सेटअप')}
               </span>
               <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
             </div>
             <h1 className="text-xl font-black text-[#2D3A2F] mt-0.5 leading-tight">
-              {isEditing ? 'Configure Profiles' : 'Welcome to Monor Xur'}
+              {isEditing ? tx('Configure Profiles', 'प्रोफ़ाइल कॉन्फ़िगर करें') : tx('Welcome to Monor Xur', 'मनोर सुर में आपका स्वागत है')}
             </h1>
             <p className="text-xs text-[#5A6E5D]">
               {isEditing 
-                ? 'Update patient, caregiver PIN, and ASHA credentials' 
-                : 'Set up player details & caregiver security PIN to begin'}
+                ? tx('Update patient, caregiver PIN, and ASHA credentials', 'रोगी, देखभालकर्ता पिन और आशा विवरण अपडेट करें') 
+                : tx('Set up player details & caregiver security PIN to begin', 'शुरू करने के लिए खिलाड़ी का विवरण और देखभालकर्ता पिन सेट करें')}
             </p>
           </div>
         </div>
@@ -322,7 +324,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             }`}
           >
             <span className="text-[10px] block opacity-80">1</span>
-            <span className="text-[11px] truncate block">Player</span>
+            <span className="text-[11px] truncate block">{tx('Player', 'खिलाड़ी')}</span>
           </button>
           <button
             type="button"
@@ -334,7 +336,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             }`}
           >
             <span className="text-[10px] block opacity-80">2</span>
-            <span className="text-[11px] truncate block">Medical</span>
+            <span className="text-[11px] truncate block">{tx('Medical', 'चिकित्सा')}</span>
           </button>
           <button
             type="button"
@@ -346,7 +348,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             }`}
           >
             <span className="text-[10px] block opacity-80">3</span>
-            <span className="text-[11px] truncate block">Caregiver</span>
+            <span className="text-[11px] truncate block">{tx('Caregiver', 'देखभालकर्ता')}</span>
           </button>
           <button
             type="button"
@@ -358,7 +360,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             }`}
           >
             <span className="text-[10px] block opacity-80">4</span>
-            <span className="text-[11px] truncate block">ASHA</span>
+            <span className="text-[11px] truncate block">{tx('ASHA', 'आशा')}</span>
           </button>
         </div>
       </div>
@@ -381,19 +383,19 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                   <User className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-base font-black text-[#2D3A2F]">Player Profile (Patient)</h2>
-                  <p className="text-[11px] text-[#5A6E5D]">Information for the loved one using the app</p>
+                  <h2 className="text-base font-black text-[#2D3A2F]">{tx('Player Profile (Patient)', 'खिलाड़ी प्रोफ़ाइल (रोगी)')}</h2>
+                  <p className="text-[11px] text-[#5A6E5D]">{tx('Information for the loved one using the app', 'ऐप का उपयोग करने वाले प्रियजन की जानकारी')}</p>
                 </div>
               </div>
               <span className="text-xs font-black text-[#5B825B] bg-[#EAF1E8] px-2.5 py-1 rounded-full">
-                Step 1 of 4
+                {tx('Step 1 of 4', 'चरण 1 / 4')}
               </span>
             </div>
 
             {/* Avatar Selector */}
             <div>
               <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1.5">
-                Choose Player Avatar / Photo
+                {tx('Choose Player Avatar / Photo', 'खिलाड़ी का अवतार / फोटो चुनें')}
               </label>
               <div className="grid grid-cols-3 gap-2.5">
                 {ELDER_AVATARS.map((item) => (
@@ -429,7 +431,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                   type="url"
                   value={avatar}
                   onChange={(e) => setAvatar(e.target.value)}
-                  placeholder="Or paste custom photo URL..."
+                  placeholder={tx('Or paste custom photo URL...', 'या कस्टम फोटो URL पेस्ट करें...')}
                   className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#E0DCD3] bg-[#FAF8F5] focus:outline-hidden focus:border-[#5B825B]"
                 />
               </div>
@@ -439,7 +441,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Calling Name *
+                  {tx('Calling Name *', 'बुलाने का नाम *')}
                 </label>
                 <input
                   type="text"
@@ -449,11 +451,11 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                   required
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-sm font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
                 />
-                <span className="text-[10px] text-[#5A6E5D]">Used in voice prompts</span>
+                <span className="text-[10px] text-[#5A6E5D]">{tx('Used in voice prompts', 'आवाज संकेतों में प्रयुक्त')}</span>
               </div>
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Full Legal Name
+                  {tx('Full Legal Name', 'पूरा कानूनी नाम')}
                 </label>
                 <input
                   type="text"
@@ -462,7 +464,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                   placeholder="e.g. Anita Sharma"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-sm font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
                 />
-                <span className="text-[10px] text-[#5A6E5D]">For medical records</span>
+                <span className="text-[10px] text-[#5A6E5D]">{tx('For medical records', 'चिकित्सा रिकॉर्ड के लिए')}</span>
               </div>
             </div>
 
@@ -470,7 +472,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             <div className="grid grid-cols-3 gap-2.5">
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Age
+                  {tx('Age', 'उम्र')}
                 </label>
                 <input
                   type="number"
@@ -483,21 +485,21 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
               </div>
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Gender
+                  {tx('Gender', 'लिंग')}
                 </label>
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
                   className="w-full px-2.5 py-2.5 rounded-xl border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B] bg-white"
                 >
-                  <option value="Female">Female</option>
-                  <option value="Male">Male</option>
-                  <option value="Other">Other</option>
+                  <option value="Female">{tx('Female', 'महिला')}</option>
+                  <option value="Male">{tx('Male', 'पुरुष')}</option>
+                  <option value="Other">{tx('Other', 'अन्य')}</option>
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Blood Group
+                  {tx('Blood Group', 'रक्त समूह')}
                 </label>
                 <select
                   value={bloodGroup}
@@ -520,7 +522,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Region / City
+                  {tx('Region / City', 'क्षेत्र / शहर')}
                 </label>
                 <input
                   type="text"
@@ -532,13 +534,13 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
               </div>
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Language Spoken
+                  {tx('Language Spoken', 'बोली जाने वाली भाषा')}
                 </label>
                 <input
                   type="text"
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
-                  placeholder="e.g. Assamese & Bengali"
+                  placeholder="e.g. Hindi & English"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
                 />
               </div>
@@ -547,13 +549,13 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             {/* Primary Care Concern */}
             <div>
               <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                Primary Memory / Care Focus
+                {tx('Primary Memory / Care Focus', 'प्राथमिक स्मृति / देखभाल ध्यान')}
               </label>
               <input
                 type="text"
                 value={majorCareIssue}
                 onChange={(e) => setMajorCareIssue(e.target.value)}
-                placeholder="e.g. Mild Memory Difficulties & Routine Navigation"
+                placeholder={tx('e.g. Mild Memory Difficulties & Routine Navigation', 'उदा. हल्की स्मृति कठिनाई और दैनिक दिनचर्या')}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
               />
             </div>
@@ -561,13 +563,13 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             {/* About / Interests */}
             <div>
               <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                Personal Interests & What Brings Comfort
+                {tx('Personal Interests & What Brings Comfort', 'व्यक्तिगत रुचियां और क्या सुकून देता है')}
               </label>
               <textarea
                 value={about}
                 onChange={(e) => setAbout(e.target.value)}
                 rows={2}
-                placeholder="e.g. Enjoys old classical songs, watering plants, spending quiet time..."
+                placeholder={tx('e.g. Enjoys old classical songs, watering plants, spending quiet time...', 'उदा. पुराने गीत सुनना, पौधों को पानी देना, परिवार के साथ समय बिताना...')}
                 className="w-full px-3.5 py-2 text-xs font-medium rounded-xl border border-[#E0DCD3] text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
               />
             </div>
@@ -584,7 +586,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 }}
                 className="px-5 py-3 rounded-2xl bg-[#5B825B] text-white font-extrabold text-xs flex items-center gap-2 hover:bg-[#4a6b4a] shadow-xs active:scale-95 transition-all"
               >
-                <span>Continue to Medical Info</span>
+                <span>{tx('Continue to Medical Info', 'चिकित्सा जानकारी पर जाएं')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -600,36 +602,36 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                   <Stethoscope className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-base font-black text-[#2D3A2F]">Medical & Health Profile</h2>
-                  <p className="text-[11px] text-[#5A6E5D]">Medications, allergies, and clinician guidance</p>
+                  <h2 className="text-base font-black text-[#2D3A2F]">{tx('Medical & Health Profile', 'चिकित्सा एवं स्वास्थ्य प्रोफ़ाइल')}</h2>
+                  <p className="text-[11px] text-[#5A6E5D]">{tx('Medications, allergies, and clinician guidance', 'दवाएं, एलर्जी और डॉक्टर मार्गदर्शन')}</p>
                 </div>
               </div>
               <span className="text-xs font-black text-[#5B825B] bg-[#EAF1E8] px-2.5 py-1 rounded-full">
-                Step 2 of 4
+                {tx('Step 2 of 4', 'चरण 2 / 4')}
               </span>
             </div>
 
             {/* Cognitive Care Stage */}
             <div>
               <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                Cognitive Care Category
+                {tx('Cognitive Care Category', 'संज्ञानात्मक देखभाल श्रेणी')}
               </label>
               <select
                 value={stage}
                 onChange={(e) => setStage(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B] bg-white"
               >
-                <option value="Mild Cognitive Impairment">Mild Cognitive Impairment (MCI)</option>
-                <option value="Early Stage Memory Difficulty">Early Stage Memory Difficulty</option>
-                <option value="Moderate Support Stage">Moderate Support Stage</option>
-                <option value="Healthy Ageing & Cognitive Wellness">Healthy Ageing & Cognitive Wellness</option>
+                <option value="Mild Cognitive Impairment">{tx('Mild Cognitive Impairment (MCI)', 'हल्की संज्ञानात्मक हानि (MCI)')}</option>
+                <option value="Early Stage Memory Difficulty">{tx('Early Stage Memory Difficulty', 'प्रारंभिक चरण स्मृति कठिनाई')}</option>
+                <option value="Moderate Support Stage">{tx('Moderate Support Stage', 'मध्यम सहायता चरण')}</option>
+                <option value="Healthy Ageing & Cognitive Wellness">{tx('Healthy Ageing & Cognitive Wellness', 'स्वस्थ वृद्धावस्था और संज्ञानात्मक कल्याण')}</option>
               </select>
             </div>
 
             {/* Prescriptions List Builder */}
             <div>
               <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                Daily Prescriptions & Medicines
+                {tx('Daily Prescriptions & Medicines', 'दैनिक नुस्खे और दवाएं')}
               </label>
               <div className="space-y-2 mb-2">
                 {prescriptions.map((rx, idx) => (
@@ -642,7 +644,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                       type="button"
                       onClick={() => handleRemoveRx(idx)}
                       className="p-1 text-[#C46A66] hover:bg-[#FCF2F0] rounded-lg transition-colors"
-                      title="Remove medicine"
+                      title={tx('Remove medicine', 'दवा हटाएं')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -655,7 +657,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                   value={newRx}
                   onChange={(e) => setNewRx(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddRx(); } }}
-                  placeholder="e.g. Donepezil 5mg (Night)"
+                  placeholder={tx('e.g. Donepezil 5mg (Night)', 'उदा. डोनेपेज़िल 5mg (रात)')}
                   className="flex-1 px-3 py-2 text-xs rounded-xl border border-[#E0DCD3] focus:outline-hidden focus:border-[#5B825B]"
                 />
                 <button
@@ -664,7 +666,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                   className="px-3.5 py-2 rounded-xl bg-[#EAF1E8] text-[#5B825B] font-extrabold text-xs flex items-center gap-1 hover:bg-[#d5ebd1]"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Add</span>
+                  <span>{tx('Add', 'जोड़ें')}</span>
                 </button>
               </div>
             </div>
@@ -672,7 +674,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             {/* Allergies */}
             <div>
               <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                Known Allergies
+                {tx('Known Allergies', 'ज्ञात एलर्जी')}
               </label>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {allergies.map((allergy, idx) => (
@@ -697,7 +699,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                   value={newAllergy}
                   onChange={(e) => setNewAllergy(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddAllergy(); } }}
-                  placeholder="e.g. Penicillin or Peanuts"
+                  placeholder={tx('e.g. Penicillin or Peanuts', 'उदा. पेनिसिलिन या मूंगफली')}
                   className="flex-1 px-3 py-2 text-xs rounded-xl border border-[#E0DCD3] focus:outline-hidden focus:border-[#5B825B]"
                 />
                 <button
@@ -705,7 +707,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                   onClick={handleAddAllergy}
                   className="px-3 py-2 rounded-xl bg-[#F4F1EA] text-[#2D3A2F] font-bold text-xs hover:bg-[#EAE5DC]"
                 >
-                  Add Allergy
+                  {tx('Add Allergy', 'एलर्जी जोड़ें')}
                 </button>
               </div>
             </div>
@@ -714,7 +716,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Primary Doctor / Clinic
+                  {tx('Primary Doctor / Clinic', 'प्राथमिक डॉक्टर / क्लिनिक')}
                 </label>
                 <input
                   type="text"
@@ -726,7 +728,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
               </div>
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Doctor / Clinic Phone
+                  {tx('Doctor / Clinic Phone', 'डॉक्टर / क्लिनिक फोन')}
                 </label>
                 <input
                   type="text"
@@ -741,13 +743,13 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             {/* Notes */}
             <div>
               <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                Clinical Care Guidance
+                {tx('Clinical Care Guidance', 'नैदानिक देखभाल मार्गदर्शन')}
               </label>
               <textarea
                 value={careInfo}
                 onChange={(e) => setCareInfo(e.target.value)}
                 rows={2}
-                placeholder="Guidance for daily routine, rest, and cognitive engagement..."
+                placeholder={tx('Guidance for daily routine, rest, and cognitive engagement...', 'दैनिक दिनचर्या, विश्राम और संज्ञानात्मक जुड़ाव के लिए मार्गदर्शन...')}
                 className="w-full px-3.5 py-2 text-xs font-medium rounded-xl border border-[#E0DCD3] text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
               />
             </div>
@@ -760,14 +762,14 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 className="px-4 py-2.5 rounded-2xl bg-[#F4F1EA] text-[#2D3A2F] font-extrabold text-xs flex items-center gap-1.5 hover:bg-[#EAE5DC]"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back</span>
+                <span>{tx('Back', 'पीछे')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => { soundController.playClick(); setStep(3); }}
                 className="px-5 py-3 rounded-2xl bg-[#5B825B] text-white font-extrabold text-xs flex items-center gap-2 hover:bg-[#4a6b4a] shadow-xs active:scale-95 transition-all"
               >
-                <span>Continue to Caregiver PIN</span>
+                <span>{tx('Continue to Caregiver PIN', 'देखभालकर्ता पिन पर जाएं')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -783,12 +785,12 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-base font-black text-[#2D3A2F]">Caregiver Profile & PIN</h2>
-                  <p className="text-[11px] text-[#5A6E5D]">Secure portal access and one-touch emergency phone</p>
+                  <h2 className="text-base font-black text-[#2D3A2F]">{tx('Caregiver Profile & PIN', 'देखभालकर्ता प्रोफ़ाइल एवं पिन')}</h2>
+                  <p className="text-[11px] text-[#5A6E5D]">{tx('Secure portal access and one-touch emergency phone', 'सुरक्षित पोर्टल पहुंच और आपातकालीन फोन')}</p>
                 </div>
               </div>
               <span className="text-xs font-black text-[#5B825B] bg-[#EAF1E8] px-2.5 py-1 rounded-full">
-                Step 3 of 4
+                {tx('Step 3 of 4', 'चरण 3 / 4')}
               </span>
             </div>
 
@@ -796,7 +798,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Caregiver Name *
+                  {tx('Caregiver Name *', 'देखभालकर्ता का नाम *')}
                 </label>
                 <input
                   type="text"
@@ -809,19 +811,19 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
               </div>
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Relationship to Player
+                  {tx('Relationship to Player', 'खिलाड़ी से संबंध')}
                 </label>
                 <select
                   value={relationship}
                   onChange={(e) => setRelationship(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B] bg-white"
                 >
-                  <option value="Daughter">Daughter</option>
-                  <option value="Son">Son</option>
-                  <option value="Spouse">Spouse</option>
-                  <option value="Grandchild">Grandchild</option>
-                  <option value="Sister/Brother">Sister / Brother</option>
-                  <option value="Primary Caregiver">Primary Caregiver</option>
+                  <option value="Daughter">{tx('Daughter', 'बेटी')}</option>
+                  <option value="Son">{tx('Son', 'बेटा')}</option>
+                  <option value="Spouse">{tx('Spouse', 'पति/पत्नी')}</option>
+                  <option value="Grandchild">{tx('Grandchild', 'पोता/पोती/नाती/नातिन')}</option>
+                  <option value="Sister/Brother">{tx('Sister / Brother', 'बहन / भाई')}</option>
+                  <option value="Primary Caregiver">{tx('Primary Caregiver', 'प्राथमिक देखभालकर्ता')}</option>
                 </select>
               </div>
             </div>
@@ -829,7 +831,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             {/* Phone Number (Used for One-Touch Emergency Call) */}
             <div>
               <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                Emergency & Family Phone Number *
+                {tx('Emergency & Family Phone Number *', 'आपातकालीन एवं परिवार फोन नंबर *')}
               </label>
               <div className="relative">
                 <input
@@ -843,7 +845,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 <Phone className="w-4 h-4 text-[#5B825B] absolute left-3.5 top-3" />
               </div>
               <span className="text-[10px] text-[#5A6E5D] mt-1 block">
-                ⭐ This number will be called when the player taps the green emergency family call button.
+                {tx('⭐ This number will be called when the player taps the green emergency family call button.', '⭐ जब खिलाड़ी हरे रंग के आपातकालीन कॉल बटन पर टैप करेगा तब इस नंबर पर कॉल जाएगा।')}
               </span>
             </div>
 
@@ -851,16 +853,16 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-3">
               <div className="flex items-center gap-2 text-[#5B825B]">
                 <KeyRound className="w-4 h-4" />
-                <span className="text-xs font-black uppercase tracking-wider">Set Caregiver Security PIN</span>
+                <span className="text-xs font-black uppercase tracking-wider">{tx('Set Caregiver Security PIN', 'देखभालकर्ता सुरक्षा पिन सेट करें')}</span>
               </div>
               <p className="text-[11px] text-[#5A6E5D] leading-relaxed">
-                Create a 4-digit PIN to prevent the player from accidentally altering medication schedules or caregiver settings.
+                {tx('Create a 4-digit PIN to prevent the player from accidentally altering medication schedules or caregiver settings.', 'दवा कार्यक्रम या सेटिंग्स में अनपेक्षित बदलाव रोकने के लिए 4 अंकों का पिन बनाएं।')}
               </p>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-[#2D3A2F] mb-1">
-                    4-Digit PIN *
+                    {tx('4-Digit PIN *', '4-अंकों का पिन *')}
                   </label>
                   <input
                     type="password"
@@ -873,7 +875,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-[#2D3A2F] mb-1">
-                    Confirm PIN *
+                    {tx('Confirm PIN *', 'पिन की पुष्टि करें *')}
                   </label>
                   <input
                     type="password"
@@ -890,10 +892,10 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 <div className="flex items-center gap-1.5 text-xs font-bold">
                   {caregiverPin === confirmPin ? (
                     <span className="text-[#3D663D] flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" /> PIN confirmed correctly
+                      <Check className="w-3.5 h-3.5" /> {tx('PIN confirmed correctly', 'पिन सफलतापूर्वक पुष्ट हुआ')}
                     </span>
                   ) : (
-                    <span className="text-[#B83E26]">PINs do not match</span>
+                    <span className="text-[#B83E26]">{tx('PINs do not match', 'पिन मेल नहीं खा रहे हैं')}</span>
                   )}
                 </div>
               )}
@@ -907,7 +909,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 className="px-4 py-2.5 rounded-2xl bg-[#F4F1EA] text-[#2D3A2F] font-extrabold text-xs flex items-center gap-1.5 hover:bg-[#EAE5DC]"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back</span>
+                <span>{tx('Back', 'पीछे')}</span>
               </button>
               <button
                 type="button"
@@ -919,7 +921,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 }}
                 className="px-5 py-3 rounded-2xl bg-[#5B825B] text-white font-extrabold text-xs flex items-center gap-2 hover:bg-[#4a6b4a] shadow-xs active:scale-95 transition-all"
               >
-                <span>Continue to ASHA Setup</span>
+                <span>{tx('Continue to ASHA Setup', 'आशा सेटअप पर जाएं')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -935,24 +937,24 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                   <Stethoscope className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-base font-black text-[#2D3A2F]">ASHA Worker Mode Setup</h2>
-                  <p className="text-[11px] text-[#5A6E5D]">Community healthcare link and village worker login</p>
+                  <h2 className="text-base font-black text-[#2D3A2F]">{tx('ASHA Worker Mode Setup', 'आशा कार्यकर्ता मोड सेटअप')}</h2>
+                  <p className="text-[11px] text-[#5A6E5D]">{tx('Community healthcare link and village worker login', 'सामुदायिक स्वास्थ्य संपर्क एवं कार्यकर्ता लॉगिन')}</p>
                 </div>
               </div>
               <span className="text-xs font-black text-[#5B825B] bg-[#EAF1E8] px-2.5 py-1 rounded-full">
-                Step 4 of 4
+                {tx('Step 4 of 4', 'चरण 4 / 4')}
               </span>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] text-xs text-[#5A6E5D] leading-relaxed">
-              💡 <strong>ASHA Worker Portal:</strong> Accredited Social Health Activists (ASHA) monitor routine adherence, cognitive play metrics, and visit tasks. They can also update these credentials anytime inside ASHA mode.
+              💡 <strong>{tx('ASHA Worker Portal:', 'आशा कार्यकर्ता पोर्टल:')}</strong> {tx('Accredited Social Health Activists (ASHA) monitor routine adherence, cognitive play metrics, and visit tasks. They can also update these credentials anytime inside ASHA mode.', 'मान्यता प्राप्त सामाजिक स्वास्थ्य कार्यकर्ता (आशा) नियमित दिनचर्या, संज्ञानात्मक खेल मैट्रिक्स और गृह भेंट कार्यों की निगरानी करते हैं।')}
             </div>
 
             {/* ASHA ID & Passcode */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  ASHA Worker ID
+                  {tx('ASHA Worker ID', 'आशा कार्यकर्ता आईडी')}
                 </label>
                 <input
                   type="text"
@@ -964,7 +966,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
               </div>
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  Security Passcode
+                  {tx('Security Passcode', 'सुरक्षा पासकोड')}
                 </label>
                 <input
                   type="text"
@@ -980,7 +982,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  ASHA Worker Name
+                  {tx('ASHA Worker Name', 'आशा कार्यकर्ता का नाम')}
                 </label>
                 <input
                   type="text"
@@ -992,7 +994,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
               </div>
               <div>
                 <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                  ASHA Contact Phone
+                  {tx('ASHA Contact Phone', 'आशा संपर्क फोन')}
                 </label>
                 <input
                   type="tel"
@@ -1007,7 +1009,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             {/* Sub-centre */}
             <div>
               <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-                Assigned Sub-Centre / Ward / Village
+                {tx('Assigned Sub-Centre / Ward / Village', 'आवंटित उप-केंद्र / वार्ड / गांव')}
               </label>
               <input
                 type="text"
@@ -1021,10 +1023,10 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             {/* Summary Reassurance Box */}
             <div className="p-4 rounded-2xl bg-[#EAF1E8]/70 border border-[#5B825B]/20 text-xs text-[#2D3A2F] space-y-1.5">
               <div className="font-extrabold text-[#3D663D] flex items-center gap-1.5">
-                <Check className="w-4 h-4" /> Ready to Launch
+                <Check className="w-4 h-4" /> {tx('Ready to Launch', 'आरंभ करने के लिए तैयार')}
               </div>
               <p className="text-[11px] text-[#556657]">
-                Player: <strong>{name || 'Player'}</strong> ({age} yrs, {region}) • Caregiver PIN: <strong>••••</strong>
+                {tx('Player:', 'खिलाड़ी:')} <strong>{name || 'Player'}</strong> ({age} {tx('yrs', 'वर्ष')}, {region}) • {tx('Caregiver PIN:', 'देखभालकर्ता पिन:')} <strong>••••</strong>
               </p>
             </div>
 
@@ -1044,10 +1046,13 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 <div className="text-xs text-[#2D3A2F] leading-relaxed">
                   <span className="font-extrabold text-[#2D3A2F] flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-[#3D663D]" />
-                    <span>DPDP Act 2023 Consent & Care Coordination Authorization *</span>
+                    <span>{tx('DPDP Act 2023 Consent & Care Coordination Authorization *', 'DPDP अधिनियम 2023 सहमति एवं देखभाल समन्वय प्राधिकरण *')}</span>
                   </span>
                   <p className="mt-1 text-[11px] text-[#4A5D4C]">
-                    I grant verifiable digital consent under India's <strong>Digital Personal Data Protection (DPDP) Act, 2023</strong> to securely process and store routine medication schedules, elder well-being logs, and cognitive telemetry strictly for the care of {name || 'the player'}. Access is strictly scoped to designated family caregivers and accredited ASHA workers.
+                    {tx(
+                      `I grant verifiable digital consent under India's Digital Personal Data Protection (DPDP) Act, 2023 to securely process and store routine medication schedules, elder well-being logs, and cognitive telemetry strictly for the care of ${name || 'the player'}. Access is strictly scoped to designated family caregivers and accredited ASHA workers.`,
+                      `मैं भारत के डिजिटल व्यक्तिगत डेटा संरक्षण (DPDP) अधिनियम, 2023 के तहत ${name || 'खिलाड़ी'} की देखभाल के लिए दवा समय सारिणी, बुजुर्ग स्वास्थ्य लॉग और संज्ञानात्मक टेलीमेट्री को सुरक्षित रूप से संसाधित और संग्रहीत करने के लिए डिजिटल सहमति प्रदान करता/करती हूं। यह पहुंच केवल नामित परिवार और आशा कार्यकर्ताओं तक सीमित है।`
+                    )}
                   </p>
                 </div>
               </label>
@@ -1061,7 +1066,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 className="px-4 py-3 rounded-2xl bg-[#F4F1EA] text-[#2D3A2F] font-extrabold text-xs flex items-center gap-1.5 hover:bg-[#EAE5DC]"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back</span>
+                <span>{tx('Back', 'पीछे')}</span>
               </button>
 
               <button
@@ -1069,7 +1074,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 className="flex-1 py-3.5 px-4 rounded-2xl bg-[#5B825B] text-white font-black text-sm flex items-center justify-center gap-2 hover:bg-[#4a6b4a] shadow-md active:scale-95 transition-all"
               >
                 <Sparkles className="w-4 h-4 text-[#FDF0D5]" />
-                <span>{isEditing ? 'Save & Return to App' : 'Complete Setup & Launch'}</span>
+                <span>{isEditing ? tx('Save & Return to App', 'सहेजें और ऐप पर वापस जाएं') : tx('Complete Setup & Launch', 'सेटअप पूर्ण करें और शुरू करें')}</span>
               </button>
             </div>
           </div>
@@ -1084,7 +1089,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             onClick={onCancel}
             className="text-xs font-bold text-[#5A6E5D] hover:underline"
           >
-            Cancel and Return to App
+            {tx('Cancel and Return to App', 'रद्द करें और ऐप पर वापस जाएं')}
           </button>
         </div>
       )}

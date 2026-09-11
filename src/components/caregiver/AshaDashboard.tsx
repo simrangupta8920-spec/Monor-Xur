@@ -13,6 +13,7 @@ import {
   generateClinicalReportSummary, 
   GameFilterType
 } from '../../utils/gameAnalytics';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface AshaDashboardProps {
   currentTab: AshaTab;
@@ -41,6 +42,7 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
   ddaLogs = [],
   auditLogs = [],
 }) => {
+  const { tx } = useLanguage();
   const [gameFilter, setGameFilter] = useState<GameFilterType>('all');
   const patient = patientProfile || DEFAULT_PATIENT;
   const completedTasks = tasks.filter((t) => t.done).length;
@@ -84,18 +86,18 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
               />
               <div>
                 <span className="px-2.5 py-0.5 rounded-full bg-[#FDF0D5] text-[#332610] text-[10px] font-black uppercase">
-                  Community Member & Player
+                  {tx('Community Member & Player', 'समुदाय सदस्य व खिलाड़ी')}
                 </span>
                 <h3 className="text-xl font-black text-[#2D3A2F] mt-0.5">{patient.fullName}</h3>
                 <p className="text-xs text-[#5A6E5D]">
-                  {patient.age} yrs • {patient.region}
+                  {tx(`${patient.age} yrs • ${patient.region}`, `${patient.age} वर्ष • ${patient.region}`)}
                 </p>
               </div>
             </div>
             <button
               onClick={onCallEmergency}
               className="p-3 rounded-2xl bg-[#C46A66] text-white hover:bg-[#b05854]"
-              aria-label="Call Family"
+              aria-label={tx('Call Family', 'परिवार को कॉल करें')}
             >
               <Phone className="w-5 h-5" />
             </button>
@@ -107,12 +109,12 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] font-black uppercase text-[#3D2423]/70">Major Care Priority</span>
+              <span className="text-[10px] font-black uppercase text-[#3D2423]/70">{tx('Major Care Priority', 'प्रमुख देखभाल प्राथमिकता')}</span>
               <h4 className="font-extrabold text-base text-[#3D2423] leading-tight">
                 {patient.majorCareIssue}
               </h4>
               <p className="text-xs text-[#3D2423]/80 mt-1">
-                Monitor memory stimulation adherence and ensure evening BP pills are acknowledged.
+                {tx('Monitor memory stimulation adherence and ensure evening BP pills are acknowledged.', 'याददाश्त अभ्यास की निगरानी करें और सुनिश्चित करें कि शाम की रक्तचाप दवा ली गई है।')}
               </p>
             </div>
           </div>
@@ -121,26 +123,26 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white p-4 rounded-3xl border border-[#E0DCD3] shadow-xs text-center">
               <span className="text-3xl font-black text-[#5B825B]">{globalGameStats.avgAccuracy}%</span>
-              <span className="block text-xs font-bold text-[#5A6E5D] mt-1">Cognitive Accuracy</span>
+              <span className="block text-xs font-bold text-[#5A6E5D] mt-1">{tx('Cognitive Accuracy', 'संज्ञानात्मक सटीकता')}</span>
               <span className="block text-[10px] text-[#5B825B] font-extrabold mt-0.5">
-                {gameBreakdown.memoryMatch.sessions} Match • {gameBreakdown.puzzle.sessions} Puzzle
+                {tx(`${gameBreakdown.memoryMatch.sessions} Match • ${gameBreakdown.puzzle.sessions} Puzzle`, `${gameBreakdown.memoryMatch.sessions} मैच • ${gameBreakdown.puzzle.sessions} पहेली`)}
               </span>
             </div>
             <div className="bg-white p-4 rounded-3xl border border-[#E0DCD3] shadow-xs text-center">
               <span className="text-3xl font-black text-[#2D3A2F]">{completedTasks}/{tasks.length}</span>
-              <span className="block text-xs font-bold text-[#5A6E5D] mt-1">Follow-Up Tasks</span>
+              <span className="block text-xs font-bold text-[#5A6E5D] mt-1">{tx('Follow-Up Tasks', 'अनुवर्ती कार्य')}</span>
               <span className="block text-[10px] text-[#5A6E5D] font-extrabold mt-0.5">
-                {globalGameStats.totalSessions} Game Sessions
+                {tx(`${globalGameStats.totalSessions} Game Sessions`, `${globalGameStats.totalSessions} खेल सत्र`)}
               </span>
             </div>
           </div>
 
           {/* Upcoming Appointment */}
           <div className="bg-white rounded-3xl p-4 border border-[#E0DCD3] shadow-xs space-y-2">
-            <h4 className="text-xs font-black uppercase tracking-wider text-[#5A6E5D]">Next Clinical Review</h4>
+            <h4 className="text-xs font-black uppercase tracking-wider text-[#5A6E5D]">{tx('Next Clinical Review', 'अगली क्लीनिकल समीक्षा')}</h4>
             <div className="p-3 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3]">
               <h5 className="font-extrabold text-sm text-[#2D3A2F]">Dr. Meera Rao (Neurology)</h5>
-              <p className="text-xs text-[#5B825B] font-semibold">Today, 11:00 AM • City Neuro Clinic</p>
+              <p className="text-xs text-[#5B825B] font-semibold">{tx('Today, 11:00 AM • City Neuro Clinic', 'आज, सुबह 11:00 बजे • सिटी न्यूरो क्लिनिक')}</p>
             </div>
           </div>
 
@@ -148,8 +150,8 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
           <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-[#5A6E5D]">Configured ASHA Worker</h4>
-                <p className="text-xs text-[#5B825B] font-extrabold">Active Community Healthcare Link</p>
+                <h4 className="text-xs font-black uppercase tracking-wider text-[#5A6E5D]">{tx('Configured ASHA Worker', 'कॉन्फ़िगर की गई आशा कार्यकर्ता')}</h4>
+                <p className="text-xs text-[#5B825B] font-extrabold">{tx('Active Community Healthcare Link', 'सक्रिय सामुदायिक स्वास्थ्य सेवा संपर्क')}</p>
               </div>
               {onOpenSetup && (
                 <button
@@ -159,25 +161,25 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
                   }}
                   className="px-3 py-1 rounded-xl bg-[#FDF0D5] text-[#A66E14] text-xs font-black hover:bg-[#fae7b9]"
                 >
-                  Edit Profile
+                  {tx('Edit Profile', 'प्रोफ़ाइल बदलें')}
                 </button>
               )}
             </div>
             <div className="divide-y divide-[#EAE6DF] text-xs">
               <div className="py-2 flex items-center justify-between">
-                <span className="text-[#5A6E5D] font-bold">Worker ID</span>
+                <span className="text-[#5A6E5D] font-bold">{tx('Worker ID', 'कार्यकर्ता आईडी')}</span>
                 <span className="font-extrabold text-[#2D3A2F]">{patient.asha?.workerId || 'ASHA-001'}</span>
               </div>
               <div className="py-2 flex items-center justify-between">
-                <span className="text-[#5A6E5D] font-bold">Worker Name</span>
+                <span className="text-[#5A6E5D] font-bold">{tx('Worker Name', 'कार्यकर्ता का नाम')}</span>
                 <span className="font-extrabold text-[#2D3A2F]">{patient.asha?.name || 'Sunita Das'}</span>
               </div>
               <div className="py-2 flex items-center justify-between">
-                <span className="text-[#5A6E5D] font-bold">Sub-Centre / Village</span>
+                <span className="text-[#5A6E5D] font-bold">{tx('Sub-Centre / Village', 'उप-केंद्र / गांव')}</span>
                 <span className="font-extrabold text-[#2D3A2F]">{patient.asha?.subCentre || 'Kamrup Community Health Sub-Centre'}</span>
               </div>
               <div className="py-2 flex items-center justify-between">
-                <span className="text-[#5A6E5D] font-bold">Contact Phone</span>
+                <span className="text-[#5A6E5D] font-bold">{tx('Contact Phone', 'संपर्क फोन')}</span>
                 <span className="font-extrabold text-[#2D3A2F]">{patient.asha?.phone || '+91 91234 56789'}</span>
               </div>
             </div>
@@ -189,14 +191,14 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
       {currentTab === 'report' && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-2xl font-black text-[#2D3A2F]">ASHA Health Report</h2>
-            <p className="text-xs text-[#5A6E5D]">Clinical engagement summary and game performance assessment.</p>
+            <h2 className="text-2xl font-black text-[#2D3A2F]">{tx('ASHA Health Report', 'आशा स्वास्थ्य रिपोर्ट')}</h2>
+            <p className="text-xs text-[#5A6E5D]">{tx('Clinical engagement summary and game performance assessment.', 'क्लीनिकल जुड़ाव सारांश और खेल प्रदर्शन मूल्यांकन।')}</p>
           </div>
 
           {/* Game Filter Bar */}
           <div className="bg-white p-3 rounded-2xl border border-[#E0DCD3] shadow-xs flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">Report Scope:</span>
+              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">{tx('Report Scope:', 'रिपोर्ट का दायरा:')}</span>
               <button
                 onClick={() => {
                   soundController.playClick();
@@ -208,7 +210,7 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
                     : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
                 }`}
               >
-                <span>Combined Overview ({effectiveLogs.length})</span>
+                <span>{tx(`Combined Overview (${effectiveLogs.length})`, `संयुक्त अवलोकन (${effectiveLogs.length})`)}</span>
               </button>
               <button
                 onClick={() => {
@@ -222,7 +224,7 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
                 }`}
               >
                 <Brain className="w-3.5 h-3.5" />
-                <span>Memory Match ({gameBreakdown.memoryMatch.sessions})</span>
+                <span>{tx(`Memory Match (${gameBreakdown.memoryMatch.sessions})`, `मेमोरी मैच (${gameBreakdown.memoryMatch.sessions})`)}</span>
               </button>
               <button
                 onClick={() => {
@@ -236,11 +238,11 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
                 }`}
               >
                 <Puzzle className="w-3.5 h-3.5" />
-                <span>Photo Puzzle ({gameBreakdown.puzzle.sessions})</span>
+                <span>{tx(`Photo Puzzle (${gameBreakdown.puzzle.sessions})`, `फोटो पहेली (${gameBreakdown.puzzle.sessions})`)}</span>
               </button>
             </div>
             <span className="text-[11px] font-bold text-[#5A6E5D]">
-              {filteredLogs.length} Sessions Assessed
+              {tx(`${filteredLogs.length} Sessions Assessed`, `${filteredLogs.length} मूल्यांकित सत्र`)}
             </span>
           </div>
 
@@ -254,24 +256,24 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
                       <Brain className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">Memory Match</h4>
-                      <p className="text-[11px] text-[#5A6E5D]">{gameBreakdown.memoryMatch.sessions} sessions</p>
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Memory Match', 'मेमोरी मैच')}</h4>
+                      <p className="text-[11px] text-[#5A6E5D]">{tx(`${gameBreakdown.memoryMatch.sessions} sessions`, `${gameBreakdown.memoryMatch.sessions} सत्र`)}</p>
                     </div>
                   </div>
                   <span className="text-xl font-black text-[#5B825B]">{gameBreakdown.memoryMatch.accuracy}%</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#EAE6DF] text-center text-xs">
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">Errors</span>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('Errors', 'गलतियां')}</span>
                     <strong className="text-[#2D3A2F] font-black">{gameBreakdown.memoryMatch.avgMistakes}</strong>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">Speed</span>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('Speed', 'गति')}</span>
                     <strong className="text-[#2D3A2F] font-black">{gameBreakdown.memoryMatch.avgLatencySec}s</strong>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">DDA Tier</span>
-                    <strong className="text-[#5B825B] font-black">Lvl {gameBreakdown.memoryMatch.level}</strong>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('DDA Tier', 'डीडीए स्तर')}</span>
+                    <strong className="text-[#5B825B] font-black">{tx(`Lvl ${gameBreakdown.memoryMatch.level}`, `स्तर ${gameBreakdown.memoryMatch.level}`)}</strong>
                   </div>
                 </div>
               </div>
@@ -283,24 +285,24 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
                       <Puzzle className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">Photo Puzzle</h4>
-                      <p className="text-[11px] text-[#5A6E5D]">{gameBreakdown.puzzle.sessions} sessions</p>
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Photo Puzzle', 'फोटो पहेली')}</h4>
+                      <p className="text-[11px] text-[#5A6E5D]">{tx(`${gameBreakdown.puzzle.sessions} sessions`, `${gameBreakdown.puzzle.sessions} सत्र`)}</p>
                     </div>
                   </div>
                   <span className="text-xl font-black text-[#E8B25C]">{gameBreakdown.puzzle.accuracy}%</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#EAE6DF] text-center text-xs">
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">Errors</span>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('Errors', 'गलतियां')}</span>
                     <strong className="text-[#2D3A2F] font-black">{gameBreakdown.puzzle.avgMistakes}</strong>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">Speed</span>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('Speed', 'गति')}</span>
                     <strong className="text-[#2D3A2F] font-black">{gameBreakdown.puzzle.avgLatencySec}s</strong>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">DDA Tier</span>
-                    <strong className="text-[#E8B25C] font-black">Lvl {gameBreakdown.puzzle.level}</strong>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('DDA Tier', 'डीडीए स्तर')}</span>
+                    <strong className="text-[#E8B25C] font-black">{tx(`Lvl ${gameBreakdown.puzzle.level}`, `स्तर ${gameBreakdown.puzzle.level}`)}</strong>
                   </div>
                 </div>
               </div>
@@ -322,21 +324,23 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
             <div className="divide-y divide-[#EAE6DF] text-xs">
               <div className="py-2.5 flex justify-between">
                 <span className="font-bold text-[#5A6E5D]">
-                  {gameFilter === 'all' ? 'Total Game Sessions' : `${gameFilter === 'puzzle' ? 'Photo Puzzle' : 'Memory Match'} Sessions`}
+                  {gameFilter === 'all' 
+                    ? tx('Total Game Sessions', 'कुल खेल सत्र') 
+                    : tx(`${gameFilter === 'puzzle' ? 'Photo Puzzle' : 'Memory Match'} Sessions`, `${gameFilter === 'puzzle' ? 'फोटो पहेली' : 'मेमोरी मैच'} सत्र`)}
                 </span>
-                <span className="font-black text-[#2D3A2F]">{filteredStats.totalSessions} sessions</span>
+                <span className="font-black text-[#2D3A2F]">{tx(`${filteredStats.totalSessions} sessions`, `${filteredStats.totalSessions} सत्र`)}</span>
               </div>
               <div className="py-2.5 flex justify-between">
-                <span className="font-bold text-[#5A6E5D]">Average Accuracy</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Average Accuracy', 'औसत सटीकता')}</span>
                 <span className="font-black text-[#5B825B]">{filteredStats.avgAccuracy}%</span>
               </div>
               <div className="py-2.5 flex justify-between">
-                <span className="font-bold text-[#5A6E5D]">Average Hesitation / Latency</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Average Hesitation / Latency', 'औसत संकोच / विलंबता')}</span>
                 <span className="font-black text-[#2D3A2F]">{filteredStats.avgLatencySec}s</span>
               </div>
               <div className="py-2.5 flex justify-between">
-                <span className="font-bold text-[#5A6E5D]">Adaptive Difficulty Tier</span>
-                <span className="font-black text-[#2D3A2F]">Level {filteredStats.currentLevel}</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Adaptive Difficulty Tier', 'अनुकूली कठिनाई स्तर')}</span>
+                <span className="font-black text-[#2D3A2F]">{tx(`Level ${filteredStats.currentLevel}`, `स्तर ${filteredStats.currentLevel}`)}</span>
               </div>
             </div>
           </div>
@@ -344,16 +348,19 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
           {/* AI Cognitive Safeguard & DDA Telemetry */}
           <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase text-[#5B825B]">AI Dynamic Cognitive Safeguard</span>
+              <span className="text-xs font-black uppercase text-[#5B825B]">{tx('AI Dynamic Cognitive Safeguard', 'एआई गतिशील संज्ञानात्मक सुरक्षा')}</span>
               <span className="text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2.5 py-0.5 rounded-full">
-                Live Active
+                {tx('Live Active', 'सक्रिय')}
               </span>
             </div>
             <p className="text-xs text-[#5A6E5D] leading-relaxed">
-              The AI model continuously monitors mistake patterns, latency, and hesitation. When consecutive wrong attempts indicate cognitive load, the system auto-shifts down to Level 1 (Easy) to protect mood and prevent abandonment.
+              {tx(
+                'The AI model continuously monitors mistake patterns, latency, and hesitation. When consecutive wrong attempts indicate cognitive load, the system auto-shifts down to Level 1 (Easy) to protect mood and prevent abandonment.',
+                'एआई मॉडल गलतियों के पैटर्न, विलंबता और झिझक की निरंतर निगरानी करता है। जब लगातार गलत प्रयास मानसिक तनाव का संकेत देते हैं, तो सिस्टम मूड को सुरक्षित रखने के लिए स्वचालित रूप से लेवल 1 (आसान) पर आ जाता है।'
+              )}
             </p>
             <div className="p-3 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] flex items-center justify-between text-xs">
-              <span className="font-bold text-[#2D3A2F]">Model Engine:</span>
+              <span className="font-bold text-[#2D3A2F]">{tx('Model Engine:', 'मॉडल इंजन:')}</span>
               <span className="font-black text-[#5B825B]">Gemini 3.8 Flash + Adaptive ML</span>
             </div>
           </div>
@@ -366,31 +373,31 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-black text-sm text-[#2D3A2F]">DPDP Act 2023 Security & Audit Trail</h3>
-                  <p className="text-[11px] text-[#5A6E5D]">Tamper-evident visit activity logs & role-scoped clinical access</p>
+                  <h3 className="font-black text-sm text-[#2D3A2F]">{tx('DPDP Act 2023 Security & Audit Trail', 'डीपीडीपी अधिनियम 2023 सुरक्षा व ऑडिट ट्रेल')}</h3>
+                  <p className="text-[11px] text-[#5A6E5D]">{tx('Tamper-evident visit activity logs & role-scoped clinical access', 'छेड़छाड़-रोधी गतिविधि लॉग व भूमिका-आधारित क्लीनिकल पहुंच')}</p>
                 </div>
               </div>
               <span className="px-2.5 py-1 rounded-full bg-[#EAF1E8] text-[#3D663D] text-[10px] font-black uppercase tracking-wider">
-                Audited
+                {tx('Audited', 'सत्यापित')}
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5 text-xs">
               <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-1">
-                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">Patient Consent</span>
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">{tx('Patient Consent', 'मरीज़ की सहमति')}</span>
                 <p className="font-extrabold text-[#3D663D] flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5" /> Granted & Verified
+                  <Check className="w-3.5 h-3.5" /> {tx('Granted & Verified', 'प्रदत्त एवं सत्यापित')}
                 </p>
                 <p className="text-[10px] text-[#8C9B8E]">
-                  {patient.consentDate ? new Date(patient.consentDate).toLocaleDateString() : 'Signed'}
+                  {patient.consentDate ? new Date(patient.consentDate).toLocaleDateString() : tx('Signed', 'हस्ताक्षरित')}
                 </p>
               </div>
               <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-1">
-                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">Access Scope</span>
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">{tx('Access Scope', 'पहुंच का दायरा')}</span>
                 <p className="font-extrabold text-[#2D3A2F] flex items-center gap-1">
-                  <Lock className="w-3.5 h-3.5 text-[#5B825B]" /> Scoped to ASHA / Caregiver
+                  <Lock className="w-3.5 h-3.5 text-[#5B825B]" /> {tx('Scoped to ASHA / Caregiver', 'आशा / देखभालकर्ता तक सीमित')}
                 </p>
-                <p className="text-[10px] text-[#8C9B8E]">Zero unauthorized data leakage</p>
+                <p className="text-[10px] text-[#8C9B8E]">{tx('Zero unauthorized data leakage', 'शून्य अनधिकृत डेटा रिसाव')}</p>
               </div>
             </div>
 
@@ -398,15 +405,15 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
               <div className="flex items-center justify-between">
                 <h4 className="font-extrabold text-xs text-[#2D3A2F] flex items-center gap-1.5">
                   <History className="w-4 h-4 text-[#5A6E5D]" />
-                  <span>Recent System & Worker Audit Events</span>
+                  <span>{tx('Recent System & Worker Audit Events', 'हाल की सिस्टम व कार्यकर्ता ऑडिट गतिविधियां')}</span>
                 </h4>
-                <span className="text-[10px] font-bold text-[#8C9B8E]">{auditLogs.length} total</span>
+                <span className="text-[10px] font-bold text-[#8C9B8E]">{tx(`${auditLogs.length} total`, `कुल ${auditLogs.length}`)}</span>
               </div>
 
               <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
                 {auditLogs.length === 0 ? (
                   <div className="p-3 rounded-2xl bg-[#FAF8F5] text-center text-xs text-[#5A6E5D]">
-                    No field actions logged yet. Visits and updates will be logged immutably.
+                    {tx('No field actions logged yet. Visits and updates will be logged immutably.', 'अभी कोई फ़ील्ड गतिविधि दर्ज नहीं है। विज़िट और अपडेट सुरक्षित रूप से दर्ज किए जाएंगे।')}
                   </div>
                 ) : (
                   auditLogs.slice(0, 8).map((log) => {
@@ -419,7 +426,7 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-[#2D3A2F] text-xs">
-                              {log.actorName || (log.actorRole === 'asha' ? 'ASHA Worker' : 'Caregiver')}
+                              {log.actorName || (log.actorRole === 'asha' ? tx('ASHA Worker', 'आशा कार्यकर्ता') : tx('Caregiver', 'देखभालकर्ता'))}
                             </span>
                             <span className="text-[10px] text-[#8C9B8E]">
                               • {log.action.replace(/_/g, ' ')}
@@ -440,7 +447,7 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
 
           {/* Medical Disclaimer Banner */}
           <div className="bg-[#FDF0D5] p-4 rounded-3xl border border-[#eadbbf] text-xs text-[#332610] leading-relaxed">
-            <strong>Clinical Notice:</strong> {MEDICAL_DISCLAIMER}
+            <strong>{tx('Clinical Notice:', 'क्लीनिकल सूचना:')}</strong> {MEDICAL_DISCLAIMER}
           </div>
         </div>
       )}
@@ -449,8 +456,8 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
       {currentTab === 'tasks' && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-2xl font-black text-[#2D3A2F]">Community Care Tasks</h2>
-            <p className="text-xs text-[#5A6E5D]">Checklist for home visits, medicine checks, and cognitive support.</p>
+            <h2 className="text-2xl font-black text-[#2D3A2F]">{tx('Community Care Tasks', 'सामुदायिक देखभाल कार्य')}</h2>
+            <p className="text-xs text-[#5A6E5D]">{tx('Checklist for home visits, medicine checks, and cognitive support.', 'गृह भेंट, दवा जांच और संज्ञानात्मक सहायता की चेकलिस्ट।')}</p>
           </div>
 
           <div className="space-y-2.5">
@@ -482,7 +489,7 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
                 <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                   task.done ? 'bg-[#5B825B] text-white' : 'bg-gray-100 text-gray-600'
                 }`}>
-                  {task.done ? 'Completed' : 'Pending'}
+                  {task.done ? tx('Completed', 'पूर्ण') : tx('Pending', 'लंबित')}
                 </span>
               </div>
             ))}
@@ -494,8 +501,8 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
       {currentTab === 'alerts' && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-2xl font-black text-[#2D3A2F]">Active Alerts</h2>
-            <p className="text-xs text-[#5A6E5D]">Issues requiring healthcare worker observation.</p>
+            <h2 className="text-2xl font-black text-[#2D3A2F]">{tx('Active Alerts', 'सक्रिय चेतावनियां')}</h2>
+            <p className="text-xs text-[#5A6E5D]">{tx('Issues requiring healthcare worker observation.', 'स्वास्थ्य कार्यकर्ता के अवलोकन योग्य समस्याएं।')}</p>
           </div>
 
           <div className="space-y-3">

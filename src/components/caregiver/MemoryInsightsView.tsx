@@ -27,6 +27,7 @@ import {
   getGameBreakdown, 
   GameFilterType 
 } from '../../utils/gameAnalytics';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface MemoryInsightsViewProps {
   ddaLogs: DDAMetric[];
@@ -45,6 +46,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
   onAddSampleSession,
   onOpenPdfExport,
 }) => {
+  const { tx } = useLanguage();
   const [gameFilter, setGameFilter] = useState<GameFilterType>('all');
   const [timeRange, setTimeRange] = useState<'all' | 'last7' | 'last14'>('all');
   const [selectedChartTab, setSelectedChartTab] = useState<'accuracy' | 'latency' | 'difficulty' | 'assistance'>('accuracy');
@@ -231,28 +233,31 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                 }}
                 className="px-2.5 py-1 rounded-xl bg-[#FDFBF7] border border-[#E0DCD3] text-xs font-bold text-[#5A6E5D] hover:bg-[#EAF1E8] transition-colors"
               >
-                ← Back
+                ← {tx('Back', 'पीछे')}
               </button>
             )}
             <span className="px-2.5 py-0.5 rounded-full bg-[#EAF1E8] text-[#5B825B] text-xs font-extrabold flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-[#5B825B]" />
-              Cognitive Telemetry
+              {tx('Cognitive Telemetry', 'संज्ञानात्मक टेलीमेट्री')}
             </span>
             {hasLiveLogs ? (
               <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
-                ● Live Patient Telemetry ({ddaLogs.length} Sessions)
+                ● {tx(`Live Patient Telemetry (${ddaLogs.length} Sessions)`, `मरीज़ की लाइव टेलीमेट्री (${ddaLogs.length} सत्र)`)}
               </span>
             ) : (
               <span className="px-2 py-0.5 rounded-full bg-[#FDF0D5] text-[#8C651E] text-[11px] font-bold">
-                0 Live Sessions Recorded
+                {tx('0 Live Sessions Recorded', '0 लाइव सत्र रिकॉर्ड')}
               </span>
             )}
           </div>
           <h2 className="text-xl font-black text-[#2D3A2F] tracking-tight">
-            Memory Games Performance Insights
+            {tx('Memory Games Performance Insights', 'स्मृति खेल प्रदर्शन अंतर्दृष्टि')}
           </h2>
           <p className="text-xs text-[#5A6E5D]">
-            Visualizing recall accuracy, hesitation speed, and DDA adaptive shifts for <span className="font-bold text-[#2D3A2F]">{patientName}</span> according to each game played.
+            {tx(
+              `Visualizing recall accuracy, hesitation speed, and DDA adaptive shifts for ${patientName} according to each game played.`,
+              `प्रत्येक खेले गए खेल के आधार पर ${patientName} की स्मरण सटीकता, झिझक गति और डीडीए अनुकूलन परिवर्तनों का विश्लेषण।`
+            )}
           </p>
         </div>
 
@@ -266,7 +271,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
               className="px-3 py-2 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] text-xs font-extrabold text-[#2D3A2F] flex items-center gap-1.5 hover:bg-[#EAF1E8] transition-colors shadow-2xs"
             >
               <Download className="w-3.5 h-3.5 text-[#5B825B]" />
-              <span>Export Report</span>
+              <span>{tx('Export Report', 'रिपोर्ट निर्यात')}</span>
             </button>
           )}
 
@@ -279,7 +284,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
               className="px-3.5 py-2 rounded-2xl bg-[#5B825B] text-white text-xs font-black flex items-center gap-1.5 shadow-2xs hover:bg-[#4a6b4a] transition-colors"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Launch Memory Game</span>
+              <span>{tx('Launch Memory Game', 'स्मृति खेल शुरू करें')}</span>
             </button>
           )}
         </div>
@@ -288,7 +293,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
       {/* Game Filter & Selection Selector */}
       <div className="bg-white p-4 rounded-3xl border border-[#E0DCD3] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">Game Filter:</span>
+          <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">{tx('Game Filter:', 'खेल फ़िल्टर:')}</span>
           
           <button
             onClick={() => {
@@ -301,7 +306,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                 : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
             }`}
           >
-            <span>All Played Games</span>
+            <span>{tx('All Played Games', 'सभी खेले गए खेल')}</span>
             <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
               gameFilter === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-[#5A6E5D]'
             }`}>
@@ -321,7 +326,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
             }`}
           >
             <Brain className="w-3.5 h-3.5" />
-            <span>Memory Match</span>
+            <span>{tx('Memory Match', 'स्मृति मिलान')}</span>
             <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
               gameFilter === 'memory_match' ? 'bg-white/20 text-white' : 'bg-[#EAF1E8] text-[#5B825B]'
             }`}>
@@ -341,7 +346,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
             }`}
           >
             <Puzzle className="w-3.5 h-3.5" />
-            <span>Photo Puzzle</span>
+            <span>{tx('Photo Puzzle', 'चित्र पहेली')}</span>
             <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
               gameFilter === 'puzzle' ? 'bg-[#332610]/20 text-[#332610]' : 'bg-[#FDF0D5] text-[#8C651E]'
             }`}>
@@ -352,10 +357,10 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
 
         <span className="text-[11px] font-bold text-[#5A6E5D] pl-1 md:pl-0">
           {gameFilter === 'all'
-            ? `Combined trends (${breakdown.memoryMatch.sessions} Card Recall, ${breakdown.puzzle.sessions} Photo Puzzles)`
+            ? tx(`Combined trends (${breakdown.memoryMatch.sessions} Card Recall, ${breakdown.puzzle.sessions} Photo Puzzles)`, `संयुक्त रुझान (${breakdown.memoryMatch.sessions} कार्ड स्मरण, ${breakdown.puzzle.sessions} चित्र पहेलियां)`)
             : gameFilter === 'memory_match'
-            ? `Visual card recall • Pairs matching • Level 1 (3 pairs) to Level 3 (6 pairs)`
-            : `Spatial photo puzzles • Grid assembly • Level 1 (2×2) to Level 3 (4×4)`}
+            ? tx(`Visual card recall • Pairs matching • Level 1 (3 pairs) to Level 3 (6 pairs)`, `दृश्य कार्ड स्मरण • जोड़े मिलान • स्तर 1 (3 जोड़े) से स्तर 3 (6 जोड़े)`)
+            : tx(`Spatial photo puzzles • Grid assembly • Level 1 (2×2) to Level 3 (4×4)`, `स्थानिक फोटो पहेलियां • ग्रिड संयोजन • स्तर 1 (2×2) से स्तर 3 (4×4)`)}
         </span>
       </div>
 
@@ -365,10 +370,10 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-black uppercase tracking-wider text-[#2D3A2F] flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-[#5B825B]" />
-              Game-by-Game Telemetry Comparison
+              {tx('Game-by-Game Telemetry Comparison', 'खेल-वार टेलीमेट्री तुलना')}
             </h3>
             <span className="text-[11px] font-extrabold text-[#5B825B] bg-[#EAF1E8] px-2.5 py-0.5 rounded-full">
-              Most Played: {breakdown.mostPlayed}
+              {tx(`Most Played: ${breakdown.mostPlayed}`, `सर्वाधिक खेला गया: ${breakdown.mostPlayed}`)}
             </span>
           </div>
 
@@ -388,28 +393,28 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                   </div>
                   <div>
                     <h4 className="font-extrabold text-sm text-[#2D3A2F] group-hover:text-[#5B825B] transition-colors">
-                      Memory Match
+                      {tx('Memory Match', 'स्मृति मिलान')}
                     </h4>
-                    <span className="text-[10px] text-[#5A6E5D]">Card Pair Recall</span>
+                    <span className="text-[10px] text-[#5A6E5D]">{tx('Card Pair Recall', 'कार्ड जोड़ा स्मरण')}</span>
                   </div>
                 </div>
                 <span className="text-xs font-black text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-lg">
-                  {breakdown.memoryMatch.sessions} rounds
+                  {breakdown.memoryMatch.sessions} {tx('rounds', 'राउंड')}
                 </span>
               </div>
 
               <div className="grid grid-cols-3 gap-2 pt-1 text-center border-t border-gray-100 text-xs">
                 <div>
-                  <span className="block text-[10px] text-[#5A6E5D]">Avg Accuracy</span>
+                  <span className="block text-[10px] text-[#5A6E5D]">{tx('Avg Accuracy', 'औसत सटीकता')}</span>
                   <span className="font-black text-[#5B825B]">{breakdown.memoryMatch.avgAccuracy}%</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] text-[#5A6E5D]">Decision Speed</span>
+                  <span className="block text-[10px] text-[#5A6E5D]">{tx('Decision Speed', 'निर्णय गति')}</span>
                   <span className="font-black text-[#2D3A2F]">{breakdown.memoryMatch.avgLatencySec}s</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] text-[#5A6E5D]">Highest Tier</span>
-                  <span className="font-black text-[#8C651E]">Level {breakdown.memoryMatch.currentLevel}</span>
+                  <span className="block text-[10px] text-[#5A6E5D]">{tx('Highest Tier', 'उच्चतम स्तर')}</span>
+                  <span className="font-black text-[#8C651E]">{tx(`Level ${breakdown.memoryMatch.currentLevel}`, `स्तर ${breakdown.memoryMatch.currentLevel}`)}</span>
                 </div>
               </div>
             </div>
@@ -429,28 +434,28 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                   </div>
                   <div>
                     <h4 className="font-extrabold text-sm text-[#2D3A2F] group-hover:text-[#8C651E] transition-colors">
-                      Photo Puzzle
+                      {tx('Photo Puzzle', 'चित्र पहेली')}
                     </h4>
-                    <span className="text-[10px] text-[#5A6E5D]">Spatial Picture Assembly</span>
+                    <span className="text-[10px] text-[#5A6E5D]">{tx('Spatial Picture Assembly', 'स्थानिक चित्र संयोजन')}</span>
                   </div>
                 </div>
                 <span className="text-xs font-black text-[#8C651E] bg-[#FDF0D5] px-2 py-0.5 rounded-lg">
-                  {breakdown.puzzle.sessions} rounds
+                  {breakdown.puzzle.sessions} {tx('rounds', 'राउंड')}
                 </span>
               </div>
 
               <div className="grid grid-cols-3 gap-2 pt-1 text-center border-t border-gray-100 text-xs">
                 <div>
-                  <span className="block text-[10px] text-[#5A6E5D]">Avg Accuracy</span>
+                  <span className="block text-[10px] text-[#5A6E5D]">{tx('Avg Accuracy', 'औसत सटीकता')}</span>
                   <span className="font-black text-[#5B825B]">{breakdown.puzzle.avgAccuracy}%</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] text-[#5A6E5D]">Assembly Speed</span>
+                  <span className="block text-[10px] text-[#5A6E5D]">{tx('Assembly Speed', 'संयोजन गति')}</span>
                   <span className="font-black text-[#2D3A2F]">{breakdown.puzzle.avgLatencySec}s</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] text-[#5A6E5D]">Highest Tier</span>
-                  <span className="font-black text-[#8C651E]">Level {breakdown.puzzle.currentLevel}</span>
+                  <span className="block text-[10px] text-[#5A6E5D]">{tx('Highest Tier', 'उच्चतम स्तर')}</span>
+                  <span className="font-black text-[#8C651E]">{tx(`Level ${breakdown.puzzle.currentLevel}`, `स्तर ${breakdown.puzzle.currentLevel}`)}</span>
                 </div>
               </div>
             </div>
@@ -463,72 +468,72 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
         {/* Card 1: Mistakes & Precision */}
         <div className="bg-white p-4 rounded-3xl border border-[#E0DCD3] shadow-xs space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#5A6E5D] uppercase tracking-wider">Accuracy & Mistakes</span>
+            <span className="text-xs font-bold text-[#5A6E5D] uppercase tracking-wider">{tx('Accuracy & Mistakes', 'सटीकता और त्रुटियां')}</span>
             <div className="w-7 h-7 rounded-xl bg-[#EAF1E8] text-[#5B825B] flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-[#2D3A2F]">{stats.avgMistakes}</span>
-            <span className="text-xs text-[#5A6E5D]">errors / round</span>
+            <span className="text-xs text-[#5A6E5D]">{tx('errors / round', 'त्रुटियां / राउंड')}</span>
           </div>
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#5B825B]">
             <ArrowDownRight className="w-3.5 h-3.5" />
-            <span>{stats.mistakeImprovementPct > 0 ? `${stats.mistakeImprovementPct}% fewer errors` : 'Stable recall accuracy'}</span>
+            <span>{stats.mistakeImprovementPct > 0 ? tx(`${stats.mistakeImprovementPct}% fewer errors`, `${stats.mistakeImprovementPct}% कम त्रुटियां`) : tx('Stable recall accuracy', 'स्थिर स्मरण सटीकता')}</span>
           </div>
         </div>
 
         {/* Card 2: Cognitive Latency */}
         <div className="bg-white p-4 rounded-3xl border border-[#E0DCD3] shadow-xs space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#5A6E5D] uppercase tracking-wider">Reaction Latency</span>
+            <span className="text-xs font-bold text-[#5A6E5D] uppercase tracking-wider">{tx('Reaction Latency', 'प्रतिक्रिया विलंबता')}</span>
             <div className="w-7 h-7 rounded-xl bg-[#FDF0D5] text-[#8C651E] flex items-center justify-center">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-[#2D3A2F]">{stats.avgLatencySec}s</span>
-            <span className="text-xs text-[#5A6E5D]">avg speed</span>
+            <span className="text-xs text-[#5A6E5D]">{tx('avg speed', 'औसत गति')}</span>
           </div>
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#5B825B]">
             <Zap className="w-3.5 h-3.5" />
-            <span>{stats.latencyImprovementPct > 0 ? `${stats.latencyImprovementPct}% faster recall` : 'Optimal cognitive window'}</span>
+            <span>{stats.latencyImprovementPct > 0 ? tx(`${stats.latencyImprovementPct}% faster recall`, `${stats.latencyImprovementPct}% तेज़ स्मरण`) : tx('Optimal cognitive window', 'इष्टतम संज्ञानात्मक खिड़की')}</span>
           </div>
         </div>
 
         {/* Card 3: Memory Challenge Tier */}
         <div className="bg-white p-4 rounded-3xl border border-[#E0DCD3] shadow-xs space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#5A6E5D] uppercase tracking-wider">Current Tier</span>
+            <span className="text-xs font-bold text-[#5A6E5D] uppercase tracking-wider">{tx('Current Tier', 'वर्तमान स्तर')}</span>
             <div className="w-7 h-7 rounded-xl bg-[#EAF1E8] text-[#5B825B] flex items-center justify-center">
               <Award className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-[#2D3A2F]">Level {stats.currentLevel}</span>
+            <span className="text-2xl font-black text-[#2D3A2F]">{tx(`Level ${stats.currentLevel}`, `स्तर ${stats.currentLevel}`)}</span>
             <span className="text-xs text-[#5A6E5D] font-bold">
-              {stats.currentLevel === 1 ? '(3 Pairs)' : stats.currentLevel === 2 ? '(4 Pairs)' : '(6 Pairs)'}
+              {stats.currentLevel === 1 ? tx('(3 Pairs)', '(3 जोड़े)') : stats.currentLevel === 2 ? tx('(4 Pairs)', '(4 जोड़े)') : tx('(6 Pairs)', '(6 जोड़े)')}
             </span>
           </div>
           <div className="text-[11px] text-[#5A6E5D] font-bold">
-            Adaptive DDA auto-regulated
+            {tx('Adaptive DDA auto-regulated', 'अनुकूली डीडीए स्वचालित नियंत्रित')}
           </div>
         </div>
 
         {/* Card 4: Focus & Fatigue Stability */}
         <div className="bg-white p-4 rounded-3xl border border-[#E0DCD3] shadow-xs space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#5A6E5D] uppercase tracking-wider">Focus Stability</span>
+            <span className="text-xs font-bold text-[#5A6E5D] uppercase tracking-wider">{tx('Focus Stability', 'एकाग्रता स्थिरता')}</span>
             <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-[#2D3A2F]">{stats.lowFatiguePct}%</span>
-            <span className="text-xs text-[#5A6E5D]">low fatigue rate</span>
+            <span className="text-xs text-[#5A6E5D]">{tx('low fatigue rate', 'कम थकान दर')}</span>
           </div>
           <div className="text-[11px] text-[#5B825B] font-bold">
-            {stats.hintsFreePct}% independent solves
+            {tx(`${stats.hintsFreePct}% independent solves`, `${stats.hintsFreePct}% स्वतंत्र समाधान`)}
           </div>
         </div>
       </div>
@@ -549,7 +554,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                   : 'bg-[#FDFBF7] text-[#5A6E5D] hover:bg-[#EAF1E8]'
               }`}
             >
-              Accuracy & Mistakes
+              {tx('Accuracy & Mistakes', 'सटीकता और त्रुटियां')}
             </button>
             <button
               onClick={() => {
@@ -562,7 +567,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                   : 'bg-[#FDFBF7] text-[#5A6E5D] hover:bg-[#EAF1E8]'
               }`}
             >
-              Latency Speed (Seconds)
+              {tx('Latency Speed (Seconds)', 'विलंबता गति (सेकंड)')}
             </button>
             <button
               onClick={() => {
@@ -575,7 +580,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                   : 'bg-[#FDFBF7] text-[#5A6E5D] hover:bg-[#EAF1E8]'
               }`}
             >
-              Difficulty Progression
+              {tx('Difficulty Progression', 'कठिनाई प्रगति')}
             </button>
             <button
               onClick={() => {
@@ -588,13 +593,13 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                   : 'bg-[#FDFBF7] text-[#5A6E5D] hover:bg-[#EAF1E8]'
               }`}
             >
-              Hints & Independence
+              {tx('Hints & Independence', 'संकेत और स्वतंत्रता')}
             </button>
           </div>
 
           {/* Time range selector */}
           <div className="flex items-center gap-2 self-end md:self-auto">
-            <span className="text-xs text-[#5A6E5D] font-bold">Sessions:</span>
+            <span className="text-xs text-[#5A6E5D] font-bold">{tx('Sessions:', 'सत्र:')}</span>
             <div className="bg-[#FDFBF7] p-1 rounded-xl border border-[#E0DCD3] flex items-center gap-1">
               <button
                 onClick={() => setTimeRange('all')}
@@ -602,7 +607,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                   timeRange === 'all' ? 'bg-[#5B825B] text-white shadow-2xs' : 'text-[#5A6E5D]'
                 }`}
               >
-                All ({sortedLogs.length})
+                {tx(`All (${sortedLogs.length})`, `सभी (${sortedLogs.length})`)}
               </button>
               <button
                 onClick={() => setTimeRange('last7')}
@@ -610,7 +615,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                   timeRange === 'last7' ? 'bg-[#5B825B] text-white shadow-2xs' : 'text-[#5A6E5D]'
                 }`}
               >
-                Last 7
+                {tx('Last 7', 'पिछले 7')}
               </button>
               <button
                 onClick={() => setTimeRange('last14')}
@@ -618,7 +623,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                   timeRange === 'last14' ? 'bg-[#5B825B] text-white shadow-2xs' : 'text-[#5A6E5D]'
                 }`}
               >
-                Last 14
+                {tx('Last 14', 'पिछले 14')}
               </button>
             </div>
           </div>
@@ -628,8 +633,8 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
         {selectedChartTab === 'accuracy' && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-[#5A6E5D]">
-              <span className="font-bold text-[#2D3A2F]">Recall Precision & Error Trend Over Rounds</span>
-              <span>Lower mistakes indicate strengthening spatial working memory</span>
+              <span className="font-bold text-[#2D3A2F]">{tx('Recall Precision & Error Trend Over Rounds', 'राउंड में स्मरण सटीकता और त्रुटि प्रवृत्ति')}</span>
+              <span>{tx('Lower mistakes indicate strengthening spatial working memory', 'कम त्रुटियां स्थानिक कार्यशील स्मृति में सुधार दर्शाती हैं')}</span>
             </div>
             <div className="h-72 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
@@ -665,9 +670,9 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                       fontSize: '12px'
                     }}
                     formatter={(value: any, name: any) => {
-                      if (name === 'mistakes') return [`${value} errors`, 'Mistakes'];
-                      if (name === 'moves') return [`${value} turns`, 'Total Moves'];
-                      if (name === 'accuracyScore') return [`${value}%`, 'Recall Score'];
+                      if (name === 'mistakes') return [`${value} ${tx('errors', 'त्रुटियां')}`, tx('Mistakes', 'त्रुटियां')];
+                      if (name === 'moves') return [`${value} ${tx('turns', 'चालें')}`, tx('Total Moves', 'कुल चालें')];
+                      if (name === 'accuracyScore') return [`${value}%`, tx('Recall Score', 'स्मरण स्कोर')];
                       return [value, String(name || '')];
                     }}
                     labelFormatter={(label) => String(label)}
@@ -677,9 +682,9 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                     height={36} 
                     iconType="circle"
                     formatter={(val) => {
-                      if (val === 'mistakes') return <span className="text-xs font-bold text-[#C46A66]">Mistakes Count</span>;
-                      if (val === 'moves') return <span className="text-xs font-bold text-[#5A6E5D]">Moves Made</span>;
-                      if (val === 'accuracyScore') return <span className="text-xs font-bold text-[#5B825B]">Accuracy Score (%)</span>;
+                      if (val === 'mistakes') return <span className="text-xs font-bold text-[#C46A66]">{tx('Mistakes Count', 'त्रुटि गणना')}</span>;
+                      if (val === 'moves') return <span className="text-xs font-bold text-[#5A6E5D]">{tx('Moves Made', 'की गई चालें')}</span>;
+                      if (val === 'accuracyScore') return <span className="text-xs font-bold text-[#5B825B]">{tx('Accuracy Score (%)', 'सटीकता स्कोर (%)')}</span>;
                       return val;
                     }}
                   />
@@ -716,8 +721,8 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
         {selectedChartTab === 'latency' && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-[#5A6E5D]">
-              <span className="font-bold text-[#2D3A2F]">Processing Speed & Hesitation Delay</span>
-              <span>Baseline therapeutic target: 2.0s – 3.8s per turn</span>
+              <span className="font-bold text-[#2D3A2F]">{tx('Processing Speed & Hesitation Delay', 'प्रसंस्करण गति और झिझक विलंब')}</span>
+              <span>{tx('Baseline therapeutic target: 2.0s – 3.8s per turn', 'आधारभूत चिकित्सीय लक्ष्य: 2.0s – 3.8s प्रति मोड़')}</span>
             </div>
             <div className="h-72 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
@@ -751,8 +756,8 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                       fontSize: '12px'
                     }}
                     formatter={(value: any, name: any) => {
-                      if (name === 'latencySec') return [`${value} seconds`, 'Response Latency'];
-                      if (name === 'optimalLatencyBaseline') return [`${value} seconds`, 'Therapeutic Target'];
+                      if (name === 'latencySec') return [`${value} ${tx('seconds', 'सेकंड')}`, tx('Response Latency', 'प्रतिक्रिया विलंबता')];
+                      if (name === 'optimalLatencyBaseline') return [`${value} ${tx('seconds', 'सेकंड')}`, tx('Therapeutic Target', 'चिकित्सीय लक्ष्य')];
                       return [value, String(name || '')];
                     }}
                   />
@@ -761,8 +766,8 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                     height={36} 
                     iconType="circle"
                     formatter={(val) => {
-                      if (val === 'latencySec') return <span className="text-xs font-bold text-[#2D3A2F]">Response Speed (Seconds)</span>;
-                      if (val === 'optimalLatencyBaseline') return <span className="text-xs font-bold text-[#5B825B]">Clinical Target Line</span>;
+                      if (val === 'latencySec') return <span className="text-xs font-bold text-[#2D3A2F]">{tx('Response Speed (Seconds)', 'प्रतिक्रिया गति (सेकंड)')}</span>;
+                      if (val === 'optimalLatencyBaseline') return <span className="text-xs font-bold text-[#5B825B]">{tx('Clinical Target Line', 'नैदानिक लक्ष्य रेखा')}</span>;
                       return val;
                     }}
                   />
@@ -770,7 +775,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                     y={3.5} 
                     stroke="#5B825B" 
                     strokeDasharray="4 4" 
-                    label={{ value: 'Target Baseline (3.5s)', fill: '#5B825B', fontSize: 10, position: 'insideTopRight' }} 
+                    label={{ value: tx('Target Baseline (3.5s)', 'लक्ष्य आधार रेखा (3.5s)'), fill: '#5B825B', fontSize: 10, position: 'insideTopRight' }} 
                   />
                   <Line
                     type="monotone"
@@ -790,8 +795,8 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
         {selectedChartTab === 'difficulty' && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-[#5A6E5D]">
-              <span className="font-bold text-[#2D3A2F]">Game Difficulty Matrix Scaling</span>
-              <span>Level 1: 3 Pairs | Level 2: 4 Pairs | Level 3: 6 Pairs</span>
+              <span className="font-bold text-[#2D3A2F]">{tx('Game Difficulty Matrix Scaling', 'खेल कठिनाई मैट्रिक्स स्केलिंग')}</span>
+              <span>{tx('Level 1: 3 Pairs | Level 2: 4 Pairs | Level 3: 6 Pairs', 'स्तर 1: 3 जोड़े | स्तर 2: 4 जोड़े | स्तर 3: 6 जोड़े')}</span>
             </div>
             <div className="h-72 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
@@ -820,15 +825,15 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                     }}
                     formatter={(value: any, name: any, item: any) => {
                       const lvl = Number(value);
-                      const label = lvl === 1 ? 'Gentle (3 Pairs)' : lvl === 2 ? 'Balanced (4 Pairs)' : 'Challenge (6 Pairs)';
+                      const label = lvl === 1 ? tx('Gentle (3 Pairs)', 'सौम्य (3 जोड़े)') : lvl === 2 ? tx('Balanced (4 Pairs)', 'संतुलित (4 जोड़े)') : tx('Challenge (6 Pairs)', 'चुनौती (6 जोड़े)');
                       const action = item?.payload?.adaptiveAction || 'maintained';
-                      return [`Level ${lvl} - ${label} [${action}]`, 'Difficulty Level'];
+                      return [`${tx('Level', 'स्तर')} ${lvl} - ${label} [${action}]`, tx('Difficulty Level', 'कठिनाई स्तर')];
                     }}
                   />
                   <Legend 
                     verticalAlign="top" 
                     height={36} 
-                    formatter={() => <span className="text-xs font-bold text-[#5B825B]">DDA Difficulty Tier Level</span>}
+                    formatter={() => <span className="text-xs font-bold text-[#5B825B]">{tx('DDA Difficulty Tier Level', 'डीडीए कठिनाई स्तर स्तर')}</span>}
                   />
                   <Bar 
                     dataKey="difficultyLevel" 
@@ -846,8 +851,8 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
         {selectedChartTab === 'assistance' && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-[#5A6E5D]">
-              <span className="font-bold text-[#2D3A2F]">Care Assistance & Hint Dependency</span>
-              <span>Fewer hints indicate autonomous recall and confident decision-making</span>
+              <span className="font-bold text-[#2D3A2F]">{tx('Care Assistance & Hint Dependency', 'देखभाल सहायता और संकेत निर्भरता')}</span>
+              <span>{tx('Fewer hints indicate autonomous recall and confident decision-making', 'कम संकेत स्वतंत्र स्मरण और आत्मविश्वासपूर्ण निर्णय दर्शाते हैं')}</span>
             </div>
             <div className="h-72 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
@@ -874,12 +879,12 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                       boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                       fontSize: '12px'
                     }}
-                    formatter={(value: any) => [`${value} hints utilized`, 'Hints Used']}
+                    formatter={(value: any) => [`${value} ${tx('hints utilized', 'संकेत उपयोग किए गए')}`, tx('Hints Used', 'उपयोग किए गए संकेत')] }
                   />
                   <Legend 
                     verticalAlign="top" 
                     height={36} 
-                    formatter={() => <span className="text-xs font-bold text-[#E8B25C]">Hints Used Per Game Session</span>}
+                    formatter={() => <span className="text-xs font-bold text-[#E8B25C]">{tx('Hints Used Per Game Session', 'प्रति खेल सत्र में उपयोग किए गए संकेत')}</span>}
                   />
                   <Bar 
                     dataKey="hintsUsed" 
@@ -900,9 +905,9 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
               <Activity className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-bold text-[#2D3A2F]">Real-time Telemetry Simulator</p>
+              <p className="text-xs font-bold text-[#2D3A2F]">{tx('Real-time Telemetry Simulator', 'रीयल-टाइम टेलीमेट्री सिम्युलेटर')}</p>
               <p className="text-[11px] text-[#5A6E5D]">
-                Log a simulated test round to watch the Recharts curve update in real-time.
+                {tx('Log a simulated test round to watch the Recharts curve update in real-time.', 'रीयल-टाइम में चार्ट वक्र को अपडेट होते देखने के लिए एक सिम्युलेटेड टेस्ट राउंड दर्ज करें।')}
               </p>
             </div>
           </div>
@@ -911,7 +916,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
             className="w-full sm:w-auto px-3.5 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black hover:bg-[#4a6b4a] transition-all shadow-2xs flex items-center justify-center gap-1.5 shrink-0"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>+ Log Practice Round</span>
+            <span>+ {tx('Log Practice Round', 'अभ्यास राउंड जोड़ें')}</span>
           </button>
         </div>
       </div>
@@ -924,40 +929,52 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
               <Brain className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-black text-[#2D3A2F] uppercase tracking-wider">
-              Clinical DDA Observations & Takeaways
+              {tx('Clinical DDA Observations & Takeaways', 'नैदानिक डीडीए अवलोकन और निष्कर्ष')}
             </h3>
           </div>
           <span className="text-[11px] font-bold text-[#5B825B] bg-white px-2.5 py-0.5 rounded-full border border-[#5B825B]/20">
-            Powered by Gemini 3.8 Flash & Local ML
+            {tx('Powered by Gemini 3.8 Flash & Local ML', 'Gemini 3.8 Flash और स्थानीय एमएल द्वारा संचालित')}
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-[#28331F]">
           <div className="bg-white/80 p-3.5 rounded-2xl border border-[#5B825B]/20 space-y-1">
-            <span className="font-extrabold text-[#5B825B] block">1. Spatial Recall Trajectory</span>
+            <span className="font-extrabold text-[#5B825B] block">{tx('1. Spatial Recall Trajectory', '1. स्थानिक स्मरण प्रक्षेपवक्र')}</span>
             <p className="leading-relaxed">
-              Patient exhibits an overall <strong className="text-[#2D3A2F]">{stats.mistakeImprovementPct > 0 ? `${stats.mistakeImprovementPct}% decrease in mispairings` : 'stable recall profile'}</strong>. Pattern recognition latency has decreased to <strong className="text-[#2D3A2F]">{stats.avgLatencySec} seconds</strong>, showing healthy visual working memory activation.
+              {tx(
+                `Patient exhibits an overall ${stats.mistakeImprovementPct > 0 ? `${stats.mistakeImprovementPct}% decrease in mispairings` : 'stable recall profile'}. Pattern recognition latency has decreased to ${stats.avgLatencySec} seconds, showing healthy visual working memory activation.`,
+                `मरीज़ में कुल मिलाकर ${stats.mistakeImprovementPct > 0 ? `गलत जोड़ियों में ${stats.mistakeImprovementPct}% कमी` : 'स्थिर स्मरण प्रोफ़ाइल'} दिखाई देती है। पैटर्न पहचान विलंबता घटकर ${stats.avgLatencySec} सेकंड हो गई है, जो स्वस्थ दृश्य कार्यशील स्मृति सक्रियता को दर्शाता है।`
+              )}
             </p>
           </div>
 
           <div className="bg-white/80 p-3.5 rounded-2xl border border-[#5B825B]/20 space-y-1">
-            <span className="font-extrabold text-[#5B825B] block">2. Adaptive Flow Regulation</span>
+            <span className="font-extrabold text-[#5B825B] block">{tx('2. Adaptive Flow Regulation', '2. अनुकूली प्रवाह विनियमन')}</span>
             <p className="leading-relaxed">
-              The engine automatically promoted {patientName} to <strong className="text-[#2D3A2F]">Level {stats.currentLevel}</strong> following consecutive low-mistake sessions. No distress thresholds or sudden downshifts were triggered.
+              {tx(
+                `The engine automatically promoted ${patientName} to Level ${stats.currentLevel} following consecutive low-mistake sessions. No distress thresholds or sudden downshifts were triggered.`,
+                `इंजन ने लगातार कम गलतियों वाले सत्रों के बाद ${patientName} को स्वचालित रूप से स्तर ${stats.currentLevel} पर पदोन्नत किया। कोई संकट सीमा या अचानक गिरावट शुरू नहीं हुई।`
+              )}
             </p>
           </div>
 
           <div className="bg-white/80 p-3.5 rounded-2xl border border-[#5B825B]/20 space-y-1">
-            <span className="font-extrabold text-[#5B825B] block">3. Cognitive Fatigue Tolerance</span>
+            <span className="font-extrabold text-[#5B825B] block">{tx('3. Cognitive Fatigue Tolerance', '3. संज्ञानात्मक थकान सहनशीलता')}</span>
             <p className="leading-relaxed">
-              <strong className="text-[#2D3A2F]">{stats.lowFatiguePct}% of completed rounds</strong> maintained a 'LOW' fatigue risk profile. Engagement remains most stable during morning periods (9:00 AM – 11:30 AM).
+              {tx(
+                `${stats.lowFatiguePct}% of completed rounds maintained a 'LOW' fatigue risk profile. Engagement remains most stable during morning periods (9:00 AM – 11:30 AM).`,
+                `पूर्ण किए गए राउंड में से ${stats.lowFatiguePct}% में 'कम' थकान जोखिम प्रोफ़ाइल बनी रही। सुबह के समय (सुबह 9:00 - 11:30 बजे) सहभागिता सबसे स्थिर रहती है।`
+              )}
             </p>
           </div>
 
           <div className="bg-white/80 p-3.5 rounded-2xl border border-[#5B825B]/20 space-y-1">
-            <span className="font-extrabold text-[#5B825B] block">4. Caregiver Recommendation</span>
+            <span className="font-extrabold text-[#5B825B] block">{tx('4. Caregiver Recommendation', '4. देखभालकर्ता अनुशंसा')}</span>
             <p className="leading-relaxed">
-              Recommend continuing 2 daily sessions of 10–12 minutes each. Pair game sessions with reminiscence photo stories to reinforce semantic connections.
+              {tx(
+                'Recommend continuing 2 daily sessions of 10–12 minutes each. Pair game sessions with reminiscence photo stories to reinforce semantic connections.',
+                'प्रतिदिन 10-12 मिनट के 2 सत्र जारी रखने की अनुशंसा है। अर्थ संबंधी संबंधों को सुदृढ़ करने के लिए खेल सत्रों को पुरानी तस्वीरों की कहानियों के साथ जोड़ें।'
+              )}
             </p>
           </div>
         </div>
@@ -968,14 +985,14 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">
-              Detailed Round Telemetry ({chartData.length} Records)
+              {tx(`Detailed Round Telemetry (${chartData.length} Records)`, `विस्तृत राउंड टेलीमेट्री (${chartData.length} रिकॉर्ड)`)}
             </h3>
             <p className="text-xs text-[#5A6E5D]">
-              Click any round to inspect exact cognitive reasoning and adaptive decisions.
+              {tx('Click any round to inspect exact cognitive reasoning and adaptive decisions.', 'सटीक संज्ञानात्मक तर्क और अनुकूली निर्णयों की जांच के लिए किसी भी राउंड पर क्लिक करें।')}
             </p>
           </div>
           <span className="text-xs font-bold text-[#5A6E5D]">
-            Sorted: Newest First
+            {tx('Sorted: Newest First', 'क्रम: नवीनतम पहले')}
           </span>
         </div>
 
@@ -1008,10 +1025,10 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                             : 'bg-[#EAF1E8] text-[#5B825B] border border-[#5B825B]/20'
                         }`}>
                           {log.gameType === 'puzzle' ? <Puzzle className="w-2.5 h-2.5" /> : <Brain className="w-2.5 h-2.5" />}
-                          {log.gameTitle}
+                          {log.gameType === 'puzzle' ? tx('Photo Puzzle', 'चित्र पहेली') : tx('Memory Match', 'स्मृति मिलान')}
                         </span>
                         <h4 className="font-extrabold text-xs text-[#2D3A2F]">
-                          Level {log.difficultyLevel}
+                          {tx(`Level ${log.difficultyLevel}`, `स्तर ${log.difficultyLevel}`)}
                         </h4>
                         <span className={`px-2 py-0.2 rounded-full text-[10px] font-black uppercase ${
                           log.adaptiveAction === 'increased'
@@ -1020,18 +1037,18 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                             ? 'bg-amber-50 text-amber-700 border border-amber-200'
                             : 'bg-gray-100 text-[#5A6E5D]'
                         }`}>
-                          {log.adaptiveAction}
+                          {log.adaptiveAction === 'increased' ? tx('increased', 'बढ़ाया') : log.adaptiveAction === 'eased' ? tx('eased', 'आसान किया') : tx('maintained', 'बनाए रखा')}
                         </span>
                       </div>
                       <p className="text-[11px] text-[#5A6E5D]">
-                        {log.dateLabel} at {log.timeLabel} • {log.latencySec}s latency • {log.mistakes} mistakes • {log.moves} moves
+                        {log.dateLabel} at {log.timeLabel} • {log.latencySec}s {tx('latency', 'विलंब')} • {log.mistakes} {tx('mistakes', 'गलतियां')} • {log.moves} {tx('moves', 'चालें')}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-extrabold text-[#5B825B] px-2.5 py-1 rounded-xl bg-[#EAF1E8]">
-                      {log.accuracyScore}% Score
+                      {log.accuracyScore}% {tx('Score', 'स्कोर')}
                     </span>
                     <ChevronRight className={`w-4 h-4 text-[#5A6E5D] transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                   </div>
@@ -1041,24 +1058,24 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
                   <div className="mt-3 pt-3 border-t border-dashed border-[#E0DCD3] space-y-2 text-xs bg-[#FDFBF7] p-3 rounded-xl">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
                       <div className="bg-white p-2 rounded-lg border border-[#E0DCD3]">
-                        <span className="text-[#5A6E5D] block">Processing Speed</span>
-                        <span className="font-extrabold text-[#2D3A2F]">{log.latencySec} seconds</span>
+                        <span className="text-[#5A6E5D] block">{tx('Processing Speed', 'प्रसंस्करण गति')}</span>
+                        <span className="font-extrabold text-[#2D3A2F]">{log.latencySec} {tx('seconds', 'सेकंड')}</span>
                       </div>
                       <div className="bg-white p-2 rounded-lg border border-[#E0DCD3]">
-                        <span className="text-[#5A6E5D] block">Hints Relied Upon</span>
-                        <span className="font-extrabold text-[#2D3A2F]">{log.hintsUsed} hints</span>
+                        <span className="text-[#5A6E5D] block">{tx('Hints Relied Upon', 'उपयोग किए गए संकेत')}</span>
+                        <span className="font-extrabold text-[#2D3A2F]">{log.hintsUsed} {tx('hints', 'संकेत')}</span>
                       </div>
                       <div className="bg-white p-2 rounded-lg border border-[#E0DCD3]">
-                        <span className="text-[#5A6E5D] block">Fatigue Assessment</span>
-                        <span className="font-extrabold text-emerald-700">{log.fatigueRisk} RISK</span>
+                        <span className="text-[#5A6E5D] block">{tx('Fatigue Assessment', 'थकान मूल्यांकन')}</span>
+                        <span className="font-extrabold text-emerald-700">{log.fatigueRisk} {tx('RISK', 'जोखिम')}</span>
                       </div>
                       <div className="bg-white p-2 rounded-lg border border-[#E0DCD3]">
-                        <span className="text-[#5A6E5D] block">AI Engine</span>
+                        <span className="text-[#5A6E5D] block">{tx('AI Engine', 'एआई इंजन')}</span>
                         <span className="font-extrabold text-[#5B825B]">{log.aiModel}</span>
                       </div>
                     </div>
                     <div className="text-[11px] text-[#2D3A2F] bg-white p-2.5 rounded-lg border border-[#E0DCD3]">
-                      <strong className="text-[#5B825B]">Clinical Reasoning: </strong>
+                      <strong className="text-[#5B825B]">{tx('Clinical Reasoning:', 'नैदानिक तर्क:')} </strong>
                       {log.aiReasoning}
                     </div>
                   </div>

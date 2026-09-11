@@ -11,6 +11,7 @@ import {
 } from '../../types';
 import { MEDICAL_DISCLAIMER } from '../../data/mockData';
 import { soundController } from '../../utils/audio';
+import { useLanguage } from '../../context/LanguageContext';
 import { CognitiveProgressView } from './CognitiveProgressView';
 import { MemoryInsightsView } from './MemoryInsightsView';
 import { ExportPdfModal } from './ExportPdfModal';
@@ -106,6 +107,8 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
   onOpenSetup,
   auditLogs = [],
 }) => {
+  const { tx, isHindi } = useLanguage();
+
   // Modal states for Calendar & Reminders
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [newEventTitle, setNewEventTitle] = useState('');
@@ -380,11 +383,11 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               />
               <div>
                 <span className="px-2.5 py-0.5 rounded-full bg-[#EAF1E8] text-[#5B825B] text-[11px] font-black uppercase">
-                  Active Player & Loved One
+                  {tx('Active Player & Loved One', 'सक्रिय खिलाड़ी व प्रियजन')}
                 </span>
                 <h2 className="text-xl font-black text-[#2D3A2F] mt-0.5">{patientProfile.fullName}</h2>
                 <p className="text-xs text-[#5A6E5D]">
-                  {patientProfile.age} yrs • {patientProfile.region}
+                  {patientProfile.age} {tx('yrs', 'वर्ष')} • {patientProfile.region}
                 </p>
               </div>
             </div>
@@ -395,9 +398,9 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   setShowExportPdfModal(true);
                 }}
                 className="px-3 py-1.5 rounded-xl bg-[#F0EBE1] text-[#2D3A2F] border border-[#D5CFBF] text-xs font-extrabold hover:bg-[#EAE4D6] flex items-center gap-1 shadow-2xs"
-                title="Download medical logs & cognitive progress PDF"
+                title={tx('Download medical logs & cognitive progress PDF', 'चिकित्सा लॉग और संज्ञानात्मक प्रगति पीडीएफ डाउनलोड करें')}
               >
-                <FileText className="w-3.5 h-3.5 text-[#5B825B]" /> PDF Summary
+                <FileText className="w-3.5 h-3.5 text-[#5B825B]" /> {tx('PDF Summary', 'पीडीएफ़ सारांश')}
               </button>
               <button
                 onClick={() => {
@@ -406,13 +409,13 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 }}
                 className="px-3 py-1.5 rounded-xl bg-[#EAF1E8] text-[#5B825B] text-xs font-extrabold hover:bg-[#d9e8d6] flex items-center gap-1 shadow-2xs"
               >
-                <Edit3 className="w-3.5 h-3.5" /> Edit Details
+                <Edit3 className="w-3.5 h-3.5" /> {tx('Edit Details', 'विवरण बदलें')}
               </button>
               <button
                 onClick={() => onSelectTab('profile')}
                 className="px-3 py-1.5 rounded-xl bg-[#FDFBF7] border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] hover:bg-[#EAF1E8]"
               >
-                Full Profile
+                {tx('Full Profile', 'पूरा प्रोफ़ाइल')}
               </button>
             </div>
           </div>
@@ -421,30 +424,30 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="bg-white p-3 rounded-2xl border border-[#E0DCD3] shadow-xs">
               <span className="text-2xl font-black text-[#5B825B]">{globalGameStats.avgAccuracy}%</span>
-              <span className="block text-[11px] font-bold text-[#5A6E5D] mt-0.5">Avg Accuracy</span>
+              <span className="block text-[11px] font-bold text-[#5A6E5D] mt-0.5">{tx('Avg Accuracy', 'औसत सटीकता')}</span>
               <span className="block text-[9px] text-[#5B825B] font-extrabold truncate">
-                {gameBreakdown.memoryMatch.sessions} Match • {gameBreakdown.puzzle.sessions} Puzzle
+                {gameBreakdown.memoryMatch.sessions} {tx('Match', 'मैच')} • {gameBreakdown.puzzle.sessions} {tx('Puzzle', 'पहेली')}
               </span>
             </div>
             <div className="bg-white p-3 rounded-2xl border border-[#E0DCD3] shadow-xs">
               <span className="text-2xl font-black text-[#2D3A2F]">{globalGameStats.totalSessions}</span>
-              <span className="block text-[11px] font-bold text-[#5A6E5D] mt-0.5">Rounds Recorded</span>
+              <span className="block text-[11px] font-bold text-[#5A6E5D] mt-0.5">{tx('Rounds Recorded', 'कुल सत्र दर्ज')}</span>
               <span className="block text-[9px] text-[#5A6E5D] font-extrabold truncate">
-                Level {globalGameStats.currentLevel} Adaptive Tier
+                {tx('Level', 'स्तर')} {globalGameStats.currentLevel} {tx('Adaptive Tier', 'अनुकूली स्तर')}
               </span>
             </div>
             <div className="bg-white p-3 rounded-2xl border border-[#E0DCD3] shadow-xs">
               <span className="text-2xl font-black text-[#E8B25C]">{globalGameStats.activeDays}</span>
-              <span className="block text-[11px] font-bold text-[#5A6E5D] mt-0.5">Active Days</span>
+              <span className="block text-[11px] font-bold text-[#5A6E5D] mt-0.5">{tx('Active Days', 'सक्रिय दिन')}</span>
               <span className="block text-[9px] text-[#8C651E] font-extrabold truncate">
-                {globalGameStats.avgLatencySec}s avg latency
+                {globalGameStats.avgLatencySec}s {tx('avg latency', 'औसत प्रतिक्रिया')}
               </span>
             </div>
           </div>
 
           {/* Care Sections Navigation Hub */}
           <div className="bg-white rounded-3xl p-4 border border-[#E0DCD3] shadow-xs space-y-2">
-            <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider px-2">Care Modules</h3>
+            <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider px-2">{tx('Care Modules', 'देखभाल मॉड्यूल')}</h3>
 
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -460,16 +463,16 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">Memory Games Insights</h4>
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Memory Games Insights', 'स्मृति खेल इनसाइट्स')}</h4>
                       <span className="px-2 py-0.2 rounded-full bg-[#5B825B] text-white text-[10px] font-black uppercase tracking-wider">
                         Recharts
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#5A6E5D]">Track accuracy, mistakes, reaction speed & DDA shifts over time</p>
+                    <p className="text-[11px] text-[#5A6E5D]">{tx('Track accuracy, mistakes, reaction speed & DDA shifts over time', 'समय के साथ सटीकता, गलतियाँ, गति और डीडीए बदलाव ट्रैक करें')}</p>
                   </div>
                 </div>
                 <span className="px-2.5 py-1 rounded-xl bg-white border border-[#5B825B]/30 text-[#5B825B] text-xs font-black">
-                  View Insights →
+                  {tx('View Insights →', 'इनसाइट्स देखें →')}
                 </span>
               </button>
 
@@ -483,16 +486,16 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">DDA Cognitive Progress</h4>
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('DDA Cognitive Progress', 'डीडीए संज्ञानात्मक प्रगति')}</h4>
                       <span className="px-2 py-0.2 rounded-full bg-white text-[#5B825B] text-[10px] font-black uppercase">
-                        Clinical Report
+                        {tx('Clinical Report', 'चिकित्सीय रिपोर्ट')}
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#5A6E5D]">Holistic cognitive engagement score and PDF health export</p>
+                    <p className="text-[11px] text-[#5A6E5D]">{tx('Holistic cognitive engagement score and PDF health export', 'संज्ञानात्मक जुड़ाव स्कोर और स्वास्थ्य पीडीएफ़ निर्यात')}</p>
                   </div>
                 </div>
                 <span className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[#2D3A2F] text-xs font-black">
-                  View Trends →
+                  {tx('View Trends →', 'ट्रेंड्स देखें →')}
                 </span>
               </button>
 
@@ -505,12 +508,12 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                     <Film className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-sm text-[#2D3A2F]">Player Memories & Media</h4>
-                    <p className="text-[11px] text-[#5A6E5D]">Upload family photos, videos, and stories</p>
+                    <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Player Memories & Media', 'खिलाड़ी की यादें और मीडिया')}</h4>
+                    <p className="text-[11px] text-[#5A6E5D]">{tx('Upload family photos, videos, and stories', 'पारिवारिक फ़ोटो, वीडियो और कहानियां अपलोड करें')}</p>
                   </div>
                 </div>
                 <span className="px-2.5 py-1 rounded-xl bg-[#5B825B] text-white text-xs font-black">
-                  {memories.length} Items
+                  {memories.length} {tx('Items', 'आइटम')}
                 </span>
               </button>
 
@@ -521,8 +524,8 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 <div className="w-8 h-8 rounded-xl bg-[#EAF1E8] text-[#5B825B] flex items-center justify-center mb-1.5">
                   <Heart className="w-4 h-4" />
                 </div>
-                <h4 className="font-extrabold text-sm text-[#2D3A2F]">Medical Details</h4>
-                <p className="text-[11px] text-[#5A6E5D]">Doctors & care notes</p>
+                <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Medical Details', 'चिकित्सा विवरण')}</h4>
+                <p className="text-[11px] text-[#5A6E5D]">{tx('Doctors & care notes', 'डॉक्टर व देखभाल नोट्स')}</p>
               </button>
 
               <button
@@ -532,8 +535,8 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 <div className="w-8 h-8 rounded-xl bg-[#FDF0D5] text-[#8C651E] flex items-center justify-center mb-1.5">
                   <Activity className="w-4 h-4" />
                 </div>
-                <h4 className="font-extrabold text-sm text-[#2D3A2F]">DDA Insights</h4>
-                <p className="text-[11px] text-[#5A6E5D]">Charts & telemetry</p>
+                <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('DDA Insights', 'डीडीए इनसाइट्स')}</h4>
+                <p className="text-[11px] text-[#5A6E5D]">{tx('Charts & telemetry', 'चार्ट और टेलीमेट्री')}</p>
               </button>
 
               <button
@@ -543,8 +546,8 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 <div className="w-8 h-8 rounded-xl bg-[#D4E4E6] text-[#7A9CA4] flex items-center justify-center mb-1.5">
                   <BarChart3 className="w-4 h-4" />
                 </div>
-                <h4 className="font-extrabold text-sm text-[#2D3A2F]">Reports</h4>
-                <p className="text-[11px] text-[#5A6E5D]">Trends & frequency</p>
+                <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Reports', 'रिपोर्ट्स')}</h4>
+                <p className="text-[11px] text-[#5A6E5D]">{tx('Trends & frequency', 'ट्रेंड्स और आवृत्ति')}</p>
               </button>
 
               <button
@@ -554,8 +557,8 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 <div className="w-8 h-8 rounded-xl bg-[#F0D8D6] text-[#C46A66] flex items-center justify-center mb-1.5">
                   <Clock className="w-4 h-4" />
                 </div>
-                <h4 className="font-extrabold text-sm text-[#2D3A2F]">Reminders</h4>
-                <p className="text-[11px] text-[#5A6E5D]">Medicine & routines</p>
+                <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Reminders', 'रिमाइंडर')}</h4>
+                <p className="text-[11px] text-[#5A6E5D]">{tx('Medicine & routines', 'दवा और दिनचर्या')}</p>
               </button>
 
               <button
@@ -571,16 +574,16 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">Generate Clinical PDF Summary</h4>
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Generate Clinical PDF Summary', 'चिकित्सीय पीडीएफ़ सारांश बनाएं')}</h4>
                       <span className="px-2 py-0.2 rounded-full bg-[#EAF1E8] text-[#5B825B] text-[10px] font-black uppercase">
-                        Printable
+                        {tx('Printable', 'प्रिंट योग्य')}
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#5A6E5D]">Download patient medical logs & engagement progress trends</p>
+                    <p className="text-[11px] text-[#5A6E5D]">{tx('Download patient medical logs & engagement progress trends', 'रोगी के मेडिकल लॉग और प्रगति रिपोर्ट डाउनलोड करें')}</p>
                   </div>
                 </div>
                 <span className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[#2D3A2F] text-xs font-black">
-                  Export PDF ↓
+                  {tx('Export PDF ↓', 'पीडीएफ़ डाउनलोड करें ↓')}
                 </span>
               </button>
             </div>
@@ -592,13 +595,13 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-[#C46A66]">
                   <AlertTriangle className="w-5 h-5" />
-                  <h3 className="font-black text-sm uppercase tracking-wide">Care Alerts</h3>
+                  <h3 className="font-black text-sm uppercase tracking-wide">{tx('Care Alerts', 'देखभाल अलर्ट्स')}</h3>
                 </div>
                 <button
                   onClick={() => onSelectTab('alerts')}
                   className="text-xs font-bold text-[#5B825B] hover:underline"
                 >
-                  View All ({alerts.length})
+                  {tx('View All', 'सभी देखें')} ({alerts.length})
                 </button>
               </div>
 
@@ -623,15 +626,15 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-black text-[#2D3A2F]">Care Calendar</h2>
-              <p className="text-xs text-[#5A6E5D]">{patientProfile.name}'s medical appointments & daily schedule</p>
+              <h2 className="text-2xl font-black text-[#2D3A2F]">{tx('Care Calendar', 'देखभाल कैलेंडर')}</h2>
+              <p className="text-xs text-[#5A6E5D]">{patientProfile.name} {tx("'s medical appointments & daily schedule", 'की चिकित्सा मुलाक़ातें और दैनिक समय-सारणी')}</p>
             </div>
             <button
               onClick={() => setShowAddEventModal(true)}
               className="flex items-center gap-1 px-3.5 py-2 rounded-2xl bg-[#5B825B] text-white font-extrabold text-xs shadow-xs hover:bg-[#4d704d]"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Event</span>
+              <span>{tx('Add Event', 'इवेंट जोड़ें')}</span>
             </button>
           </div>
 
@@ -662,7 +665,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   </div>
                 </div>
                 <span className="px-2.5 py-1 rounded-full bg-[#FDFBF7] border border-[#E0DCD3] text-[11px] font-bold text-[#5A6E5D] uppercase">
-                  {evt.type}
+                  {evt.type === 'doctor' ? tx('Doctor', 'डॉक्टर') : evt.type === 'family' ? tx('Family', 'परिवार') : evt.type === 'routine' ? tx('Routine', 'दिनचर्या') : evt.type}
                 </span>
               </div>
             ))}
@@ -674,8 +677,8 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
       {currentTab === 'alerts' && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-2xl font-black text-[#2D3A2F]">Caregiver Alerts</h2>
-            <p className="text-xs text-[#5A6E5D]">System notices for missed routines and upcoming appointments.</p>
+            <h2 className="text-2xl font-black text-[#2D3A2F]">{tx('Caregiver Alerts', 'देखभालकर्ता अलर्ट्स')}</h2>
+            <p className="text-xs text-[#5A6E5D]">{tx('System notices for missed routines and upcoming appointments.', 'छूटी हुई दिनचर्या और आगामी मुलाक़ातों की प्रणाली सूचनाएं।')}</p>
           </div>
 
           <div className="space-y-3">
@@ -708,7 +711,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                       onClick={() => onAcknowledgeAlert(al.id)}
                       className="px-3 py-1.5 rounded-xl bg-[#EAF1E8] text-[#5B825B] font-extrabold text-xs whitespace-nowrap hover:bg-[#d6e5d3]"
                     >
-                      Acknowledge
+                      {tx('Acknowledge', 'स्वीकार करें')}
                     </button>
                   )}
                 </div>
@@ -729,7 +732,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               }}
               className="absolute top-4 right-4 flex items-center gap-1 px-3 py-1.5 rounded-2xl bg-[#5B825B] text-white text-xs font-black shadow-xs hover:bg-[#4d704d]"
             >
-              <Edit3 className="w-3.5 h-3.5" /> Edit Details
+              <Edit3 className="w-3.5 h-3.5" /> {tx('Edit Details', 'विवरण बदलें')}
             </button>
 
             <img
@@ -739,14 +742,14 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
             />
             <div>
               <h2 className="text-2xl font-black text-[#2D3A2F]">{patientProfile.fullName}</h2>
-              <p className="text-xs font-semibold text-[#5B825B] mt-0.5">Player Profile • Loved One & Care Recipient</p>
+              <p className="text-xs font-semibold text-[#5B825B] mt-0.5">{tx('Player Profile • Loved One & Care Recipient', 'खिलाड़ी प्रोफ़ाइल • प्रियजन और देखभाल प्राप्तकर्ता')}</p>
             </div>
             <p className="text-xs text-[#5A6E5D] italic max-w-xs mx-auto">"{patientProfile.about}"</p>
           </div>
 
           <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">Personal Records</h3>
+              <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">{tx('Personal Records', 'व्यक्तिगत रिकॉर्ड')}</h3>
               <button
                 onClick={() => {
                   setProfileForm(patientProfile);
@@ -754,40 +757,42 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 }}
                 className="text-xs font-extrabold text-[#5B825B] hover:underline flex items-center gap-1"
               >
-                <Edit3 className="w-3 h-3" /> Edit
+                <Edit3 className="w-3 h-3" /> {tx('Edit', 'संपादित करें')}
               </button>
             </div>
             <div className="divide-y divide-[#EAE6DF]">
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Preferred Name</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Preferred Name', 'पसंदीदा नाम')}</span>
                 <span className="font-extrabold text-[#2D3A2F]">{patientProfile.name}</span>
               </div>
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Full name</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Full name', 'पूरा नाम')}</span>
                 <span className="font-extrabold text-[#2D3A2F]">{patientProfile.fullName}</span>
               </div>
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Age</span>
-                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.age} years</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Age', 'आयु')}</span>
+                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.age} {tx('years', 'वर्ष')}</span>
               </div>
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Gender</span>
-                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.gender}</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Gender', 'लिंग')}</span>
+                <span className="font-extrabold text-[#2D3A2F]">
+                  {patientProfile.gender === 'Female' ? tx('Female', 'महिला') : patientProfile.gender === 'Male' ? tx('Male', 'पुरुष') : patientProfile.gender}
+                </span>
               </div>
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Region</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Region', 'क्षेत्र')}</span>
                 <span className="font-extrabold text-[#2D3A2F]">{patientProfile.region}</span>
               </div>
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Languages</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Languages', 'भाषाएं')}</span>
                 <span className="font-extrabold text-[#2D3A2F]">{patientProfile.language}</span>
               </div>
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Blood group</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Blood group', 'रक्त समूह')}</span>
                 <span className="font-extrabold text-[#2D3A2F]">{patientProfile.bloodGroup}</span>
               </div>
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Care Focus</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Care Focus', 'देखभाल का मुख्य केंद्र')}</span>
                 <span className="font-extrabold text-[#5B825B] text-right max-w-[180px]">{patientProfile.majorCareIssue}</span>
               </div>
             </div>
@@ -795,7 +800,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
           {/* Emergency Contacts List */}
           <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
-            <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">Emergency Contacts</h3>
+            <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">{tx('Emergency Contacts', 'आपातकालीन संपर्क')}</h3>
             <div className="space-y-2">
               {contacts.map((c) => (
                 <div key={c.id} className="p-3 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] flex items-center justify-between">
@@ -819,8 +824,8 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
           <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">Caregiver Security & Access</h3>
-                <p className="text-xs text-[#5A6E5D]">Family portal credentials and PIN protection</p>
+                <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">{tx('Caregiver Security & Access', 'देखभालकर्ता सुरक्षा व पहुंच')}</h3>
+                <p className="text-xs text-[#5A6E5D]">{tx('Family portal credentials and PIN protection', 'पारिवारिक पोर्टल क्रेडेंशियल्स और पिन सुरक्षा')}</p>
               </div>
               {onOpenSetup && (
                 <button
@@ -830,28 +835,28 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   }}
                   className="px-3.5 py-1.5 rounded-xl bg-[#EAF1E8] text-[#5B825B] text-xs font-black hover:bg-[#d6ebd3] transition-colors"
                 >
-                  Configure Profiles
+                  {tx('Configure Profiles', 'प्रोफ़ाइल कॉन्फ़िगर करें')}
                 </button>
               )}
             </div>
 
             <div className="divide-y divide-[#EAE6DF]">
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Caregiver Name</span>
-                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.caregiver?.name || 'Family Caregiver'}</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Caregiver Name', 'देखभालकर्ता का नाम')}</span>
+                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.caregiver?.name || tx('Family Caregiver', 'पारिवारिक देखभालकर्ता')}</span>
               </div>
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Relationship</span>
-                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.caregiver?.relationship || 'Family'}</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Relationship', 'संबंध')}</span>
+                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.caregiver?.relationship || tx('Family', 'परिवार')}</span>
               </div>
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Phone Contact</span>
-                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.caregiver?.phone || 'Configured in setup'}</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Phone Contact', 'फ़ोन संपर्क')}</span>
+                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.caregiver?.phone || tx('Configured in setup', 'सेटअप में कॉन्फ़िगर किया गया')}</span>
               </div>
               <div className="py-2.5 flex items-center justify-between text-sm">
-                <span className="font-bold text-[#5A6E5D]">Caregiver PIN</span>
+                <span className="font-bold text-[#5A6E5D]">{tx('Caregiver PIN', 'देखभालकर्ता पिन')}</span>
                 <span className="font-extrabold text-[#5B825B] tracking-widest bg-[#EAF1E8] px-2.5 py-0.5 rounded-lg text-xs">
-                  {patientProfile.caregiver?.pin ? '•••• (Configured)' : '1234 (Default)'}
+                  {patientProfile.caregiver?.pin ? tx('•••• (Configured)', '•••• (सेट किया गया)') : tx('1234 (Default)', '1234 (डिफ़ॉल्ट)')}
                 </span>
               </div>
             </div>
@@ -865,7 +870,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   }}
                   className="w-full py-3 rounded-2xl bg-[#5B825B] text-white font-extrabold text-xs flex items-center justify-center gap-2 hover:bg-[#4a6b4a] shadow-xs"
                 >
-                  <span>Launch Initial Setup / Configuration Wizard</span>
+                  <span>{tx('Launch Initial Setup / Configuration Wizard', 'प्रारंभिक सेटअप / कॉन्फ़िगरेशन विज़ार्ड खोलें')}</span>
                 </button>
               </div>
             )}
@@ -879,41 +884,41 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-black text-sm text-[#2D3A2F]">Data Privacy & DPDP Act 2023</h3>
-                  <p className="text-[11px] text-[#5A6E5D]">End-to-end security, consent, and tamper-evident audit logs</p>
+                  <h3 className="font-black text-sm text-[#2D3A2F]">{tx('Data Privacy & DPDP Act 2023', 'डेटा गोपनीयता व डीपी़डीपी अधिनियम 2023')}</h3>
+                  <p className="text-[11px] text-[#5A6E5D]">{tx('End-to-end security, consent, and tamper-evident audit logs', 'सुरक्षा, सहमति और छेड़छाड़-रहित ऑडिट लॉग्स')}</p>
                 </div>
               </div>
               <span className="px-2.5 py-1 rounded-full bg-[#EAF1E8] text-[#3D663D] text-[10px] font-black uppercase tracking-wider">
-                Protected
+                {tx('Protected', 'संरक्षित')}
               </span>
             </div>
 
             {/* Compliance Matrix */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
               <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-1">
-                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">Consent Status</span>
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">{tx('Consent Status', 'सहमति स्थिति')}</span>
                 <p className="font-extrabold text-[#3D663D] flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5" /> Granted
+                  <Check className="w-3.5 h-3.5" /> {tx('Granted', 'स्वीकृत')}
                 </p>
                 <p className="text-[10px] text-[#8C9B8E]">
-                  {patientProfile.consentDate ? new Date(patientProfile.consentDate).toLocaleDateString() : 'Active in profile'}
+                  {patientProfile.consentDate ? new Date(patientProfile.consentDate).toLocaleDateString() : tx('Active in profile', 'प्रोफ़ाइल में सक्रिय')}
                 </p>
               </div>
 
               <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-1">
-                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">Data at Rest</span>
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">{tx('Data at Rest', 'संग्रहीत डेटा')}</span>
                 <p className="font-extrabold text-[#2D3A2F] flex items-center gap-1">
                   <Lock className="w-3.5 h-3.5 text-[#5B825B]" /> AES-256-GCM
                 </p>
-                <p className="text-[10px] text-[#8C9B8E]">Firestore + Client encrypted cache</p>
+                <p className="text-[10px] text-[#8C9B8E]">{tx('Firestore + Client encrypted cache', 'फ़ायरस्टोर + एन्क्रिप्टेड कैश')}</p>
               </div>
 
               <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-1">
-                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">Access Scope</span>
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#5A6E5D] block">{tx('Access Scope', 'पहुंच का दायरा')}</span>
                 <p className="font-extrabold text-[#2D3A2F] flex items-center gap-1">
-                  <Shield className="w-3.5 h-3.5 text-[#3D663D]" /> Caregiver & ASHA
+                  <Shield className="w-3.5 h-3.5 text-[#3D663D]" /> {tx('Caregiver & ASHA', 'देखभालकर्ता और आशा')}
                 </p>
-                <p className="text-[10px] text-[#8C9B8E]">RBAC security rules enforced</p>
+                <p className="text-[10px] text-[#8C9B8E]">{tx('RBAC security rules enforced', 'आरबीएसी सुरक्षा नियम लागू')}</p>
               </div>
             </div>
 
@@ -922,17 +927,17 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               <div className="flex items-center justify-between">
                 <h4 className="font-extrabold text-xs text-[#2D3A2F] flex items-center gap-1.5">
                   <History className="w-4 h-4 text-[#5A6E5D]" />
-                  <span>Immutable Caregiver & ASHA Audit Trail</span>
+                  <span>{tx('Immutable Caregiver & ASHA Audit Trail', 'देखभालकर्ता व आशा अपरिवर्तनीय ऑडिट ट्रेल')}</span>
                 </h4>
                 <span className="text-[10px] font-bold text-[#8C9B8E]">
-                  {auditLogs.length} events recorded
+                  {auditLogs.length} {tx('events recorded', 'घटनाएं दर्ज')}
                 </span>
               </div>
 
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
                 {auditLogs.length === 0 ? (
                   <div className="p-4 rounded-2xl bg-[#FAF8F5] text-center text-xs text-[#5A6E5D]">
-                    Initial profile created. Live caregiver and ASHA interactions will stream here.
+                    {tx('Initial profile created. Live caregiver and ASHA interactions will stream here.', 'प्रारंभिक प्रोफ़ाइल बनाई गई। देखभालकर्ता और आशा की गतिविधियां यहाँ दिखाई देंगी।')}
                   </div>
                 ) : (
                   auditLogs.map((log) => {
@@ -946,10 +951,10 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
                             <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${roleBadge}`}>
-                              {log.actorRole}
+                              {log.actorRole === 'asha' ? tx('ASHA', 'आशा') : tx('Caregiver', 'देखभालकर्ता')}
                             </span>
                             <span className="font-bold text-[#2D3A2F]">
-                              {log.actorName || (log.actorRole === 'asha' ? 'ASHA Worker' : 'Caregiver')}
+                              {log.actorName || (log.actorRole === 'asha' ? tx('ASHA Worker', 'आशा कार्यकर्ता') : tx('Caregiver', 'देखभालकर्ता'))}
                             </span>
                             <span className="text-[10px] text-[#8C9B8E]">
                               {log.action.replace(/_/g, ' ')}
@@ -983,9 +988,9 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 onClick={() => onSelectTab('home')}
                 className="px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-bold"
               >
-                ← Back
+                ← {tx('Back', 'वापस')}
               </button>
-              <h2 className="text-xl font-black text-[#2D3A2F]">Medical Details</h2>
+              <h2 className="text-xl font-black text-[#2D3A2F]">{tx('Medical Details', 'चिकित्सा विवरण')}</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
@@ -996,7 +1001,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F0EBE1] border border-[#D5CFBF] text-[#2D3A2F] text-xs font-extrabold hover:bg-[#EAE4D6] shadow-2xs"
                 title="Download medical logs & progress summary as PDF"
               >
-                <Download className="w-3.5 h-3.5 text-[#5B825B]" /> Export PDF
+                <Download className="w-3.5 h-3.5 text-[#5B825B]" /> {tx('Export PDF', 'पीडीएफ़ डाउनलोड करें')}
               </button>
               <button
                 onClick={() => {
@@ -1005,20 +1010,20 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 }}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#EAF1E8] text-[#5B825B] text-xs font-black hover:bg-[#d9e8d6]"
               >
-                <Edit3 className="w-3.5 h-3.5" /> Edit Guidance
+                <Edit3 className="w-3.5 h-3.5" /> {tx('Edit Guidance', 'मार्गदर्शन बदलें')}
               </button>
               <button
                 onClick={() => setShowAddConsultationModal(true)}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black shadow-xs hover:bg-[#4d704d]"
               >
-                <Plus className="w-3.5 h-3.5" /> Consultation
+                <Plus className="w-3.5 h-3.5" /> {tx('Consultation', 'परामर्श')}
               </button>
             </div>
           </div>
 
           <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">Primary Medical Concerns</h3>
+              <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">{tx('Primary Medical Concerns', 'प्रमुख चिकित्सीय चिंताएं')}</h3>
               <button
                 onClick={() => {
                   setMedicalForm(medicalProfile);
@@ -1026,7 +1031,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 }}
                 className="text-xs font-bold text-[#5B825B] hover:underline"
               >
-                + Add / Manage Concerns
+                {tx('+ Add / Manage Concerns', '+ चिंताएं जोड़ें / प्रबंधित करें')}
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1039,7 +1044,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
             <div className="pt-3 border-t border-[#EAE6DF]">
               <div className="flex items-center justify-between">
-                <h4 className="font-extrabold text-xs text-[#5A6E5D] uppercase">Physician Care Guidance</h4>
+                <h4 className="font-extrabold text-xs text-[#5A6E5D] uppercase">{tx('Physician Care Guidance', 'चिकित्सक देखभाल मार्गदर्शन')}</h4>
                 <button
                   onClick={() => {
                     setMedicalForm(medicalProfile);
@@ -1047,7 +1052,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   }}
                   className="text-xs font-bold text-[#5B825B] hover:underline"
                 >
-                  Edit
+                  {tx('Edit', 'संपादित करें')}
                 </button>
               </div>
               <p className="text-sm font-medium text-[#2D3A2F] mt-1.5 bg-[#FDFBF7] p-3.5 rounded-2xl border border-[#E0DCD3] leading-relaxed">
@@ -1058,8 +1063,8 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
           <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">Doctor Consultations</h3>
-              <span className="text-xs font-bold text-[#5A6E5D]">{medicalProfile.consultations.length} Visits Logged</span>
+              <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">{tx('Doctor Consultations', 'डॉक्टर परामर्श')}</h3>
+              <span className="text-xs font-bold text-[#5A6E5D]">{medicalProfile.consultations.length} {tx('Visits Logged', 'मुलाक़ातें दर्ज')}</span>
             </div>
 
             <div className="space-y-3">
@@ -1100,11 +1105,11 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 onClick={() => onSelectTab('home')}
                 className="px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-bold"
               >
-                ← Back
+                ← {tx('Back', 'वापस')}
               </button>
               <div>
-                <h2 className="text-xl font-black text-[#2D3A2F]">Player Memories & Media</h2>
-                <p className="text-xs text-[#5A6E5D]">Photos and videos for {patientProfile.name} to view in Player Mode</p>
+                <h2 className="text-xl font-black text-[#2D3A2F]">{tx('Player Memories & Media', 'खिलाड़ी की यादें और मीडिया')}</h2>
+                <p className="text-xs text-[#5A6E5D]">{tx('Photos and videos for', 'तस्वीरें और वीडियो')} {patientProfile.name} {tx('to view in Player Mode', 'के लिए प्लेयर मोड में देखने हेतु')}</p>
               </div>
             </div>
             <button
@@ -1115,7 +1120,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               className="flex items-center gap-1 px-3.5 py-2 rounded-2xl bg-[#5B825B] text-white font-extrabold text-xs shadow-xs hover:bg-[#4d704d]"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Memory</span>
+              <span>{tx('Add Memory', 'याद जोड़ें')}</span>
             </button>
           </div>
 
@@ -1132,12 +1137,12 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 }`}
               >
                 {filter === 'All'
-                  ? `All Items (${memories.length})`
+                  ? `${tx('All Items', 'सभी वस्तुएं')} (${memories.length})`
                   : filter === 'photo'
-                  ? 'Photos Only'
+                  ? tx('Photos Only', 'केवल तस्वीरें')
                   : filter === 'video'
-                  ? 'Videos Only'
-                  : 'Voice Diaries'}
+                  ? tx('Videos Only', 'केवल वीडियो')
+                  : tx('Voice Diaries', 'वॉयस डायरी')}
               </button>
             ))}
           </div>
@@ -1186,15 +1191,15 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                           </span>
                           {isVideo ? (
                             <span className="text-[10px] font-black uppercase text-[#E8B25C] bg-[#FDF0D5] px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <Video className="w-2.5 h-2.5" /> Video
+                              <Video className="w-2.5 h-2.5" /> {tx('Video', 'वीडियो')}
                             </span>
                           ) : isVoiceDiary ? (
                             <span className="text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <Mic className="w-2.5 h-2.5" /> Voice Diary
+                              <Mic className="w-2.5 h-2.5" /> {tx('Voice Diary', 'वॉयस डायरी')}
                             </span>
                           ) : (
                             <span className="text-[10px] font-black uppercase text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <ImageIcon className="w-2.5 h-2.5" /> Photo
+                              <ImageIcon className="w-2.5 h-2.5" /> {tx('Photo', 'तस्वीर')}
                             </span>
                           )}
                         </div>
@@ -1268,9 +1273,9 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 onClick={() => onSelectTab('home')}
                 className="px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-bold"
               >
-                ← Back
+                ← {tx('Back', 'वापस')}
               </button>
-              <h2 className="text-xl font-black text-[#2D3A2F]">DDA Insights & Telemetry</h2>
+              <h2 className="text-xl font-black text-[#2D3A2F]">{tx('DDA Insights & Telemetry', 'डीडीए इनसाइट्स और टेलीमेट्री')}</h2>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -1278,30 +1283,30 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 className="px-3 py-1.5 rounded-xl bg-[#EAF1E8] border border-[#5B825B]/40 text-[#5B825B] text-xs font-black flex items-center gap-1.5 shadow-2xs hover:bg-[#dfeade]"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Memory Charts</span>
+                <span>{tx('Memory Charts', 'स्मृति चार्ट')}</span>
               </button>
               <button
                 onClick={() => onSelectTab('progress')}
                 className="px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black flex items-center gap-1.5 shadow-2xs hover:bg-[#4a6b4a]"
               >
                 <TrendingUp className="w-3.5 h-3.5" />
-                <span>Cognitive Progress</span>
+                <span>{tx('Cognitive Progress', 'संज्ञानात्मक प्रगति')}</span>
               </button>
             </div>
           </div>
 
           {/* DDA explanation banner */}
           <div className="bg-[#EAF1E8] rounded-3xl p-4 border border-[#5B825B]/30 text-xs text-[#28331F] space-y-1">
-            <span className="font-black uppercase tracking-wider block text-[#5B825B]">Dynamic Difficulty Adjustment (DDA)</span>
+            <span className="font-black uppercase tracking-wider block text-[#5B825B]">{tx('Dynamic Difficulty Adjustment (DDA)', 'गतिशील कठिनाई समायोजन (DDA)')}</span>
             <p>
-              The engine automatically analyzes latency, hesitation, and mistakes during gameplay to dynamically scale difficulty without frustrating the player.
+              {tx('The engine automatically analyzes latency, hesitation, and mistakes during gameplay to dynamically scale difficulty without frustrating the player.', 'यह इंजन खेल के दौरान विलंब, झिझक और गलतियों का स्वचालित रूप से विश्लेषण करके कठिनाई को गतिशील रूप से समायोजित करता है ताकि खिलाड़ी निराश न हो।')}
             </p>
           </div>
 
           {/* Game Filter Bar */}
           <div className="bg-white p-3 rounded-2xl border border-[#E0DCD3] shadow-xs flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">Filter by Game:</span>
+              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">{tx('Filter by Game:', 'खेल द्वारा फ़िल्टर:')}</span>
               <button
                 onClick={() => {
                   soundController.playClick();
@@ -1313,7 +1318,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                     : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
                 }`}
               >
-                <span>All Games ({effectiveDdaLogs.length})</span>
+                <span>{tx('All Games', 'सभी खेल')} ({effectiveDdaLogs.length})</span>
               </button>
               <button
                 onClick={() => {
@@ -1327,7 +1332,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 }`}
               >
                 <Brain className="w-3.5 h-3.5" />
-                <span>Memory Match ({gameBreakdown.memoryMatch.sessions})</span>
+                <span>{tx('Memory Match', 'मेमोरी मैच')} ({gameBreakdown.memoryMatch.sessions})</span>
               </button>
               <button
                 onClick={() => {
@@ -1341,28 +1346,28 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 }`}
               >
                 <Puzzle className="w-3.5 h-3.5" />
-                <span>Photo Puzzle ({gameBreakdown.puzzle.sessions})</span>
+                <span>{tx('Photo Puzzle', 'फ़ोटो पहेली')} ({gameBreakdown.puzzle.sessions})</span>
               </button>
             </div>
             <span className="text-[11px] font-bold text-[#5A6E5D]">
-              Showing {filteredTelemetryLogs.length} logs
+              {tx('Showing', 'प्रदर्शित')} {filteredTelemetryLogs.length} {tx('logs', 'लॉग्स')}
             </span>
           </div>
 
           {/* Live Telemetry Logs from player sessions */}
           <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
             <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">
-              Telemetry Logs ({filteredTelemetryLogs.length})
+              {tx('Telemetry Logs', 'टेलीमेट्री लॉग्स')} ({filteredTelemetryLogs.length})
             </h3>
             {filteredTelemetryLogs.length === 0 ? (
-              <p className="text-xs text-[#5A6E5D]">No game sessions found matching the selected filter. Play a round in Player Mode!</p>
+              <p className="text-xs text-[#5A6E5D]">{tx('No game sessions found matching the selected filter. Play a round in Player Mode!', 'चयनित फ़िल्टर से मेल खाने वाले कोई सत्र नहीं मिले। प्लेयर मोड में खेलें!')}</p>
             ) : (
               <div className="space-y-2.5">
                 {filteredTelemetryLogs.map((log, idx) => {
                   const resolvedGameType = log.gameType === 'puzzle' || (log.gameTitle && log.gameTitle.toLowerCase().includes('puzzle'))
                     ? 'puzzle'
                     : 'memory_match';
-                  const resolvedGameTitle = log.gameTitle || (resolvedGameType === 'puzzle' ? 'Photo Puzzle' : 'Memory Match');
+                  const resolvedGameTitle = log.gameTitle || (resolvedGameType === 'puzzle' ? tx('Photo Puzzle', 'फ़ोटो पहेली') : tx('Memory Match', 'मेमोरी मैच'));
 
                   return (
                     <div key={idx} className="p-3.5 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] text-xs space-y-2 shadow-2xs">
@@ -1376,10 +1381,10 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                             {resolvedGameType === 'puzzle' ? <Puzzle className="w-2.5 h-2.5" /> : <Brain className="w-2.5 h-2.5" />}
                             {resolvedGameTitle}
                           </span>
-                          <span className="text-[#2D3A2F]">Round {log.roundNumber} (Level {log.difficultyLevel})</span>
+                          <span className="text-[#2D3A2F]">{tx('Round', 'राउंड')} {log.roundNumber} ({tx('Level', 'स्तर')} {log.difficultyLevel})</span>
                           {log.aiModel && (
                             <span className="text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
-                              AI Analyzed
+                              {tx('AI Analyzed', 'एआई विश्लेषित')}
                             </span>
                           )}
                         </div>
@@ -1390,18 +1395,18 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                             ? 'bg-[#EAF1E8] text-[#5B825B]'
                             : 'bg-gray-100 text-gray-700'
                         }`}>
-                          AI: {log.adaptiveAction}
+                          AI: {log.adaptiveAction === 'eased' ? tx('eased', 'सरल किया') : log.adaptiveAction === 'increased' ? tx('increased', 'बढ़ाया') : log.adaptiveAction}
                         </span>
                       </div>
 
                       <p className="text-[#5A6E5D]">
-                        Latency: {(log.latencyMs / 1000).toFixed(1)}s • Moves: {log.moves} • Mistakes: <strong className={log.mistakes >= 3 ? 'text-[#C46A66]' : 'text-[#2D3A2F]'}>{log.mistakes}</strong> • Hints: {log.hintsUsed}
+                        {tx('Latency:', 'विलंबता:')} {(log.latencyMs / 1000).toFixed(1)}s • {tx('Moves:', 'चालें:')} {log.moves} • {tx('Mistakes:', 'गलतियां:')} <strong className={log.mistakes >= 3 ? 'text-[#C46A66]' : 'text-[#2D3A2F]'}>{log.mistakes}</strong> • {tx('Hints:', 'संकेत:')} {log.hintsUsed}
                       </p>
 
                       {log.aiReasoning && (
                         <div className="bg-white p-2.5 rounded-xl border border-[#5B825B]/20 text-[11px] space-y-1">
                           <div className="flex items-center justify-between text-[10px] font-black text-[#5B825B]">
-                            <span>AI MODEL RATIONALE</span>
+                            <span>{tx('AI MODEL RATIONALE', 'एआई मॉडल का तर्क')}</span>
                             <span>{log.aiModel}</span>
                           </div>
                           <p className="text-[#2D3A2F]">{log.aiReasoning}</p>
@@ -1444,7 +1449,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
           {/* Reports Game Filter Bar */}
           <div className="bg-white p-3.5 rounded-2xl border border-[#E0DCD3] shadow-xs flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">Report Filter:</span>
+              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">{tx('Report Filter:', 'रिपोर्ट फ़िल्टर:')}</span>
               <button
                 onClick={() => {
                   soundController.playClick();
@@ -1456,7 +1461,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                     : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
                 }`}
               >
-                <span>Combined Overview ({effectiveDdaLogs.length})</span>
+                <span>{tx('Combined Overview', 'संयुक्त अवलोकन')} ({effectiveDdaLogs.length})</span>
               </button>
               <button
                 onClick={() => {
@@ -1470,7 +1475,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 }`}
               >
                 <Brain className="w-3.5 h-3.5" />
-                <span>Memory Match Report ({gameBreakdown.memoryMatch.sessions})</span>
+                <span>{tx('Memory Match Report', 'मेमोरी मैच रिपोर्ट')} ({gameBreakdown.memoryMatch.sessions})</span>
               </button>
               <button
                 onClick={() => {
@@ -1484,11 +1489,11 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 }`}
               >
                 <Puzzle className="w-3.5 h-3.5" />
-                <span>Photo Puzzle Report ({gameBreakdown.puzzle.sessions})</span>
+                <span>{tx('Photo Puzzle Report', 'फ़ोटो पहेली रिपोर्ट')} ({gameBreakdown.puzzle.sessions})</span>
               </button>
             </div>
             <span className="text-[11px] font-bold text-[#5A6E5D]">
-              Active Scope: {reportsGameFilter === 'all' ? 'All Games' : reportsGameFilter === 'puzzle' ? 'Photo Puzzle' : 'Memory Match'}
+              {tx('Active Scope:', 'सक्रिय दायरा:')} {reportsGameFilter === 'all' ? tx('All Games', 'सभी खेल') : reportsGameFilter === 'puzzle' ? tx('Photo Puzzle', 'फ़ोटो पहेली') : tx('Memory Match', 'मेमोरी मैच')}
             </span>
           </div>
 
@@ -1502,24 +1507,24 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                       <Brain className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">Memory Match Performance</h4>
-                      <p className="text-[11px] text-[#5A6E5D]">{gameBreakdown.memoryMatch.sessions} sessions played</p>
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Memory Match Performance', 'मेमोरी मैच प्रदर्शन')}</h4>
+                      <p className="text-[11px] text-[#5A6E5D]">{gameBreakdown.memoryMatch.sessions} {tx('sessions played', 'सत्र खेले गए')}</p>
                     </div>
                   </div>
                   <span className="text-xl font-black text-[#5B825B]">{gameBreakdown.memoryMatch.accuracy}%</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#EAE6DF] text-center text-xs">
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">Avg Errors</span>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('Avg Errors', 'औसत गलतियां')}</span>
                     <strong className="text-[#2D3A2F] font-black">{gameBreakdown.memoryMatch.avgMistakes}</strong>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">Avg Speed</span>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('Avg Speed', 'औसत गति')}</span>
                     <strong className="text-[#2D3A2F] font-black">{gameBreakdown.memoryMatch.avgLatencySec}s</strong>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">Current Level</span>
-                    <strong className="text-[#5B825B] font-black">Lvl {gameBreakdown.memoryMatch.level}</strong>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('Current Level', 'वर्तमान स्तर')}</span>
+                    <strong className="text-[#5B825B] font-black">{tx('Lvl', 'स्तर')} {gameBreakdown.memoryMatch.level}</strong>
                   </div>
                 </div>
               </div>
@@ -1531,24 +1536,24 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                       <Puzzle className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">Photo Puzzle Performance</h4>
-                      <p className="text-[11px] text-[#5A6E5D]">{gameBreakdown.puzzle.sessions} sessions played</p>
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Photo Puzzle Performance', 'फ़ोटो पहेली प्रदर्शन')}</h4>
+                      <p className="text-[11px] text-[#5A6E5D]">{gameBreakdown.puzzle.sessions} {tx('sessions played', 'सत्र खेले गए')}</p>
                     </div>
                   </div>
                   <span className="text-xl font-black text-[#E8B25C]">{gameBreakdown.puzzle.accuracy}%</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#EAE6DF] text-center text-xs">
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">Avg Errors</span>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('Avg Errors', 'औसत गलतियां')}</span>
                     <strong className="text-[#2D3A2F] font-black">{gameBreakdown.puzzle.avgMistakes}</strong>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">Avg Speed</span>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('Avg Speed', 'औसत गति')}</span>
                     <strong className="text-[#2D3A2F] font-black">{gameBreakdown.puzzle.avgLatencySec}s</strong>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-[#5A6E5D]">Current Level</span>
-                    <strong className="text-[#E8B25C] font-black">Lvl {gameBreakdown.puzzle.level}</strong>
+                    <span className="block text-[10px] text-[#5A6E5D]">{tx('Current Level', 'वर्तमान स्तर')}</span>
+                    <strong className="text-[#E8B25C] font-black">{tx('Lvl', 'स्तर')} {gameBreakdown.puzzle.level}</strong>
                   </div>
                 </div>
               </div>
@@ -1566,10 +1571,10 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
             </div>
             <h3 className="text-xl font-black text-[#2D3A2F]">
               {reportsGameFilter === 'all' 
-                ? 'Clinical Summary & Cognitive Routine' 
+                ? tx('Clinical Summary & Cognitive Routine', 'चिकित्सीय सारांश और संज्ञानात्मक दिनचर्या')
                 : reportsGameFilter === 'puzzle'
-                ? 'Photo Puzzle Clinical Telemetry Summary'
-                : 'Memory Match Clinical Telemetry Summary'}
+                ? tx('Photo Puzzle Clinical Telemetry Summary', 'फ़ोटो पहेली टेलीमेट्री सारांश')
+                : tx('Memory Match Clinical Telemetry Summary', 'मेमोरी मैच टेलीमेट्री सारांश')}
             </h3>
             <p className="text-xs text-[#5A6E5D] bg-[#FDFBF7] p-3.5 rounded-2xl border border-[#E0DCD3] leading-relaxed">
               {dynamicReportSummary.note}
@@ -1579,10 +1584,10 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
             <div className="pt-3">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-extrabold text-xs text-[#2D3A2F]">
-                  Daily Game Activity Hours (This Week)
+                  {tx('Daily Game Activity Hours (This Week)', 'दैनिक खेल गतिविधि के घंटे (इस सप्ताह)')}
                 </h4>
                 <span className="text-[11px] font-bold text-[#5A6E5D]">
-                  {filteredReportLogs.length} total sessions accounted
+                  {filteredReportLogs.length} {tx('total sessions accounted', 'कुल सत्र गिने गए')}
                 </span>
               </div>
               <div className="flex items-end justify-between h-32 pt-4 px-2">
@@ -1607,7 +1612,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
           </div>
 
           <div className="p-4 rounded-3xl bg-[#FDF0D5] border border-[#eadbbf] text-xs text-[#332610] leading-relaxed">
-            <strong>Disclaimer:</strong> {MEDICAL_DISCLAIMER}
+            <strong>{tx('Disclaimer:', 'अस्वीकरण:')}</strong> {MEDICAL_DISCLAIMER}
           </div>
         </div>
       )}
@@ -1621,16 +1626,16 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 onClick={() => onSelectTab('home')}
                 className="px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-bold"
               >
-                ← Back
+                ← {tx('Back', 'वापस')}
               </button>
-              <h2 className="text-xl font-black text-[#2D3A2F]">Reminders Manager</h2>
+              <h2 className="text-xl font-black text-[#2D3A2F]">{tx('Reminders Manager', 'स्मरण प्रबंधक')}</h2>
             </div>
             <button
               onClick={() => setShowAddReminderModal(true)}
               className="flex items-center gap-1 px-3.5 py-2 rounded-2xl bg-[#5B825B] text-white font-extrabold text-xs shadow-xs hover:bg-[#4d704d]"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Reminder</span>
+              <span>{tx('Add Reminder', 'स्मरण जोड़ें')}</span>
             </button>
           </div>
 
@@ -1644,11 +1649,11 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-extrabold text-[#5B825B]">{r.time_label}</span>
                     <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#FDF0D5] text-[#332610]">
-                      {r.type}
+                      {r.type === 'medicine' ? tx('Medicine', 'दवा') : r.type === 'routine' ? tx('Routine', 'दिनचर्या') : r.type}
                     </span>
                     {r.completed && (
                       <span className="text-[10px] font-bold text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
-                        Done
+                        {tx('Done', 'पूर्ण')}
                       </span>
                     )}
                   </div>
@@ -1677,7 +1682,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 <div className="w-8 h-8 rounded-xl bg-[#5B825B] text-white flex items-center justify-center">
                   <User className="w-4 h-4" />
                 </div>
-                <h3 className="text-lg font-black text-[#2D3A2F]">Edit Personal Details</h3>
+                <h3 className="text-lg font-black text-[#2D3A2F]">{tx('Edit Personal Details', 'व्यक्तिगत विवरण संपादित करें')}</h3>
               </div>
               <button
                 onClick={() => setShowEditProfileModal(false)}
@@ -1696,10 +1701,10 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   className="w-14 h-14 rounded-2xl object-cover border-2 border-[#5B825B]"
                 />
                 <div className="flex-1 space-y-1.5">
-                  <label className="block font-black text-[#2D3A2F]">Profile Photo</label>
+                  <label className="block font-black text-[#2D3A2F]">{tx('Profile Photo', 'प्रोफ़ाइल फ़ोटो')}</label>
                   <div className="flex items-center gap-2">
                     <label className="px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-[#5B825B] font-bold cursor-pointer hover:bg-[#EAF1E8] flex items-center gap-1">
-                      <Upload className="w-3.5 h-3.5" /> Upload File
+                      <Upload className="w-3.5 h-3.5" /> {tx('Upload File', 'फ़ाइल अपलोड करें')}
                       <input
                         type="file"
                         accept="image/*"
@@ -1707,13 +1712,13 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                         className="hidden"
                       />
                     </label>
-                    <span className="text-[10px] text-[#5A6E5D]">or enter URL below</span>
+                    <span className="text-[10px] text-[#5A6E5D]">{tx('or enter URL below', 'या नीचे यूआरएल दर्ज करें')}</span>
                   </div>
                   <input
                     type="text"
                     value={profileForm.avatar}
                     onChange={(e) => setProfileForm({ ...profileForm, avatar: e.target.value })}
-                    placeholder="Image URL"
+                    placeholder={tx('Image URL', 'तस्वीर का URL')}
                     className="w-full px-2.5 py-1 rounded-lg border border-[#E0DCD3] text-[11px]"
                   />
                 </div>
@@ -1721,7 +1726,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-black text-[#2D3A2F] mb-1">Preferred Name</label>
+                  <label className="block font-black text-[#2D3A2F] mb-1">{tx('Preferred Name', 'पसंदीदा नाम')}</label>
                   <input
                     type="text"
                     value={profileForm.name}
@@ -1732,7 +1737,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block font-black text-[#2D3A2F] mb-1">Full Name</label>
+                  <label className="block font-black text-[#2D3A2F] mb-1">{tx('Full Name', 'पूरा नाम')}</label>
                   <input
                     type="text"
                     value={profileForm.fullName}
@@ -1746,7 +1751,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
               <div className="grid grid-cols-3 gap-2.5">
                 <div>
-                  <label className="block font-black text-[#2D3A2F] mb-1">Age</label>
+                  <label className="block font-black text-[#2D3A2F] mb-1">{tx('Age', 'उम्र')}</label>
                   <input
                     type="number"
                     value={profileForm.age}
@@ -1756,19 +1761,19 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block font-black text-[#2D3A2F] mb-1">Gender</label>
+                  <label className="block font-black text-[#2D3A2F] mb-1">{tx('Gender', 'लिंग')}</label>
                   <select
                     value={profileForm.gender}
                     onChange={(e) => setProfileForm({ ...profileForm, gender: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-[#E0DCD3] text-xs font-semibold focus:border-[#5B825B]"
                   >
-                    <option value="Female">Female</option>
-                    <option value="Male">Male</option>
-                    <option value="Other">Other</option>
+                    <option value="Female">{tx('Female', 'महिला')}</option>
+                    <option value="Male">{tx('Male', 'पुरुष')}</option>
+                    <option value="Other">{tx('Other', 'अन्य')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block font-black text-[#2D3A2F] mb-1">Blood Group</label>
+                  <label className="block font-black text-[#2D3A2F] mb-1">{tx('Blood Group', 'रक्त समूह')}</label>
                   <input
                     type="text"
                     value={profileForm.bloodGroup}
@@ -1781,7 +1786,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-black text-[#2D3A2F] mb-1">Region / City</label>
+                  <label className="block font-black text-[#2D3A2F] mb-1">{tx('Region / City', 'क्षेत्र / शहर')}</label>
                   <input
                     type="text"
                     value={profileForm.region}
@@ -1791,7 +1796,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block font-black text-[#2D3A2F] mb-1">Languages</label>
+                  <label className="block font-black text-[#2D3A2F] mb-1">{tx('Languages', 'भाषाएँ')}</label>
                   <input
                     type="text"
                     value={profileForm.language}
@@ -1803,7 +1808,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block font-black text-[#2D3A2F] mb-1">About / Bio & Hobbies</label>
+                <label className="block font-black text-[#2D3A2F] mb-1">{tx('About / Bio & Hobbies', 'परिचय और शौक')}</label>
                 <textarea
                   rows={2}
                   value={profileForm.about}
@@ -1814,7 +1819,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block font-black text-[#2D3A2F] mb-1">Major Care Focus Note</label>
+                <label className="block font-black text-[#2D3A2F] mb-1">{tx('Major Care Focus Note', 'प्रमुख देखभाल टिप्पणी')}</label>
                 <input
                   type="text"
                   value={profileForm.majorCareIssue}
@@ -1830,13 +1835,13 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   onClick={() => setShowEditProfileModal(false)}
                   className="flex-1 py-2.5 rounded-xl bg-gray-100 text-xs font-extrabold text-[#5A6E5D]"
                 >
-                  Cancel
+                  {tx('Cancel', 'रद्द करें')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-[#5B825B] text-white text-xs font-black shadow-xs hover:bg-[#4d704d]"
                 >
-                  Save Changes
+                  {tx('Save Changes', 'परिवर्तन सहेजें')}
                 </button>
               </div>
             </form>
@@ -1853,7 +1858,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 <div className="w-8 h-8 rounded-xl bg-[#C46A66] text-white flex items-center justify-center">
                   <Heart className="w-4 h-4" />
                 </div>
-                <h3 className="text-lg font-black text-[#2D3A2F]">Edit Medical Details</h3>
+                <h3 className="text-lg font-black text-[#2D3A2F]">{tx('Edit Medical Details', 'चिकित्सा विवरण संपादित करें')}</h3>
               </div>
               <button
                 onClick={() => setShowEditMedicalModal(false)}
@@ -1866,7 +1871,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
             <form onSubmit={handleSaveMedical} className="space-y-3.5 text-xs">
               {/* Concerns tags */}
               <div className="space-y-2">
-                <label className="block font-black text-[#2D3A2F]">Primary Health & Cognitive Concerns</label>
+                <label className="block font-black text-[#2D3A2F]">{tx('Primary Health & Cognitive Concerns', 'प्रमुख स्वास्थ्य व संज्ञानात्मक चिंताएं')}</label>
                 <div className="flex flex-wrap gap-1.5">
                   {medicalForm.concerns.map((c, i) => (
                     <span
@@ -1896,7 +1901,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                         handleAddConcern();
                       }
                     }}
-                    placeholder="Add concern (e.g. Sleep irregularity)"
+                    placeholder={tx('Add concern (e.g. Sleep irregularity)', 'चिंता जोड़ें (उदा. नींद की अनियमितता)')}
                     className="flex-1 px-3 py-1.5 rounded-xl border border-[#E0DCD3] text-xs"
                   />
                   <button
@@ -1904,14 +1909,14 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                     onClick={handleAddConcern}
                     className="px-3 py-1.5 rounded-xl bg-[#EAF1E8] text-[#5B825B] font-black text-xs hover:bg-[#d4e6d0]"
                   >
-                    + Add
+                    {tx('+ Add', '+ जोड़ें')}
                   </button>
                 </div>
               </div>
 
               {/* Physician care guidance */}
               <div className="space-y-1">
-                <label className="block font-black text-[#2D3A2F]">Physician Care Guidance & Notes</label>
+                <label className="block font-black text-[#2D3A2F]">{tx('Physician Care Guidance & Notes', 'चिकित्सक देखभाल मार्गदर्शन व नोट्स')}</label>
                 <textarea
                   rows={4}
                   value={medicalForm.careInfo}
@@ -1928,13 +1933,13 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   onClick={() => setShowEditMedicalModal(false)}
                   className="flex-1 py-2.5 rounded-xl bg-gray-100 text-xs font-extrabold text-[#5A6E5D]"
                 >
-                  Cancel
+                  {tx('Cancel', 'रद्द करें')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-[#5B825B] text-white text-xs font-black shadow-xs hover:bg-[#4d704d]"
                 >
-                  Save Medical Details
+                  {tx('Save Medical Details', 'चिकित्सा विवरण सहेजें')}
                 </button>
               </div>
             </form>
@@ -1946,10 +1951,10 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
       {showAddConsultationModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl animate-scaleUp">
-            <h3 className="text-lg font-black text-[#2D3A2F]">Log Doctor Consultation</h3>
+            <h3 className="text-lg font-black text-[#2D3A2F]">{tx('Log Doctor Consultation', 'डॉक्टर परामर्श दर्ज करें')}</h3>
             <form onSubmit={handleAddConsultation} className="space-y-3 text-xs">
               <div>
-                <label className="block font-black text-[#2D3A2F] mb-1">Doctor Name</label>
+                <label className="block font-black text-[#2D3A2F] mb-1">{tx('Doctor Name', 'डॉक्टर का नाम')}</label>
                 <input
                   type="text"
                   value={newDocName}
@@ -1960,7 +1965,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 />
               </div>
               <div>
-                <label className="block font-black text-[#2D3A2F] mb-1">Specialty</label>
+                <label className="block font-black text-[#2D3A2F] mb-1">{tx('Specialty', 'विशेषज्ञता')}</label>
                 <input
                   type="text"
                   value={newDocSpecialty}
@@ -1971,7 +1976,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 />
               </div>
               <div>
-                <label className="block font-black text-[#2D3A2F] mb-1">Date</label>
+                <label className="block font-black text-[#2D3A2F] mb-1">{tx('Date', 'तारीख')}</label>
                 <input
                   type="text"
                   value={newDocDate}
@@ -1982,7 +1987,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 />
               </div>
               <div>
-                <label className="block font-black text-[#2D3A2F] mb-1">Consultation Summary / Notes</label>
+                <label className="block font-black text-[#2D3A2F] mb-1">{tx('Consultation Summary / Notes', 'परामर्श सारांश / नोट्स')}</label>
                 <textarea
                   rows={3}
                   value={newDocNotes}
@@ -1999,13 +2004,13 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   onClick={() => setShowAddConsultationModal(false)}
                   className="flex-1 py-2.5 rounded-xl bg-gray-100 text-xs font-extrabold text-[#5A6E5D]"
                 >
-                  Cancel
+                  {tx('Cancel', 'रद्द करें')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-[#5B825B] text-white text-xs font-black shadow-xs hover:bg-[#4d704d]"
                 >
-                  Save Visit
+                  {tx('Save Visit', 'मुलाक़ात सहेजें')}
                 </button>
               </div>
             </form>
@@ -2023,8 +2028,8 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   <Film className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-[#2D3A2F]">Add Player Memory</h3>
-                  <p className="text-[11px] text-[#5A6E5D]">Upload photos, videos, or memories for {patientProfile.name}</p>
+                  <h3 className="text-lg font-black text-[#2D3A2F]">{tx('Add Player Memory', 'याद जोड़ें')}</h3>
+                  <p className="text-[11px] text-[#5A6E5D]">{tx('Upload photos, videos, or memories for', 'तस्वीरें, वीडियो या यादें अपलोड करें')} {patientProfile.name}</p>
                 </div>
               </div>
               <button
@@ -2049,7 +2054,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                     : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
                 }`}
               >
-                <ImageIcon className="w-3.5 h-3.5" /> Photo Memory
+                <ImageIcon className="w-3.5 h-3.5" /> {tx('Photo Memory', 'फ़ोटो याद')}
               </button>
               <button
                 type="button"
@@ -2063,7 +2068,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                     : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
                 }`}
               >
-                <Video className="w-3.5 h-3.5" /> Video Story
+                <Video className="w-3.5 h-3.5" /> {tx('Video Story', 'वीडियो कहानी')}
               </button>
             </div>
 
@@ -2085,10 +2090,10 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                     <Upload className="w-5 h-5" />
                   </div>
                   <span className="font-extrabold text-sm text-[#2D3A2F]">
-                    {memoryUploadPreview ? 'File Selected! Tap to change' : 'Upload Photo or Video'}
+                    {memoryUploadPreview ? tx('File Selected! Tap to change', 'फ़ाइल चुनी गई! बदलने के लिए टैप करें') : tx('Upload Photo or Video', 'फ़ोटो या वीडियो अपलोड करें')}
                   </span>
                   <span className="text-[11px] text-[#5A6E5D]">
-                    Supports JPG, PNG, MP4, WebM from your computer/phone
+                    {tx('Supports JPG, PNG, MP4, WebM from your computer/phone', 'कंप्यूटर या फ़ोन से JPG, PNG, MP4, WebM समर्थित')}
                   </span>
                 </label>
 
@@ -2114,7 +2119,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               {/* Direct Media URL */}
               <div>
                 <label className="block font-black text-[#2D3A2F] mb-1">
-                  Or Paste {newMemoryMediaType === 'video' ? 'Video' : 'Photo'} URL
+                  {tx('Or Paste', 'या पेस्ट करें')} {newMemoryMediaType === 'video' ? tx('Video URL', 'वीडियो URL') : tx('Photo URL', 'फ़ोटो URL')}
                 </label>
                 <input
                   type="text"
@@ -2130,7 +2135,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
               {/* Quick Sample Presets */}
               <div className="space-y-1">
-                <span className="text-[11px] font-bold text-[#5A6E5D] block">Quick Sample Media:</span>
+                <span className="text-[11px] font-bold text-[#5A6E5D] block">{tx('Quick Sample Media:', 'त्वरित नमूना मीडिया:')}</span>
                 <div className="flex flex-wrap gap-1.5">
                   {SAMPLE_MEDIA_PRESETS.map((preset, idx) => (
                     <button
@@ -2146,7 +2151,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block font-black text-[#2D3A2F] mb-1">Memory Title</label>
+                <label className="block font-black text-[#2D3A2F] mb-1">{tx('Memory Title', 'याद का शीर्षक')}</label>
                 <input
                   type="text"
                   value={newMemoryTitle}
@@ -2159,7 +2164,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-black text-[#2D3A2F] mb-1">People in this Memory</label>
+                  <label className="block font-black text-[#2D3A2F] mb-1">{tx('People in this Memory', 'इस याद में लोग')}</label>
                   <input
                     type="text"
                     value={newMemoryPerson}
@@ -2169,22 +2174,22 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block font-black text-[#2D3A2F] mb-1">Category</label>
+                  <label className="block font-black text-[#2D3A2F] mb-1">{tx('Category', 'श्रेणी')}</label>
                   <select
                     value={newMemoryCategory}
                     onChange={(e) => setNewMemoryCategory(e.target.value as MemoryCategory)}
                     className="w-full px-3.5 py-2 rounded-xl border border-[#E0DCD3] text-xs font-semibold focus:border-[#5B825B]"
                   >
-                    <option value="Family">Family</option>
-                    <option value="People">People</option>
-                    <option value="Places">Places</option>
-                    <option value="Special Moments">Special Moments</option>
+                    <option value="Family">{tx('Family', 'परिवार')}</option>
+                    <option value="People">{tx('People', 'लोग')}</option>
+                    <option value="Places">{tx('Places', 'स्थान')}</option>
+                    <option value="Special Moments">{tx('Special Moments', 'खास पल')}</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block font-black text-[#2D3A2F] mb-1">Story / Heartfelt Narration</label>
+                <label className="block font-black text-[#2D3A2F] mb-1">{tx('Story / Heartfelt Narration', 'कहानी / भावनात्मक विवरण')}</label>
                 <textarea
                   rows={3}
                   value={newMemoryDesc}
@@ -2201,13 +2206,13 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   onClick={() => setShowAddMemoryModal(false)}
                   className="flex-1 py-2.5 rounded-xl bg-gray-100 text-xs font-extrabold text-[#5A6E5D]"
                 >
-                  Cancel
+                  {tx('Cancel', 'रद्द करें')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-[#5B825B] text-white text-xs font-black shadow-xs hover:bg-[#4d704d]"
                 >
-                  Save to Player Memories
+                  {tx('Save to Player Memories', 'खिलाड़ी की यादों में सहेजें')}
                 </button>
               </div>
             </form>
@@ -2260,10 +2265,10 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
       {showAddEventModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-xl animate-scaleUp">
-            <h3 className="text-xl font-black text-[#2D3A2F]">Add Calendar Event</h3>
+            <h3 className="text-xl font-black text-[#2D3A2F]">{tx('Add Calendar Event', 'कैलेंडर कार्यक्रम जोड़ें')}</h3>
             <form onSubmit={handleCreateEvent} className="space-y-3">
               <div>
-                <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">Title</label>
+                <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">{tx('Title', 'शीर्षक')}</label>
                 <input
                   type="text"
                   value={newEventTitle}
@@ -2275,7 +2280,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">Time</label>
+                <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">{tx('Time', 'समय')}</label>
                 <input
                   type="text"
                   value={newEventTime}
@@ -2287,16 +2292,16 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">Type</label>
+                <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">{tx('Type', 'प्रकार')}</label>
                 <select
                   value={newEventType}
                   onChange={(e) => setNewEventType(e.target.value as any)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-sm focus:outline-hidden focus:border-[#5B825B]"
                 >
-                  <option value="doctor">Doctor Consultation</option>
-                  <option value="routine">Routine</option>
-                  <option value="family">Family Visit</option>
-                  <option value="appointment">Appointment</option>
+                  <option value="doctor">{tx('Doctor Consultation', 'डॉक्टर परामर्श')}</option>
+                  <option value="routine">{tx('Routine', 'दिनचर्या')}</option>
+                  <option value="family">{tx('Family Visit', 'पारिवारिक मुलाक़ात')}</option>
+                  <option value="appointment">{tx('Appointment', 'मुलाक़ात')}</option>
                 </select>
               </div>
 
@@ -2306,13 +2311,13 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   onClick={() => setShowAddEventModal(false)}
                   className="flex-1 py-2.5 rounded-xl bg-gray-100 text-xs font-extrabold text-[#5A6E5D]"
                 >
-                  Cancel
+                  {tx('Cancel', 'रद्द करें')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-[#5B825B] text-white text-xs font-extrabold shadow-xs hover:bg-[#4d704d]"
                 >
-                  Save Event
+                  {tx('Save Event', 'कार्यक्रम सहेजें')}
                 </button>
               </div>
             </form>
@@ -2324,10 +2329,10 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
       {showAddReminderModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-xl animate-scaleUp">
-            <h3 className="text-xl font-black text-[#2D3A2F]">Add Daily Reminder</h3>
+            <h3 className="text-xl font-black text-[#2D3A2F]">{tx('Add Daily Reminder', 'दैनिक स्मरण जोड़ें')}</h3>
             <form onSubmit={handleCreateReminder} className="space-y-3">
               <div>
-                <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">Title</label>
+                <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">{tx('Title', 'शीर्षक')}</label>
                 <input
                   type="text"
                   value={newReminderTitle}
@@ -2340,7 +2345,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">Time</label>
+                  <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">{tx('Time', 'समय')}</label>
                   <input
                     type="text"
                     value={newReminderTime}
@@ -2351,20 +2356,20 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">Type</label>
+                  <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">{tx('Type', 'प्रकार')}</label>
                   <select
                     value={newReminderType}
                     onChange={(e) => setNewReminderType(e.target.value as any)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-sm focus:outline-hidden focus:border-[#5B825B]"
                   >
-                    <option value="medicine">Medicine</option>
-                    <option value="routine">Routine</option>
+                    <option value="medicine">{tx('Medicine', 'दवा')}</option>
+                    <option value="routine">{tx('Routine', 'दिनचर्या')}</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">Notes / Guidance</label>
+                <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">{tx('Notes / Guidance', 'नोट्स / मार्गदर्शन')}</label>
                 <input
                   type="text"
                   value={newReminderNote}
@@ -2380,13 +2385,13 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   onClick={() => setShowAddReminderModal(false)}
                   className="flex-1 py-2.5 rounded-xl bg-gray-100 text-xs font-extrabold text-[#5A6E5D]"
                 >
-                  Cancel
+                  {tx('Cancel', 'रद्द करें')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-[#5B825B] text-white text-xs font-extrabold shadow-xs hover:bg-[#4d704d]"
                 >
-                  Save Reminder
+                  {tx('Save Reminder', 'स्मरण सहेजें')}
                 </button>
               </div>
             </form>

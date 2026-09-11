@@ -6,7 +6,8 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
-  t: (key: keyof Translations, params?: Record<string, string | number>) => string;
+  t: (key: keyof Translations | string, params?: Record<string, string | number>) => string;
+  tx: (en: string, hi: string) => string;
   isHindi: boolean;
   formatLocalizedDate: (date: Date) => string;
   speak: (textEn: string, textHi: string, onEnd?: () => void) => void;
@@ -52,10 +53,17 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, [language]);
 
   const t = useCallback(
-    (key: keyof Translations, params?: Record<string, string | number>): string => {
-      const langDict = translations[language] || translations.en;
-      const text = langDict[key] || translations.en[key] || String(key);
+    (key: keyof Translations | string, params?: Record<string, string | number>): string => {
+      const langDict = (translations as Record<string, Record<string, string>>)[language] || translations.en;
+      const text = langDict[key as string] || (translations.en as Record<string, string>)[key as string] || String(key);
       return formatTranslation(text, params);
+    },
+    [language]
+  );
+
+  const tx = useCallback(
+    (en: string, hi: string): string => {
+      return language === 'hi' ? hi : en;
     },
     [language]
   );
@@ -100,6 +108,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
         setLanguage,
         toggleLanguage,
         t,
+        tx,
         isHindi: language === 'hi',
         formatLocalizedDate,
         speak,

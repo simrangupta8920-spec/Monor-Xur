@@ -25,6 +25,7 @@ import {
   filterLogsByGame, 
   GameFilterType 
 } from '../../utils/gameAnalytics';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface CognitiveProgressViewProps {
   ddaLogs: DDAMetric[];
@@ -64,6 +65,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
   onOpenPdfExport,
   onNavigateToInsights,
 }) => {
+  const { tx } = useLanguage();
   const [gameFilter, setGameFilter] = useState<GameFilterType>('all');
   const [timeFilter, setTimeFilter] = useState<'all' | 'recent' | 'adaptive'>('all');
   const [activeMetricTab, setActiveMetricTab] = useState<'engagement' | 'latency' | 'difficulty'>('engagement');
@@ -174,18 +176,21 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
               }}
               className="px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] hover:bg-[#EAF1E8]"
             >
-              ← Back
+              ← {tx('Back', 'पीछे')}
             </button>
           )}
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-[#2D3A2F]">DDA Cognitive Progress</h2>
+              <h2 className="text-xl font-black text-[#2D3A2F]">{tx('DDA Cognitive Progress', 'डीडीए संज्ञानात्मक प्रगति')}</h2>
               <span className="px-2.5 py-0.5 rounded-full bg-[#EAF1E8] text-[#5B825B] text-[10px] font-black uppercase tracking-wide">
-                Live Telemetry
+                {tx('Live Telemetry', 'लाइव टेलीमेट्री')}
               </span>
             </div>
             <p className="text-xs text-[#5A6E5D]">
-              Tracking {patientName}'s cognitive engagement, response speed, and adaptive difficulty over time.
+              {tx(
+                `Tracking ${patientName}'s cognitive engagement, response speed, and adaptive difficulty over time.`,
+                `${patientName} के संज्ञानात्मक जुड़ाव, प्रतिक्रिया गति और अनुकूलन कठिनाई की समय के साथ निगरानी।`
+              )}
             </p>
           </div>
         </div>
@@ -201,7 +206,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
               className="px-3 py-1.5 rounded-xl bg-[#EAF1E8] border border-[#5B825B]/40 text-[#5B825B] text-xs font-black flex items-center gap-1.5 hover:bg-[#dfeade] shadow-2xs transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#5B825B]" />
-              <span>Memory Insights</span>
+              <span>{tx('Memory Insights', 'स्मृति अंतर्दृष्टि')}</span>
             </button>
           )}
 
@@ -212,10 +217,10 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                 onOpenPdfExport();
               }}
               className="px-3 py-1.5 rounded-xl bg-[#F0EBE1] border border-[#D5CFBF] text-[#2D3A2F] text-xs font-extrabold flex items-center gap-1.5 hover:bg-[#EAE4D6] shadow-2xs transition-colors"
-              title="Download clinical summary PDF for doctor or family"
+              title={tx('Download clinical summary PDF for doctor or family', 'डॉक्टर या परिवार के लिए नैदानिक सारांश PDF डाउनलोड करें')}
             >
               <FileText className="w-3.5 h-3.5 text-[#5B825B]" />
-              <span>Export PDF Report</span>
+              <span>{tx('Export PDF Report', 'PDF रिपोर्ट निर्यात करें')}</span>
             </button>
           )}
 
@@ -228,7 +233,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
               className="px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black flex items-center gap-1.5 shadow-2xs hover:bg-[#4a6b4a]"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Play Game</span>
+              <span>{tx('Play Game', 'खेल खेलें')}</span>
             </button>
           )}
 
@@ -236,10 +241,10 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
             <button
               onClick={handleSimulateNewEntry}
               className="px-3 py-1.5 rounded-xl bg-[#FDFBF7] border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] flex items-center gap-1.5 hover:bg-[#EAF1E8]"
-              title="Add a sample session to test the graph"
+              title={tx('Add a sample session to test the graph', 'ग्राफ़ जांचने के लिए एक नमूना सत्र जोड़ें')}
             >
               <RefreshCw className="w-3 h-3 text-[#5B825B]" />
-              <span>Simulate Session</span>
+              <span>{tx('Simulate Session', 'सत्र अनुकरण')}</span>
             </button>
           )}
         </div>
@@ -248,7 +253,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
       {/* Game Filter Bar */}
       <div className="bg-white p-3.5 rounded-2xl border border-[#E0DCD3] shadow-xs flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">Game Filter:</span>
+          <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider pl-1">{tx('Game Filter:', 'खेल फ़िल्टर:')}</span>
           
           <button
             onClick={() => {
@@ -261,7 +266,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                 : 'bg-[#FDFBF7] text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
             }`}
           >
-            <span>All Games</span>
+            <span>{tx('All Games', 'सभी खेल')}</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
               {rawLogs.length}
             </span>
@@ -279,7 +284,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
             }`}
           >
             <Brain className="w-3.5 h-3.5" />
-            <span>Memory Match</span>
+            <span>{tx('Memory Match', 'स्मृति मिलान')}</span>
           </button>
 
           <button
@@ -294,12 +299,15 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
             }`}
           >
             <Puzzle className="w-3.5 h-3.5" />
-            <span>Photo Puzzle</span>
+            <span>{tx('Photo Puzzle', 'चित्र पहेली')}</span>
           </button>
         </div>
 
         <span className="text-[11px] font-bold text-[#5A6E5D] pr-1">
-          Showing {chartData.length} records matching {gameFilter === 'all' ? 'both games' : gameFilter === 'puzzle' ? 'Photo Puzzle' : 'Memory Match'}
+          {tx(
+            `Showing ${chartData.length} records matching ${gameFilter === 'all' ? 'both games' : gameFilter === 'puzzle' ? 'Photo Puzzle' : 'Memory Match'}`,
+            `${gameFilter === 'all' ? 'दोनों खेलों' : gameFilter === 'puzzle' ? 'चित्र पहेली' : 'स्मृति मिलान'} के लिए ${chartData.length} रिकॉर्ड्स प्रदर्शित`
+          )}
         </span>
       </div>
 
@@ -309,7 +317,11 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
           <div className="flex items-center gap-2.5 text-[#4A3D29]">
             <Brain className="w-5 h-5 text-[#C98A2C] shrink-0" />
             <span>
-              <strong>No Gameplay Telemetry Recorded Yet:</strong> Real-time cognitive progress, reaction speed trends, and AI difficulty adaptation will automatically populate from live sessions played by <strong className="text-[#2D3A2F]">{patientName}</strong> in the Player Zone.
+              <strong>{tx('No Gameplay Telemetry Recorded Yet:', 'अभी कोई खेल टेलीमेट्री रिकॉर्ड नहीं:')}</strong>{' '}
+              {tx(
+                `Real-time cognitive progress, reaction speed trends, and AI difficulty adaptation will automatically populate from live sessions played by ${patientName} in the Player Zone.`,
+                `खिलाड़ी क्षेत्र में ${patientName} द्वारा खेले गए सत्रों से वास्तविक समय संज्ञानात्मक प्रगति, प्रतिक्रिया गति और AI कठिनाई अनुकूलन स्वचालित रूप से दिखाई देगा।`
+              )}
             </span>
           </div>
           {onNavigateToGames && (
@@ -321,7 +333,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
               className="px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-bold hover:bg-[#4A6D4A] shrink-0 shadow-xs flex items-center gap-1.5"
             >
               <Play className="w-3.5 h-3.5 fill-white" />
-              <span>Play Games</span>
+              <span>{tx('Play Games', 'खेल खेलें')}</span>
             </button>
           )}
         </div>
@@ -332,7 +344,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
         {/* Engagement Score */}
         <div className="bg-white p-3.5 rounded-2xl border border-[#E0DCD3] shadow-xs space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#5A6E5D] uppercase">Engagement Index</span>
+            <span className="text-[11px] font-bold text-[#5A6E5D] uppercase">{tx('Engagement Index', 'जुड़ाव सूचकांक')}</span>
             <div className={`flex items-center text-[11px] font-extrabold ${
               engagementTrend >= 0 ? 'text-[#5B825B]' : 'text-[#C46A66]'
             }`}>
@@ -341,51 +353,53 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
             </div>
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-[#2D3A2F]">{latestMetric.engagement}%</span>
-            <span className="text-[11px] text-[#5A6E5D]">avg: {averageEngagement}%</span>
+            <span className="text-2xl font-black text-[#2D3A2F]">{latestMetric ? `${latestMetric.engagement}%` : '0%'}</span>
+            <span className="text-[11px] text-[#5A6E5D]">{tx('avg:', 'औसत:')} {averageEngagement}%</span>
           </div>
-          <p className="text-[10px] text-[#5B825B] font-bold">Optimal Focus Range</p>
+          <p className="text-[10px] text-[#5B825B] font-bold">{tx('Optimal Focus Range', 'इष्टतम एकाग्रता दायरा')}</p>
         </div>
 
         {/* Avg Latency */}
         <div className="bg-white p-3.5 rounded-2xl border border-[#E0DCD3] shadow-xs space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#5A6E5D] uppercase">Avg Latency</span>
+            <span className="text-[11px] font-bold text-[#5A6E5D] uppercase">{tx('Avg Latency', 'औसत प्रतिक्रिया')}</span>
             <Clock className="w-3.5 h-3.5 text-[#5A6E5D]" />
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-[#2D3A2F]">{latestMetric.latencySec}s</span>
-            <span className="text-[11px] text-[#5A6E5D]">avg: {averageLatency}s</span>
+            <span className="text-2xl font-black text-[#2D3A2F]">{latestMetric ? `${latestMetric.latencySec}s` : '0s'}</span>
+            <span className="text-[11px] text-[#5A6E5D]">{tx('avg:', 'औसत:')} {averageLatency}s</span>
           </div>
-          <p className="text-[10px] text-[#5A6E5D] font-medium">Deliberate, steady tempo</p>
+          <p className="text-[10px] text-[#5A6E5D] font-medium">{tx('Deliberate, steady tempo', 'स्थिर और संतुलित गति')}</p>
         </div>
 
         {/* Adaptive Difficulty Level */}
         <div className="bg-white p-3.5 rounded-2xl border border-[#E0DCD3] shadow-xs space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#5A6E5D] uppercase">Current Level</span>
+            <span className="text-[11px] font-bold text-[#5A6E5D] uppercase">{tx('Current Level', 'वर्तमान स्तर')}</span>
             <span className="px-1.5 py-0.5 rounded-md bg-[#EAF1E8] text-[#5B825B] text-[10px] font-black">
-              DDA Scaled
+              {tx('DDA Scaled', 'DDA समायोजित')}
             </span>
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-[#5B825B]">Level {latestMetric.difficultyLevel}</span>
-            <span className="text-[11px] text-[#5A6E5D]">of 5</span>
+            <span className="text-2xl font-black text-[#5B825B]">
+              {tx('Level', 'स्तर')} {latestMetric ? latestMetric.difficultyLevel : 1}
+            </span>
+            <span className="text-[11px] text-[#5A6E5D]">{tx('of 5', '/ 5')}</span>
           </div>
-          <p className="text-[10px] text-[#5A6E5D] font-medium">Automatic adjustments</p>
+          <p className="text-[10px] text-[#5A6E5D] font-medium">{tx('Automatic adjustments', 'स्वचालित समायोजन')}</p>
         </div>
 
         {/* Fatigue Risk & Shift */}
         <div className="bg-white p-3.5 rounded-2xl border border-[#E0DCD3] shadow-xs space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#5A6E5D] uppercase">Fatigue Flag</span>
+            <span className="text-[11px] font-bold text-[#5A6E5D] uppercase">{tx('Fatigue Flag', 'थकान चेतावनी')}</span>
             <ShieldCheck className="w-3.5 h-3.5 text-[#5B825B]" />
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-[#5B825B]">{latestMetric.fatigueRisk}</span>
-            <span className="text-[11px] text-[#5A6E5D]">Risk</span>
+            <span className="text-2xl font-black text-[#5B825B]">{latestMetric ? latestMetric.fatigueRisk : tx('LOW', 'कम')}</span>
+            <span className="text-[11px] text-[#5A6E5D]">{tx('Risk', 'जोखिम')}</span>
           </div>
-          <p className="text-[10px] text-[#5B825B] font-bold">No hesitation burnout</p>
+          <p className="text-[10px] text-[#5B825B] font-bold">{tx('No hesitation burnout', 'कोई झिझक या थकावट नहीं')}</p>
         </div>
       </div>
 
@@ -395,10 +409,13 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#F0EDE6]">
           <div>
             <h3 className="font-extrabold text-base text-[#2D3A2F]">
-              Cognitive Engagement Trend Line
+              {tx('Cognitive Engagement Trend Line', 'संज्ञानात्मक जुड़ाव रुझान रेखा')}
             </h3>
             <p className="text-xs text-[#5A6E5D]">
-              Composite engagement score derived from accuracy, hesitation-free speed, and adaptive difficulty.
+              {tx(
+                'Composite engagement score derived from accuracy, hesitation-free speed, and adaptive difficulty.',
+                'सटीकता, झिझक रहित गति और अनुकूलन कठिनाई से तैयार समग्र जुड़ाव स्कोर।'
+              )}
             </p>
           </div>
 
@@ -414,7 +431,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                   : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
               }`}
             >
-              Engagement (%)
+              {tx('Engagement (%)', 'जुड़ाव (%)')}
             </button>
 
             <button
@@ -428,7 +445,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                   : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
               }`}
             >
-              Speed & Latency
+              {tx('Speed & Latency', 'गति एवं प्रतिक्रिया')}
             </button>
 
             <button
@@ -442,7 +459,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                   : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
               }`}
             >
-              Mistakes & Hints
+              {tx('Mistakes & Hints', 'त्रुटियां एवं संकेत')}
             </button>
           </div>
         </div>
@@ -472,17 +489,17 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                   tickLine={false}
                   unit="%"
                 />
-                <Tooltip content={<CustomEngagementTooltip />} />
+                <Tooltip content={<CustomEngagementTooltip tx={tx} />} />
                 <ReferenceLine 
                   y={75} 
                   stroke="#C98A2C" 
                   strokeDasharray="4 4" 
-                  label={{ value: 'Target Engagement (75%)', position: 'insideTopRight', fill: '#C98A2C', fontSize: 10 }} 
+                  label={{ value: tx('Target Engagement (75%)', 'लक्षित जुड़ाव (75%)'), position: 'insideTopRight', fill: '#C98A2C', fontSize: 10 }} 
                 />
                 <Area 
                   type="monotone" 
                   dataKey="engagement" 
-                  name="Engagement Score" 
+                  name={tx('Engagement Score', 'जुड़ाव स्कोर')} 
                   stroke="#5B825B" 
                   strokeWidth={3} 
                   fillOpacity={1} 
@@ -523,7 +540,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                   tickLine={false}
                   unit=" lvl"
                 />
-                <Tooltip content={<CustomLatencyTooltip />} />
+                <Tooltip content={<CustomLatencyTooltip tx={tx} />} />
                 <Legend 
                   verticalAlign="top" 
                   height={30} 
@@ -533,7 +550,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                   yAxisId="left"
                   type="monotone" 
                   dataKey="latencySec" 
-                  name="Response Latency (sec)" 
+                  name={tx('Response Latency (sec)', 'प्रतिक्रिया समय (सेकंड)')} 
                   stroke="#7A9CA4" 
                   strokeWidth={2.5} 
                   dot={{ r: 4, fill: '#7A9CA4' }}
@@ -542,7 +559,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                   yAxisId="right"
                   type="stepAfter" 
                   dataKey="difficultyLevel" 
-                  name="Difficulty Level" 
+                  name={tx('Difficulty Level', 'कठिनाई स्तर')} 
                   stroke="#C98A2C" 
                   strokeWidth={2} 
                   strokeDasharray="4 4"
@@ -571,7 +588,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                   axisLine={{ stroke: '#E0DCD3' }}
                   tickLine={false}
                 />
-                <Tooltip content={<CustomMistakesTooltip />} />
+                <Tooltip content={<CustomMistakesTooltip tx={tx} />} />
                 <Legend 
                   verticalAlign="top" 
                   height={30} 
@@ -579,13 +596,13 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                 />
                 <Bar 
                   dataKey="mistakes" 
-                  name="Mistakes" 
+                  name={tx('Mistakes', 'त्रुटियां')} 
                   fill="#C46A66" 
                   radius={[4, 4, 0, 0]} 
                 />
                 <Bar 
                   dataKey="hintsUsed" 
-                  name="Hints Requested" 
+                  name={tx('Hints Requested', 'मांगे गए संकेत')} 
                   fill="#E8B25C" 
                   radius={[4, 4, 0, 0]} 
                 />
@@ -599,15 +616,18 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#5B825B]" />
-              <strong>High Engagement (75%+)</strong>
+              <strong>{tx('High Engagement (75%+)', 'उच्च जुड़ाव (75%+)')}</strong>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#E8B25C]" />
-              <strong>Adaptive Stabilized</strong>
+              <strong>{tx('Adaptive Stabilized', 'अनुकूलन स्थिर')}</strong>
             </span>
           </div>
           <span className="font-semibold text-[11px]">
-            {chartData.length} Game Rounds Processed by DDA Engine
+            {tx(
+              `${chartData.length} Game Rounds Processed by DDA Engine`,
+              `${chartData.length} खेल राउंड डीडीए इंजन द्वारा विश्लेषित`
+            )}
           </span>
         </div>
       </div>
@@ -620,10 +640,10 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
               <Sparkles className="w-4 h-4" />
             </div>
             <h3 className="font-extrabold text-sm text-[#2D3A2F] uppercase tracking-wide">
-              Recent Adaptive Action Rationale
+              {tx('Recent Adaptive Action Rationale', 'हालिया अनुकूलन निर्णय एवं कारण')}
             </h3>
           </div>
-          <span className="text-xs text-[#5A6E5D] font-semibold">Gemini 3.8 Flash Rationale</span>
+          <span className="text-xs text-[#5A6E5D] font-semibold">{tx('Gemini 3.8 Flash Rationale', 'जेमिनी 3.8 फ़्लैश विश्लेषण')}</span>
         </div>
 
         <div className="space-y-2.5">
@@ -640,10 +660,10 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                       : 'bg-[#EAF1E8] text-[#5B825B]'
                   }`}>
                     {item.gameType === 'puzzle' ? <Puzzle className="w-2.5 h-2.5" /> : <Brain className="w-2.5 h-2.5" />}
-                    {item.gameTitle}
+                    {item.gameTitle === 'Photo Puzzle' ? tx('Photo Puzzle', 'चित्र पहेली') : tx('Memory Match', 'स्मृति मिलान')}
                   </span>
                   <span className="font-black text-[#2D3A2F]">
-                    Level {item.difficultyLevel}
+                    {tx('Level', 'स्तर')} {item.difficultyLevel}
                   </span>
                   <span className="text-[11px] text-[#5A6E5D]">({item.dateLabel})</span>
                   <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
@@ -653,7 +673,7 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
                       ? 'bg-[#F0D8D6] text-[#C46A66]'
                       : 'bg-gray-100 text-gray-700'
                   }`}>
-                    Action: {item.adaptiveAction}
+                    {tx('Action:', 'क्रिया:')} {item.adaptiveAction === 'increased' ? tx('increased', 'बढ़ाया गया') : item.adaptiveAction === 'eased' ? tx('eased', 'आसान किया गया') : tx('maintained', 'स्थिर रखा गया')}
                   </span>
                 </div>
                 <p className="text-[#5A6E5D] leading-relaxed italic">
@@ -662,9 +682,9 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
               </div>
 
               <div className="flex items-center gap-3 shrink-0 text-[11px] font-bold text-[#5A6E5D] pt-1 sm:pt-0 border-t sm:border-t-0 border-[#EAE6DF]">
-                <span>Speed: {item.latencySec}s</span>
-                <span>Errors: {item.mistakes}</span>
-                <span className="text-[#5B825B] font-extrabold">Score: {item.engagement}%</span>
+                <span>{tx('Speed:', 'गति:')} {item.latencySec}s</span>
+                <span>{tx('Errors:', 'त्रुटियां:')} {item.mistakes}</span>
+                <span className="text-[#5B825B] font-extrabold">{tx('Score:', 'स्कोर:')} {item.engagement}%</span>
               </div>
             </div>
           ))}
@@ -675,9 +695,10 @@ export const CognitiveProgressView: React.FC<CognitiveProgressViewProps> = ({
 };
 
 // Custom Tooltip for Engagement Chart
-const CustomEngagementTooltip = ({ active, payload, label }: any) => {
+const CustomEngagementTooltip = ({ active, payload, label, tx }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    const t = tx || ((en: string, hi: string) => en);
     return (
       <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border border-[#E0DCD3] shadow-lg text-xs space-y-1.5 max-w-xs">
         <div className="flex items-center justify-between font-black text-[#2D3A2F] border-b border-[#F0EDE6] pb-1">
@@ -685,14 +706,14 @@ const CustomEngagementTooltip = ({ active, payload, label }: any) => {
           <span className="text-[#5B825B]">{data.dateLabel}</span>
         </div>
         <div className="flex items-center justify-between font-bold">
-          <span className="text-[#5A6E5D]">Cognitive Engagement:</span>
+          <span className="text-[#5A6E5D]">{t('Cognitive Engagement:', 'संज्ञानात्मक जुड़ाव:')}</span>
           <span className="text-[#5B825B] text-sm font-black">{data.engagement}%</span>
         </div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-[#5A6E5D]">
-          <div>Difficulty: <strong className="text-[#2D3A2F]">Lvl {data.difficultyLevel}</strong></div>
-          <div>Latency: <strong className="text-[#2D3A2F]">{data.latencySec}s</strong></div>
-          <div>Mistakes: <strong className="text-[#2D3A2F]">{data.mistakes}</strong></div>
-          <div>Hints: <strong className="text-[#2D3A2F]">{data.hintsUsed}</strong></div>
+          <div>{t('Difficulty:', 'कठिनाई:')} <strong className="text-[#2D3A2F]">{t('Lvl', 'स्तर')} {data.difficultyLevel}</strong></div>
+          <div>{t('Latency:', 'प्रतिक्रिया:')} <strong className="text-[#2D3A2F]">{data.latencySec}s</strong></div>
+          <div>{t('Mistakes:', 'त्रुटियां:')} <strong className="text-[#2D3A2F]">{data.mistakes}</strong></div>
+          <div>{t('Hints:', 'संकेत:')} <strong className="text-[#2D3A2F]">{data.hintsUsed}</strong></div>
         </div>
         {data.aiReasoning && (
           <p className="text-[10px] text-[#5A6E5D] bg-[#FDFBF7] p-1.5 rounded-lg border border-[#EBE7DF] italic">
@@ -706,15 +727,16 @@ const CustomEngagementTooltip = ({ active, payload, label }: any) => {
 };
 
 // Custom Tooltip for Latency & Difficulty Chart
-const CustomLatencyTooltip = ({ active, payload }: any) => {
+const CustomLatencyTooltip = ({ active, payload, tx }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    const t = tx || ((en: string, hi: string) => en);
     return (
       <div className="bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-[#E0DCD3] shadow-lg text-xs space-y-1">
         <div className="font-black text-[#2D3A2F]">{data.sessionName} ({data.dateLabel})</div>
-        <div className="text-[#7A9CA4] font-extrabold">Response Speed: {data.latencySec} seconds</div>
-        <div className="text-[#C98A2C] font-extrabold">Difficulty: Level {data.difficultyLevel}</div>
-        <div className="text-[11px] text-[#5A6E5D]">Adaptive Decision: {data.adaptiveAction}</div>
+        <div className="text-[#7A9CA4] font-extrabold">{t('Response Speed:', 'प्रतिक्रिया गति:')} {data.latencySec} {t('seconds', 'सेकंड')}</div>
+        <div className="text-[#C98A2C] font-extrabold">{t('Difficulty:', 'कठिनाई:')} {t('Level', 'स्तर')} {data.difficultyLevel}</div>
+        <div className="text-[11px] text-[#5A6E5D]">{t('Adaptive Decision:', 'अनुकूलन निर्णय:')} {data.adaptiveAction}</div>
       </div>
     );
   }
@@ -722,14 +744,15 @@ const CustomLatencyTooltip = ({ active, payload }: any) => {
 };
 
 // Custom Tooltip for Mistakes & Hints
-const CustomMistakesTooltip = ({ active, payload }: any) => {
+const CustomMistakesTooltip = ({ active, payload, tx }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    const t = tx || ((en: string, hi: string) => en);
     return (
       <div className="bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-[#E0DCD3] shadow-lg text-xs space-y-1">
         <div className="font-black text-[#2D3A2F]">{data.sessionName} ({data.dateLabel})</div>
-        <div className="text-[#C46A66] font-extrabold">Mistakes: {data.mistakes}</div>
-        <div className="text-[#E8B25C] font-extrabold">Hints Used: {data.hintsUsed}</div>
+        <div className="text-[#C46A66] font-extrabold">{t('Mistakes:', 'त्रुटियां:')} {data.mistakes}</div>
+        <div className="text-[#E8B25C] font-extrabold">{t('Hints Used:', 'प्रयुक्त संकेत:')} {data.hintsUsed}</div>
       </div>
     );
   }

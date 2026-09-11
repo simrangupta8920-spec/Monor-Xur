@@ -3,6 +3,7 @@
 export type Language = 'en' | 'hi';
 
 export interface Translations {
+  [key: string]: string | undefined;
   // Navigation & Role Headers
   monorXur: string;
   playerMode: string;

@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowLeft, Users, Stethoscope, ShieldCheck, Gamepad2 } from 'lucide-react';
 import { AppRole } from '../../types';
 import { soundController } from '../../utils/audio';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface CaregiverSelectProps {
   onSelectRole: (role: AppRole) => void;
@@ -16,6 +17,8 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
   patientName = 'Player',
   onOpenSetup,
 }) => {
+  const { tx } = useLanguage();
+
   return (
     <div className="p-4 pb-24 space-y-5 animate-fadeIn">
       {/* Brand Header */}
@@ -30,17 +33,21 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
             />
           </div>
           <div>
-            <h2 className="text-xl font-black text-[#2D3A2F] leading-tight">Caregiver Portals</h2>
-            <p className="text-xs text-[#5A6E5D]">Choose your access portal or return to play</p>
+            <h2 className="text-xl font-black text-[#2D3A2F] leading-tight">
+              {tx('Caregiver Portals', 'देखभालकर्ता पोर्टल')}
+            </h2>
+            <p className="text-xs text-[#5A6E5D]">
+              {tx('Choose your access portal or return to play', 'अपना एक्सेस पोर्टल चुनें या खेलने के लिए वापस जाएं')}
+            </p>
           </div>
         </div>
         <button
           onClick={onBack}
           className="px-3 py-2 rounded-2xl bg-[#EAF1E8] border border-[#5B825B]/30 text-xs font-black text-[#5B825B] flex items-center gap-1.5 hover:bg-[#d8ebd5] active:scale-95"
-          title="Return to Player Mode"
+          title={tx('Return to Player Mode', 'प्लेयर मोड पर लौटें')}
         >
           <Gamepad2 className="w-3.5 h-3.5" />
-          <span>Player Mode</span>
+          <span>{tx('Player Mode', 'प्लेयर मोड')}</span>
         </button>
       </div>
 
@@ -60,14 +67,18 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
               </div>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-[#5B825B] bg-white/80 px-2 py-0.5 rounded-full">
-                  Primary Mode
+                  {tx('Primary Mode', 'मुख्य मोड')}
                 </span>
-                <h3 className="text-lg font-black text-[#2D3A2F] mt-0.5">Player Mode (Elder Friendly)</h3>
-                <p className="text-xs text-[#2D3A2F]/75">Designed for {patientName} to enjoy games, stories, and calm</p>
+                <h3 className="text-lg font-black text-[#2D3A2F] mt-0.5">
+                  {tx('Player Mode (Elder Friendly)', 'प्लेयर मोड (बुजुर्गों के अनुकूल)')}
+                </h3>
+                <p className="text-xs text-[#2D3A2F]/75">
+                  {tx(`Designed for ${patientName} to enjoy games, stories, and calm`, `${patientName} के लिए खेल, कहानियां और शांति का आनंद लेने के लिए डिज़ाइन किया गया`)}
+                </p>
               </div>
             </div>
             <span className="px-3.5 py-1.5 rounded-xl bg-[#5B825B] text-white font-black text-xs shrink-0">
-              Enter →
+              {tx('Enter →', 'प्रवेश करें →')}
             </span>
           </div>
         </div>
@@ -85,20 +96,27 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
               <Users className="w-7 h-7" />
             </div>
             <span className="px-3 py-1 rounded-full bg-[#EAF1E8] text-[#5B825B] text-xs font-black">
-              Full Care Access
+              {tx('Full Care Access', 'पूर्ण देखभाल पहुंच')}
             </span>
           </div>
 
           <div>
-            <h3 className="text-xl font-black text-[#2D3A2F]">Family Caregiver</h3>
+            <h3 className="text-xl font-black text-[#2D3A2F]">
+              {tx('Family Caregiver', 'पारिवारिक देखभालकर्ता')}
+            </h3>
             <p className="text-sm text-[#5A6E5D] mt-1">
-              Manage {patientName}&apos;s profile, memories, medical consultations, calendar appointments, and track adaptive cognitive game telemetry.
+              {tx(
+                `Manage ${patientName}'s profile, memories, medical consultations, calendar appointments, and track adaptive cognitive game telemetry.`,
+                `${patientName} की प्रोफ़ाइल, यादें, चिकित्सा परामर्श, कैलेंडर अपॉइंटमेंट प्रबंधित करें और गेम टेलीमेट्री ट्रैक करें।`
+              )}
             </p>
           </div>
 
           <div className="pt-2 flex items-center justify-between text-xs font-black text-[#5B825B]">
-            <span>Secured via 4-digit PIN</span>
-            <span className="px-4 py-2 rounded-xl bg-[#5B825B] text-white">Enter PIN →</span>
+            <span>{tx('Secured via 4-digit PIN', '4-अंकीय पिन द्वारा सुरक्षित')}</span>
+            <span className="px-4 py-2 rounded-xl bg-[#5B825B] text-white">
+              {tx('Enter PIN →', 'पिन दर्ज करें →')}
+            </span>
           </div>
         </div>
 
@@ -115,20 +133,27 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
               <Stethoscope className="w-7 h-7 text-[#E8B25C]" />
             </div>
             <span className="px-3 py-1 rounded-full bg-[#FDF0D5] text-[#332610] text-xs font-black">
-              Field & Community
+              {tx('Field & Community', 'क्षेत्र और समुदाय')}
             </span>
           </div>
 
           <div>
-            <h3 className="text-xl font-black text-[#2D3A2F]">ASHA / Health Worker</h3>
+            <h3 className="text-xl font-black text-[#2D3A2F]">
+              {tx('ASHA / Health Worker', 'आशा / स्वास्थ्य कार्यकर्ता')}
+            </h3>
             <p className="text-sm text-[#5A6E5D] mt-1">
-              Focused community health worker portal with cognitive status reports, follow-up checklist, and clinical guidance disclaimers.
+              {tx(
+                'Focused community health worker portal with cognitive status reports, follow-up checklist, and clinical guidance disclaimers.',
+                'संज्ञानात्मक स्थिति रिपोर्ट, फॉलो-अप चेकलिस्ट और नैदानिक मार्गदर्शन के साथ सामुदायिक स्वास्थ्य कार्यकर्ता पोर्टल।'
+              )}
             </p>
           </div>
 
           <div className="pt-2 flex items-center justify-between text-xs font-black text-[#5A6E5D]">
-            <span>Worker ID & Password</span>
-            <span className="px-4 py-2 rounded-xl bg-[#2D3A2F] text-white">Sign In →</span>
+            <span>{tx('Worker ID & Password', 'कार्यकर्ता आईडी और पासवर्ड')}</span>
+            <span className="px-4 py-2 rounded-xl bg-[#2D3A2F] text-white">
+              {tx('Sign In →', 'लॉग इन करें →')}
+            </span>
           </div>
         </div>
 
@@ -143,7 +168,7 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
               className="px-4 py-2.5 rounded-2xl bg-white border border-[#E0DCD3] text-xs font-extrabold text-[#5A6E5D] hover:bg-[#FAF8F5] transition-colors inline-flex items-center gap-2"
             >
               <ShieldCheck className="w-4 h-4 text-[#5B825B]" />
-              <span>Edit Setup & Profiles (Player, Medical, PIN)</span>
+              <span>{tx('Edit Setup & Profiles (Player, Medical, PIN)', 'सेटअप और प्रोफ़ाइल संपादित करें (प्लेयर, मेडिकल, पिन)')}</span>
             </button>
           </div>
         )}
@@ -151,7 +176,12 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
 
       <div className="p-4 rounded-3xl bg-[#FDFBF7] border border-[#E0DCD3] flex items-center gap-3 text-xs text-[#5A6E5D]">
         <ShieldCheck className="w-6 h-6 text-[#5B825B] shrink-0" />
-        <span>Caregiver authentication keeps private memories, medical details, and routines safe and organized.</span>
+        <span>
+          {tx(
+            'Caregiver authentication keeps private memories, medical details, and routines safe and organized.',
+            'देखभालकर्ता प्रमाणीकरण निजी यादों, चिकित्सा विवरणों और दिनचर्या को सुरक्षित और व्यवस्थित रखता है।'
+          )}
+        </span>
       </div>
     </div>
   );
