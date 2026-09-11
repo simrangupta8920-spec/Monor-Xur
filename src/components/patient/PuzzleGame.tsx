@@ -15,6 +15,7 @@ interface PuzzleGameProps {
   memories: Memory[];
   onBack: () => void;
   onLogDDAMetric?: (metric: DDAMetric) => void;
+  playerName?: string;
 }
 
 interface DefaultPuzzleItem {
@@ -131,7 +132,7 @@ const PIECE_COORDINATES: Record<number, { bgPos: string; label: string; row: num
   3: { bgPos: '100% 100%', label: 'Bottom Right', row: 1, col: 1 },
 };
 
-export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogDDAMetric }) => {
+export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogDDAMetric, playerName = 'Player' }) => {
   // Available personalized memories (filter for photo memories with valid image)
   const photoMemories = useMemo(() => {
     return memories.filter(
@@ -344,7 +345,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
       try {
         const correctCount = boardSlots.filter((p, i) => p === i).length;
         const aiResult = await analyzePuzzleDifficulty({
-          playerName: 'Anita',
+          playerName: playerName || 'Player',
           currentGrid: gridSize,
           timeTaken: timeTakenSeconds,
           previousAverageSeconds: baselineAvg,
@@ -516,7 +517,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
 
     try {
       const aiResult = await analyzePuzzleDifficulty({
-        playerName: 'Anita',
+        playerName: playerName || 'Player',
         currentGrid: gridSize,
         timeTaken: testTime,
         previousAverageSeconds: testBaseline,
@@ -2043,7 +2044,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
                         action: 'EASE_DIFFICULTY',
                         previousLevelName: 'Tough (4×4)',
                         newLevelName: 'Medium (3×3)',
-                        encouragement: "You're doing wonderfully, Anita! We've made the puzzle a little gentler so you can relax, take your time, and enjoy every piece.",
+                        encouragement: `You're doing wonderfully, ${playerName}! We've made the puzzle a little gentler so you can relax, take your time, and enjoy every piece.`,
                         timeTaken: 152,
                         averageTime: 120,
                         onUndo: () => handleSelectGridSize(4),

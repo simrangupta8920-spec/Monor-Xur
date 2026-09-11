@@ -10,6 +10,7 @@ interface PatientHomeProps {
   onSelectSubView: (view: PatientSubView) => void;
   reminders: Reminder[];
   onCallFamily: () => void;
+  emergencyContactName?: string;
 }
 
 export const PatientHome: React.FC<PatientHomeProps> = ({
@@ -18,6 +19,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
   onSelectSubView,
   reminders,
   onCallFamily,
+  emergencyContactName,
 }) => {
   const todayStr = format(new Date(), 'EEEE, d MMMM');
   const nextReminder = reminders.find((r) => !r.completed);
@@ -41,11 +43,11 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
                 Player Mode
               </span>
               <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#E8B25C] bg-[#FDF0D5] px-2 py-0.5 rounded-full">
-                <Flame className="w-3 h-3 fill-current" /> 5 Day Streak
+                <Flame className="w-3 h-3 fill-current" /> Active Session
               </span>
             </div>
             <h2 className="text-2xl font-black text-[#2D3A2F] leading-tight mt-0.5">
-              Hello, Player {patientName}!
+              {patientName ? `Hello, ${patientName}!` : 'Hello, Welcome!'}
             </h2>
             <p className="text-xs font-semibold text-[#5A6E5D]">{todayStr}</p>
           </div>
@@ -181,8 +183,10 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             <PhoneCall className="w-6 h-6" />
           </div>
           <div className="text-left">
-            <h4 className="font-extrabold text-base text-[#2D3A2F]">Call Family (Son Rahul)</h4>
-            <p className="text-xs text-[#5A6E5D]">One tap to connect with your family</p>
+            <h4 className="font-extrabold text-base text-[#2D3A2F]">
+              {emergencyContactName ? `Call ${emergencyContactName}` : 'Call Family / Emergency'}
+            </h4>
+            <p className="text-xs text-[#5A6E5D]">One tap to connect with your caregiver</p>
           </div>
         </div>
         <span className="px-3.5 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black">

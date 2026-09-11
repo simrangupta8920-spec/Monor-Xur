@@ -11,6 +11,7 @@ import { DifficultyToast, DifficultyToastProps } from '../common/DifficultyToast
 interface MemoryMatchGameProps {
   onBack: () => void;
   onLogDDAMetric: (metric: DDAMetric) => void;
+  playerName?: string;
 }
 
 interface CardItem {
@@ -37,7 +38,7 @@ const LEVEL_CONFIG: Record<number, { label: string; pairs: number; hints: number
   3: { label: 'Hard (6 Pairs)', pairs: 6, hints: 1 },
 };
 
-export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogDDAMetric }) => {
+export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogDDAMetric, playerName = 'Player' }) => {
   const [level, setLevel] = useState<number>(2);
   const [deck, setDeck] = useState<CardItem[]>([]);
   const [firstCardIndex, setFirstCardIndex] = useState<number | null>(null);
@@ -136,7 +137,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
 
       try {
         const aiResult = await analyzePlayerDifficulty({
-          playerName: 'Anita',
+          playerName: playerName || 'Player',
           currentLevel: fromLvl,
           moves: currentMoves,
           mistakes: currentMistakes,
@@ -172,8 +173,8 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           previousLevelName: LEVEL_CONFIG[fromLvl]?.label || `Level ${fromLvl}`,
           newLevelName: LEVEL_CONFIG[targetLvl]?.label || `Level ${targetLvl}`,
           encouragement: aiResult.encouragement || (fromLvl === 3 
-            ? "You're doing wonderfully, Anita! We've made the cards a bit gentler with 4 pairs so you can relax, take your time, and enjoy matching."
-            : "You're doing wonderfully, Anita! We've switched to a gentle 3-pair board so you can relax, take your time, and have fun."),
+            ? `You're doing wonderfully, ${playerName}! We've made the cards a bit gentler with 4 pairs so you can relax, take your time, and enjoy matching.`
+            : `You're doing wonderfully, ${playerName}! We've switched to a gentle 3-pair board so you can relax, take your time, and have fun.`),
           reason: aiResult.reasoning,
           onUndo: () => {
             setLevel(fromLvl);
@@ -338,7 +339,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
     try {
       // AI Comprehensive Round Assessment
       const aiResult = await analyzePlayerDifficulty({
-        playerName: 'Anita',
+        playerName: playerName || 'Player',
         currentLevel: level,
         moves: finalMoves,
         mistakes: finalMistakes,
@@ -366,8 +367,8 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
           previousLevelName: LEVEL_CONFIG[level]?.label || `Level ${level}`,
           newLevelName: LEVEL_CONFIG[nextLvl]?.label || `Level ${nextLvl}`,
           encouragement: level === 1
-            ? "Splendid 5-game streak, Anita! You've mastered Easy mode and stepped up to Medium (4 Pairs) for a fresh spark!"
-            : "Sensational 5-game streak, Anita! You've mastered Medium mode and stepped up to Hard (6 Pairs)!",
+            ? `Splendid 5-game streak, ${playerName}! You've mastered Easy mode and stepped up to Medium (4 Pairs) for a fresh spark!`
+            : `Sensational 5-game streak, ${playerName}! You've mastered Medium mode and stepped up to Hard (6 Pairs)!`,
           reason: `5 consecutive victories achieved at ${LEVEL_CONFIG[level]?.label}. Upgraded by 1 level.`,
           onUndo: () => setLevel(level),
           onDismiss: () => setDifficultyToast(null),
@@ -420,7 +421,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
         });
       }
     } catch {
-      setHelperMessage("Excellent memory workout! Well done Anita.");
+      setHelperMessage(`Excellent memory workout! Well done ${playerName}.`);
       onLogDDAMetric({
         timestamp: Date.now(),
         roundNumber: roundNumber.current++,
@@ -806,8 +807,8 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
                         previousLevelName: LEVEL_CONFIG[currentLvl]?.label || `Level ${currentLvl}`,
                         newLevelName: LEVEL_CONFIG[nextLvl]?.label || `Level ${nextLvl}`,
                         encouragement: currentLvl === 1
-                          ? "Splendid 5-game streak, Anita! You've mastered Easy mode and stepped up to Medium (4 Pairs) for a fresh spark!"
-                          : "Sensational 5-game streak, Anita! You've mastered Medium mode and stepped up to Hard (6 Pairs)!",
+                          ? `Splendid 5-game streak, ${playerName}! You've mastered Easy mode and stepped up to Medium (4 Pairs) for a fresh spark!`
+                          : `Sensational 5-game streak, ${playerName}! You've mastered Medium mode and stepped up to Hard (6 Pairs)!`,
                         reason: `5 consecutive victories achieved at ${LEVEL_CONFIG[currentLvl]?.label}. Upgraded 1 level.`,
                         onUndo: () => setLevel(currentLvl),
                         onDismiss: () => setDifficultyToast(null),
@@ -835,7 +836,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
                         action: 'EASE_DIFFICULTY',
                         previousLevelName: 'Hard (6 Pairs)',
                         newLevelName: 'Medium (4 Pairs)',
-                        encouragement: "You're doing wonderfully, Anita! We've made the cards a little gentler so you can relax, take your time, and enjoy matching.",
+                        encouragement: `You're doing wonderfully, ${playerName}! We've made the cards a little gentler so you can relax, take your time, and enjoy matching.`,
                         reason: "Player reached 10 mistakes on Hard mode. Auto-shifting 1 step down to Medium mode.",
                         onUndo: () => setLevel(3),
                         onDismiss: () => setDifficultyToast(null),
@@ -856,7 +857,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, onLogD
                         action: 'INCREASE_DIFFICULTY',
                         previousLevelName: 'Easy (3 Pairs)',
                         newLevelName: 'Medium (4 Pairs)',
-                        encouragement: "Splendid focus, Anita! 5 wins in a row! We've stepped up the cards for a fun fresh spark.",
+                        encouragement: `Splendid focus, ${playerName}! 5 wins in a row! We've stepped up the cards for a fun fresh spark.`,
                         reason: "5 consecutive wins achieved. Upgrading 1 level to Medium.",
                         onUndo: () => setLevel(1),
                         onDismiss: () => setDifficultyToast(null),

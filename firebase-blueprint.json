@@ -1,0 +1,173 @@
+{
+  "entities": {
+    "PatientProfile": {
+      "title": "PatientProfile",
+      "description": "Profile information for a care recipient",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "fullName": { "type": "string", "maxLength": 150 },
+        "age": { "type": "number" },
+        "gender": { "type": "string", "maxLength": 50 },
+        "region": { "type": "string", "maxLength": 150 },
+        "language": { "type": "string", "maxLength": 100 },
+        "bloodGroup": { "type": "string", "maxLength": 20 },
+        "about": { "type": "string", "maxLength": 1000 },
+        "majorCareIssue": { "type": "string", "maxLength": 500 },
+        "avatar": { "type": "string", "maxLength": 5000 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "fullName"]
+    },
+    "MedicalProfile": {
+      "title": "MedicalProfile",
+      "description": "Medical background, physician notes, and clinical care directives",
+      "type": "object",
+      "properties": {
+        "concerns": { "type": "array" },
+        "careInfo": { "type": "string", "maxLength": 2000 },
+        "consultations": { "type": "array" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "Memory": {
+      "title": "Memory",
+      "description": "Reminiscence photo, video, or audio record belonging to the patient",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "person": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "maxLength": 50 },
+        "mediaType": { "type": "string", "enum": ["photo", "video", "audio"] },
+        "image": { "type": "string", "maxLength": 500000 },
+        "videoUrl": { "type": "string", "maxLength": 2000 },
+        "audioUrl": { "type": "string", "maxLength": 2000 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "category", "image"]
+    },
+    "Reminder": {
+      "title": "Reminder",
+      "description": "Daily medication or routine scheduled reminder",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "type": { "type": "string", "enum": ["medicine", "routine"] },
+        "time_label": { "type": "string", "maxLength": 50 },
+        "minutes": { "type": "number" },
+        "note": { "type": "string", "maxLength": 500 },
+        "completed": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "type", "time_label", "completed"]
+    },
+    "CalendarEvent": {
+      "title": "CalendarEvent",
+      "description": "Doctor appointments, family visits, or community events",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "type": { "type": "string", "maxLength": 50 },
+        "time": { "type": "string", "maxLength": 50 },
+        "date": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "time", "date"]
+    },
+    "CareTask": {
+      "title": "CareTask",
+      "description": "Checklist task for ASHA or family caregiver home visits",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 300 },
+        "done": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "done"]
+    },
+    "AlertItem": {
+      "title": "AlertItem",
+      "description": "Safety or routine adherence alert item",
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "maxLength": 50 },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "time": { "type": "string", "maxLength": 100 },
+        "acknowledged": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "acknowledged"]
+    },
+    "EmergencyContact": {
+      "title": "EmergencyContact",
+      "description": "One-touch emergency or primary family contact",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "relationship": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "phone"]
+    },
+    "DDAMetric": {
+      "title": "DDAMetric",
+      "description": "Cognitive game metrics, performance latency, mistakes, and difficulty shift logs",
+      "type": "object",
+      "properties": {
+        "gameTitle": { "type": "string", "maxLength": 100 },
+        "level": { "type": "number" },
+        "mistakes": { "type": "number" },
+        "consecutiveMistakes": { "type": "number" },
+        "durationSeconds": { "type": "number" },
+        "actionTaken": { "type": "string", "maxLength": 50 },
+        "reason": { "type": "string", "maxLength": 500 },
+        "timestamp": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["gameTitle", "level", "mistakes", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/patients/{patientId}": {
+      "schema": "PatientProfile",
+      "description": "Patient demographic and primary profile collection"
+    },
+    "/patients/{patientId}/medical/{medicalId}": {
+      "schema": "MedicalProfile",
+      "description": "Medical history and consultation notes for the patient"
+    },
+    "/patients/{patientId}/memories/{memoryId}": {
+      "schema": "Memory",
+      "description": "Reminiscence therapy media records"
+    },
+    "/patients/{patientId}/reminders/{reminderId}": {
+      "schema": "Reminder",
+      "description": "Medication and routine schedules"
+    },
+    "/patients/{patientId}/events/{eventId}": {
+      "schema": "CalendarEvent",
+      "description": "Appointments and calendar events"
+    },
+    "/patients/{patientId}/care_tasks/{taskId}": {
+      "schema": "CareTask",
+      "description": "ASHA and family caregiver visit checklist items"
+    },
+    "/patients/{patientId}/alerts/{alertId}": {
+      "schema": "AlertItem",
+      "description": "System and safety notifications"
+    },
+    "/patients/{patientId}/contacts/{contactId}": {
+      "schema": "EmergencyContact",
+      "description": "Emergency telephone contacts"
+    },
+    "/patients/{patientId}/dda_logs/{logId}": {
+      "schema": "DDAMetric",
+      "description": "Clinical cognitive performance and difficulty adjustment logs"
+    }
+  }
+}

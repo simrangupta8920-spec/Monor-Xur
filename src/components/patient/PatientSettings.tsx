@@ -1,24 +1,27 @@
 import React, { useState } from 'react';
 import { Type, Volume2, Bell, PhoneCall, Stethoscope, Check, HeartHandshake } from 'lucide-react';
-import { PatientProfile } from '../../types';
+import { PatientProfile, EmergencyContact } from '../../types';
 import { soundController } from '../../utils/audio';
 
 interface PatientSettingsProps {
   onOpenCaregiverSelect: () => void;
   onCallEmergency: () => void;
   patientProfile?: PatientProfile;
+  contacts?: EmergencyContact[];
 }
 
 export const PatientSettings: React.FC<PatientSettingsProps> = ({
   onOpenCaregiverSelect,
   onCallEmergency,
   patientProfile,
+  contacts = [],
 }) => {
   const [largeText, setLargeText] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  const playerName = patientProfile?.name || 'Anita';
-  const playerFullName = patientProfile?.fullName || 'Anita Sharma';
+  const playerName = patientProfile?.name || 'Player';
+  const playerFullName = patientProfile?.fullName || 'Mind Explorer';
+  const primaryContact = contacts[0];
 
   const testReadAloud = () => {
     soundController.speak(`Hello ${playerName}. Read aloud is working warmly and clearly.`);
@@ -123,7 +126,11 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
               </div>
               <div>
                 <h4 className="font-extrabold text-base text-[#3D2423]">Emergency Contact</h4>
-                <p className="text-xs text-[#3D2423]/80">Son Rahul Sharma (+91 98200 12345)</p>
+                <p className="text-xs text-[#3D2423]/80">
+                  {primaryContact 
+                    ? `${primaryContact.relationship ? `${primaryContact.relationship}: ` : ''}${primaryContact.name} (${primaryContact.phone})`
+                    : 'Configure emergency contact in Caregiver Portal'}
+                </p>
               </div>
             </div>
             <button

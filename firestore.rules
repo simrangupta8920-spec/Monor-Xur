@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Patients collection
+    match /patients/{patientId} {
+      allow get, list: if isValidId(patientId);
+      allow create, update: if isValidId(patientId) 
+        && request.resource.data.name is string 
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100;
+      allow delete: if isValidId(patientId);
+
+      // Medical profile subcollection
+      match /medical/{medicalId} {
+        allow read, write: if isValidId(patientId) && isValidId(medicalId);
+      }
+
+      // Memories subcollection
+      match /memories/{memoryId} {
+        allow read: if isValidId(patientId) && isValidId(memoryId);
+        allow create, update: if isValidId(patientId) && isValidId(memoryId)
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 200;
+        allow delete: if isValidId(patientId) && isValidId(memoryId);
+      }
+
+      // Reminders subcollection
+      match /reminders/{reminderId} {
+        allow read: if isValidId(patientId) && isValidId(reminderId);
+        allow create, update: if isValidId(patientId) && isValidId(reminderId)
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 200;
+        allow delete: if isValidId(patientId) && isValidId(reminderId);
+      }
+
+      // Calendar Events subcollection
+      match /events/{eventId} {
+        allow read: if isValidId(patientId) && isValidId(eventId);
+        allow create, update: if isValidId(patientId) && isValidId(eventId)
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 200;
+        allow delete: if isValidId(patientId) && isValidId(eventId);
+      }
+
+      // Care Tasks subcollection
+      match /care_tasks/{taskId} {
+        allow read, write: if isValidId(patientId) && isValidId(taskId);
+      }
+
+      // Alerts subcollection
+      match /alerts/{alertId} {
+        allow read, write: if isValidId(patientId) && isValidId(alertId);
+      }
+
+      // Contacts subcollection
+      match /contacts/{contactId} {
+        allow read, write: if isValidId(patientId) && isValidId(contactId);
+      }
+
+      // DDA Logs subcollection
+      match /dda_logs/{logId} {
+        allow read: if isValidId(patientId) && isValidId(logId);
+        allow create: if isValidId(patientId) && isValidId(logId)
+          && request.resource.data.gameTitle is string
+          && request.resource.data.level is number;
+        allow update, delete: if isValidId(patientId) && isValidId(logId);
+      }
+    }
+  }
+}

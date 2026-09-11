@@ -24,7 +24,7 @@ export const MEMORY_LEVEL_THRESHOLDS: Record<number, { name: string; pairs: numb
  */
 function localMLFallback(input: GameTelemetryInput): AIAnalysisResult {
   const { currentLevel, mistakes, consecutiveMistakes, moves, matchedPairs, totalPairs, elapsedSeconds, consecutiveWins = 0 } = input;
-  const playerName = input.playerName || 'Anita';
+  const playerName = input.playerName || 'Player';
   const errorRate = moves > 0 ? mistakes / moves : 0;
 
   // RULE 1: UPGRADE BY 1 LEVEL ON 5 CONSECUTIVE WINS
@@ -159,7 +159,7 @@ export interface PuzzleAIAnalysisResult {
 
 function localPuzzleMLFallback(input: PuzzleTelemetryInput): PuzzleAIAnalysisResult {
   const { currentGrid, timeTaken, previousAverageSeconds, triggerEvent } = input;
-  const playerName = input.playerName || 'Anita';
+  const playerName = input.playerName || 'Player';
   const designatedTime = input.designatedAverageSeconds || PUZZLE_DESIGNATED_TIMES[currentGrid] || 25;
   const consecutiveSolves = input.consecutiveSolves || 0;
   const delta = timeTaken - designatedTime;
