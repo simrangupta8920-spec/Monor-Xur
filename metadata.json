@@ -1,7 +1,9 @@
 {
   "name": "Monor Xur",
   "description": "Mobile-first cognitive engagement and care-support app for older adults with memory difficulties, caregivers, and health workers.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": [
+    "microphone"
+  ],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]

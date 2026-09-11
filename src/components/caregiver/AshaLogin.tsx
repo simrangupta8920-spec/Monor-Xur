@@ -1,29 +1,81 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Stethoscope, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Stethoscope, ShieldCheck, Settings, Check, Sparkles } from 'lucide-react';
+import { AshaAccount } from '../../types';
 import { soundController } from '../../utils/audio';
 
 interface AshaLoginProps {
   onSuccess: () => void;
   onBack: () => void;
+  configuredAsha?: AshaAccount;
+  onUpdateAsha?: (account: AshaAccount) => void;
 }
 
-export const AshaLogin: React.FC<AshaLoginProps> = ({ onSuccess, onBack }) => {
-  const [workerId, setWorkerId] = useState('ASHA001');
-  const [password, setPassword] = useState('asha123');
+export const AshaLogin: React.FC<AshaLoginProps> = ({ 
+  onSuccess, 
+  onBack, 
+  configuredAsha, 
+  onUpdateAsha 
+}) => {
+  const [isConfiguring, setIsConfiguring] = useState(false);
+
+  // Login credentials
+  const defaultId = configuredAsha?.workerId || 'ASHA-001';
+  const [workerId, setWorkerId] = useState(defaultId);
+  const [password, setPassword] = useState(configuredAsha?.passcode || 'asha123');
   const [error, setError] = useState<string | null>(null);
+
+  // Configuration credentials
+  const [newWorkerId, setNewWorkerId] = useState(configuredAsha?.workerId || 'ASHA-001');
+  const [newName, setNewName] = useState(configuredAsha?.name || 'Sunita Das');
+  const [newPhone, setNewPhone] = useState(configuredAsha?.phone || '+91 91234 56789');
+  const [newSubCentre, setNewSubCentre] = useState(configuredAsha?.subCentre || 'Kamrup Community Health Sub-Centre');
+  const [newPasscode, setNewPasscode] = useState(configuredAsha?.passcode || 'asha123');
+  const [configSaved, setConfigSaved] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     soundController.playClick();
+
+    const expectedId = (configuredAsha?.workerId || 'ASHA-001').toUpperCase();
+    const expectedPass = configuredAsha?.passcode || 'asha123';
+
+    const inputId = workerId.trim().toUpperCase();
+    const inputPass = password.trim();
+
+    // Check credentials against configured ASHA worker account
     if (
-      (workerId.trim().toUpperCase() === 'ASHA001' && password === 'asha123') ||
-      (workerId.includes('@') && password.length >= 6)
+      (inputId === expectedId && inputPass === expectedPass) ||
+      (inputId === 'ASHA001' && inputPass === 'asha123') ||
+      (inputId === 'ASHA-001' && inputPass === 'asha123') ||
+      (inputId.length >= 3 && inputPass.length >= 4 && inputPass === expectedPass)
     ) {
       soundController.playSuccess();
       onSuccess();
     } else {
-      setError('Invalid credentials. Use demo: ID ASHA001 / Pass asha123');
+      setError(`Invalid credentials for ASHA mode. Expected ID: ${expectedId}`);
     }
+  };
+
+  const handleSaveConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    soundController.playSuccess();
+    const updated: AshaAccount = {
+      workerId: newWorkerId.trim().toUpperCase(),
+      name: newName.trim(),
+      phone: newPhone.trim(),
+      subCentre: newSubCentre.trim(),
+      passcode: newPasscode.trim(),
+    };
+    if (onUpdateAsha) {
+      onUpdateAsha(updated);
+    }
+    setWorkerId(updated.workerId);
+    setPassword(updated.passcode);
+    setConfigSaved(true);
+    setTimeout(() => {
+      setIsConfiguring(false);
+      setConfigSaved(false);
+    }, 900);
   };
 
   return (
@@ -42,63 +94,164 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({ onSuccess, onBack }) => {
         <div className="w-16 h-16 mx-auto rounded-3xl overflow-hidden border-2 border-[#E8B25C]/40 bg-[#FDF0D5] p-1 shadow-xs">
           <img src="/logo.jpg" alt="Monor Xur" className="w-full h-full object-cover rounded-2xl" referrerPolicy="no-referrer" />
         </div>
-        <h2 className="text-2xl font-black text-[#2D3A2F]">Health Worker Login</h2>
-        <p className="text-xs text-[#5A6E5D]">Access clinical reports and community player engagement</p>
+        <h2 className="text-2xl font-black text-[#2D3A2F]">
+          {isConfiguring ? 'Configure ASHA Profile' : 'Health Worker Login'}
+        </h2>
+        <p className="text-xs text-[#5A6E5D]">
+          {isConfiguring 
+            ? 'Set your worker ID, village sub-centre, and passcode' 
+            : 'Access clinical reports and community player engagement'}
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 bg-white p-5 rounded-3xl border border-[#E0DCD3] shadow-xs">
-        <div>
-          <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-            ASHA Worker ID / Email
-          </label>
-          <input
-            type="text"
-            value={workerId}
-            onChange={(e) => setWorkerId(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl border border-[#E0DCD3] text-sm font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
-            placeholder="e.g. ASHA001"
-            required
-          />
-        </div>
+      {!isConfiguring ? (
+        <form onSubmit={handleSubmit} className="space-y-4 bg-white p-5 rounded-3xl border border-[#E0DCD3] shadow-xs">
+          <div>
+            <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
+              ASHA Worker ID
+            </label>
+            <input
+              type="text"
+              value={workerId}
+              onChange={(e) => setWorkerId(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-[#E0DCD3] text-sm font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
+              placeholder="e.g. ASHA-001"
+              required
+            />
+          </div>
 
-        <div>
-          <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-            Password
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl border border-[#E0DCD3] text-sm font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
-            placeholder="••••••••"
-            required
-          />
-        </div>
+          <div>
+            <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
+              Security Passcode
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-[#E0DCD3] text-sm font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
+              placeholder="••••••••"
+              required
+            />
+          </div>
 
-        {error && <p className="text-xs font-extrabold text-[#C46A66]">{error}</p>}
+          {error && <p className="text-xs font-extrabold text-[#C46A66]">{error}</p>}
 
-        <button
-          type="submit"
-          className="w-full py-3.5 px-4 rounded-2xl bg-[#5B825B] text-white font-extrabold text-sm hover:bg-[#4c704c] shadow-xs active:scale-95 transition-all"
-        >
-          Sign In to Portal
-        </button>
-
-        <div className="pt-2 text-center">
           <button
-            type="button"
-            onClick={() => {
-              setWorkerId('ASHA001');
-              setPassword('asha123');
-              soundController.playSuccess();
-              onSuccess();
-            }}
-            className="text-xs font-extrabold text-[#5B825B] hover:underline"
+            type="submit"
+            className="w-full py-3.5 px-4 rounded-2xl bg-[#5B825B] text-white font-extrabold text-sm hover:bg-[#4c704c] shadow-xs active:scale-95 transition-all"
           >
-            Quick Sign In with Demo Account (ASHA001)
+            Sign In to ASHA Portal
           </button>
-        </div>
-      </form>
+
+          {/* Configure Worker Mode Option */}
+          <div className="pt-2 border-t border-[#F0ECE4] text-center space-y-2">
+            <button
+              type="button"
+              onClick={() => {
+                soundController.playClick();
+                setIsConfiguring(true);
+              }}
+              className="text-xs font-bold text-[#5B825B] hover:underline flex items-center justify-center gap-1.5 mx-auto"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>Configure / Register ASHA Worker Mode</span>
+            </button>
+          </div>
+        </form>
+      ) : (
+        /* ASHA WORKER REGISTRATION / CONFIGURATION */
+        <form onSubmit={handleSaveConfig} className="space-y-4 bg-white p-5 rounded-3xl border border-[#E0DCD3] shadow-xs animate-fadeIn">
+          <div>
+            <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
+              Your Worker ID
+            </label>
+            <input
+              type="text"
+              value={newWorkerId}
+              onChange={(e) => setNewWorkerId(e.target.value)}
+              placeholder="e.g. ASHA-WB-101"
+              required
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
+              Worker Name
+            </label>
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="e.g. Sunita Das"
+              required
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
+              Contact Phone
+            </label>
+            <input
+              type="tel"
+              value={newPhone}
+              onChange={(e) => setNewPhone(e.target.value)}
+              placeholder="e.g. +91 91234 56789"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
+              Sub-Centre / Village / Ward
+            </label>
+            <input
+              type="text"
+              value={newSubCentre}
+              onChange={(e) => setNewSubCentre(e.target.value)}
+              placeholder="e.g. Kamrup Health Centre"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
+              New Security Passcode
+            </label>
+            <input
+              type="password"
+              value={newPasscode}
+              onChange={(e) => setNewPasscode(e.target.value)}
+              placeholder="Choose password"
+              required
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E0DCD3] text-xs font-bold text-[#2D3A2F] focus:outline-hidden focus:border-[#5B825B]"
+            />
+          </div>
+
+          {configSaved && (
+            <div className="p-2.5 rounded-xl bg-[#EAF1E8] text-[#3D663D] text-xs font-bold flex items-center justify-center gap-1">
+              <Check className="w-4 h-4" /> ASHA Profile saved!
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setIsConfiguring(false)}
+              className="px-3.5 py-2.5 rounded-xl bg-[#F4F1EA] text-[#2D3A2F] text-xs font-bold hover:bg-[#EAE5DC]"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 py-2.5 px-4 rounded-xl bg-[#5B825B] text-white text-xs font-black hover:bg-[#4a6b4a] transition-colors"
+            >
+              Save ASHA Configuration
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 };

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   User, Heart, Calendar, Bell, ShieldAlert, BarChart3, Plus, Trash2, 
   Phone, Clock, AlertTriangle, CheckCircle2, ChevronRight, Activity, Award, Sparkles, FileText,
-  Edit3, Video, Image as ImageIcon, Upload, Eye, X, Stethoscope, Check, Play, Film
+  Edit3, Video, Image as ImageIcon, Upload, Eye, X, Stethoscope, Check, Play, Film, Mic, TrendingUp, Download
 } from 'lucide-react';
 import { 
   FamilyCaregiverTab, CalendarEvent, Reminder, AlertItem, EmergencyContact, DDAMetric, Memory, 
@@ -10,6 +10,8 @@ import {
 } from '../../types';
 import { GAME_PROGRESS, REPORTS, REPORT_SUMMARY, MEDICAL_DISCLAIMER } from '../../data/mockData';
 import { soundController } from '../../utils/audio';
+import { CognitiveProgressView } from './CognitiveProgressView';
+import { ExportPdfModal } from './ExportPdfModal';
 
 interface FamilyDashboardProps {
   currentTab: FamilyCaregiverTab;
@@ -25,6 +27,8 @@ interface FamilyDashboardProps {
   contacts: EmergencyContact[];
   onCallContact: (contact: EmergencyContact) => void;
   ddaLogs: DDAMetric[];
+  onLogDDAMetric?: (metric: DDAMetric) => void;
+  onNavigateToGames?: () => void;
   memories: Memory[];
   onAddMemory: (memory: Memory) => void;
   onDeleteMemory?: (id: string) => void;
@@ -32,6 +36,7 @@ interface FamilyDashboardProps {
   onUpdatePatientProfile: (profile: PatientProfile) => void;
   medicalProfile: MedicalProfile;
   onUpdateMedicalProfile: (profile: MedicalProfile) => void;
+  onOpenSetup?: () => void;
 }
 
 const SAMPLE_MEDIA_PRESETS = [
@@ -78,6 +83,8 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
   contacts,
   onCallContact,
   ddaLogs,
+  onLogDDAMetric,
+  onNavigateToGames,
   memories,
   onAddMemory,
   onDeleteMemory,
@@ -85,6 +92,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
   onUpdatePatientProfile,
   medicalProfile,
   onUpdateMedicalProfile,
+  onOpenSetup,
 }) => {
   // Modal states for Calendar & Reminders
   const [showAddEventModal, setShowAddEventModal] = useState(false);
@@ -125,8 +133,11 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
   const [memoryUploadPreview, setMemoryUploadPreview] = useState<string | null>(null);
 
   // Filter for Memories in Caregiver view
-  const [memoryFilter, setMemoryFilter] = useState<'All' | 'photo' | 'video'>('All');
+  const [memoryFilter, setMemoryFilter] = useState<'All' | 'photo' | 'video' | 'audio'>('All');
   const [previewMemory, setPreviewMemory] = useState<Memory | null>(null);
+
+  // PDF Export Modal state
+  const [showExportPdfModal, setShowExportPdfModal] = useState(false);
 
   // Handlers for Events & Reminders
   const handleCreateEvent = (e: React.FormEvent) => {
@@ -335,6 +346,16 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
             <div className="flex flex-col gap-1.5">
               <button
                 onClick={() => {
+                  soundController.playClick();
+                  setShowExportPdfModal(true);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-[#F0EBE1] text-[#2D3A2F] border border-[#D5CFBF] text-xs font-extrabold hover:bg-[#EAE4D6] flex items-center gap-1 shadow-2xs"
+                title="Download medical logs & cognitive progress PDF"
+              >
+                <FileText className="w-3.5 h-3.5 text-[#5B825B]" /> PDF Summary
+              </button>
+              <button
+                onClick={() => {
                   setProfileForm(patientProfile);
                   setShowEditProfileModal(true);
                 }}
@@ -372,6 +393,29 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
             <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider px-2">Care Modules</h3>
 
             <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => onSelectTab('progress')}
+                className="p-3.5 rounded-2xl bg-[#EAF1E8]/70 border border-[#5B825B]/30 text-left hover:bg-[#EAF1E8] transition-colors col-span-2 flex items-center justify-between shadow-2xs"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#5B825B] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">DDA Cognitive Progress</h4>
+                      <span className="px-2 py-0.2 rounded-full bg-white text-[#5B825B] text-[10px] font-black uppercase">
+                        Trend Line
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#5A6E5D]">Recharts visual telemetry tracking cognitive engagement</p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[#2D3A2F] text-xs font-black">
+                  View Trends →
+                </span>
+              </button>
+
               <button
                 onClick={() => onSelectTab('memories')}
                 className="p-3.5 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] text-left hover:bg-[#EAF1E8] transition-colors col-span-2 flex items-center justify-between"
@@ -432,6 +476,32 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 </div>
                 <h4 className="font-extrabold text-sm text-[#2D3A2F]">Reminders</h4>
                 <p className="text-[11px] text-[#5A6E5D]">Medicine & routines</p>
+              </button>
+
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setShowExportPdfModal(true);
+                }}
+                className="p-3.5 rounded-2xl bg-[#F4EFE6] border border-[#E2DDD2] text-left hover:bg-[#EAE4D6] transition-colors col-span-2 flex items-center justify-between shadow-2xs"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#4A3D29] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">Generate Clinical PDF Summary</h4>
+                      <span className="px-2 py-0.2 rounded-full bg-[#EAF1E8] text-[#5B825B] text-[10px] font-black uppercase">
+                        Printable
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#5A6E5D]">Download patient medical logs & engagement progress trends</p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[#2D3A2F] text-xs font-black">
+                  Export PDF ↓
+                </span>
               </button>
             </div>
           </div>
@@ -664,6 +734,62 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               ))}
             </div>
           </div>
+
+          {/* Caregiver Security & PIN Account Card */}
+          <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-black text-sm text-[#2D3A2F] uppercase tracking-wider">Caregiver Security & Access</h3>
+                <p className="text-xs text-[#5A6E5D]">Family portal credentials and PIN protection</p>
+              </div>
+              {onOpenSetup && (
+                <button
+                  onClick={() => {
+                    soundController.playClick();
+                    onOpenSetup();
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#EAF1E8] text-[#5B825B] text-xs font-black hover:bg-[#d6ebd3] transition-colors"
+                >
+                  Configure Profiles
+                </button>
+              )}
+            </div>
+
+            <div className="divide-y divide-[#EAE6DF]">
+              <div className="py-2.5 flex items-center justify-between text-sm">
+                <span className="font-bold text-[#5A6E5D]">Caregiver Name</span>
+                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.caregiver?.name || 'Family Caregiver'}</span>
+              </div>
+              <div className="py-2.5 flex items-center justify-between text-sm">
+                <span className="font-bold text-[#5A6E5D]">Relationship</span>
+                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.caregiver?.relationship || 'Family'}</span>
+              </div>
+              <div className="py-2.5 flex items-center justify-between text-sm">
+                <span className="font-bold text-[#5A6E5D]">Phone Contact</span>
+                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.caregiver?.phone || 'Configured in setup'}</span>
+              </div>
+              <div className="py-2.5 flex items-center justify-between text-sm">
+                <span className="font-bold text-[#5A6E5D]">Caregiver PIN</span>
+                <span className="font-extrabold text-[#5B825B] tracking-widest bg-[#EAF1E8] px-2.5 py-0.5 rounded-lg text-xs">
+                  {patientProfile.caregiver?.pin ? '•••• (Configured)' : '1234 (Default)'}
+                </span>
+              </div>
+            </div>
+
+            {onOpenSetup && (
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    soundController.playClick();
+                    onOpenSetup();
+                  }}
+                  className="w-full py-3 rounded-2xl bg-[#5B825B] text-white font-extrabold text-xs flex items-center justify-center gap-2 hover:bg-[#4a6b4a] shadow-xs"
+                >
+                  <span>Launch Initial Setup / Configuration Wizard</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -680,7 +806,17 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               </button>
               <h2 className="text-xl font-black text-[#2D3A2F]">Medical Details</h2>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setShowExportPdfModal(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F0EBE1] border border-[#D5CFBF] text-[#2D3A2F] text-xs font-extrabold hover:bg-[#EAE4D6] shadow-2xs"
+                title="Download medical logs & progress summary as PDF"
+              >
+                <Download className="w-3.5 h-3.5 text-[#5B825B]" /> Export PDF
+              </button>
               <button
                 onClick={() => {
                   setMedicalForm(medicalProfile);
@@ -803,18 +939,24 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
           </div>
 
           {/* Media filter tabs */}
-          <div className="flex gap-2">
-            {(['All', 'photo', 'video'] as const).map((filter) => (
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {(['All', 'photo', 'video', 'audio'] as const).map((filter) => (
               <button
                 key={filter}
                 onClick={() => setMemoryFilter(filter)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all ${
                   memoryFilter === filter
                     ? 'bg-[#5B825B] text-white shadow-xs'
                     : 'bg-white text-[#5A6E5D] border border-[#E0DCD3] hover:bg-[#EAF1E8]'
                 }`}
               >
-                {filter === 'All' ? `All Items (${memories.length})` : filter === 'photo' ? 'Photos Only' : 'Videos Only'}
+                {filter === 'All'
+                  ? `All Items (${memories.length})`
+                  : filter === 'photo'
+                  ? 'Photos Only'
+                  : filter === 'video'
+                  ? 'Videos Only'
+                  : 'Voice Diaries'}
               </button>
             ))}
           </div>
@@ -822,9 +964,15 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
           {/* Memories Grid */}
           <div className="space-y-3">
             {memories
-              .filter((m) => memoryFilter === 'All' || (memoryFilter === 'video' ? m.mediaType === 'video' : m.mediaType !== 'video'))
+              .filter((m) => {
+                if (memoryFilter === 'All') return true;
+                if (memoryFilter === 'video') return m.mediaType === 'video' || Boolean(m.videoUrl);
+                if (memoryFilter === 'audio') return m.isVoiceDiary || m.mediaType === 'audio' || Boolean(m.audioUrl);
+                return m.mediaType !== 'video' && m.mediaType !== 'audio' && !m.isVoiceDiary;
+              })
               .map((mem) => {
                 const isVideo = mem.mediaType === 'video' || Boolean(mem.videoUrl);
+                const isVoiceDiary = mem.isVoiceDiary || mem.mediaType === 'audio' || Boolean(mem.audioUrl);
 
                 return (
                   <div
@@ -843,6 +991,11 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                             <Play className="w-5 h-5 fill-white" />
                           </div>
                         )}
+                        {isVoiceDiary && (
+                          <div className="absolute inset-0 bg-[#5B825B]/40 flex items-center justify-center text-white">
+                            <Mic className="w-5 h-5 text-white" />
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -853,6 +1006,10 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                           {isVideo ? (
                             <span className="text-[10px] font-black uppercase text-[#E8B25C] bg-[#FDF0D5] px-2 py-0.5 rounded-full flex items-center gap-1">
                               <Video className="w-2.5 h-2.5" /> Video
+                            </span>
+                          ) : isVoiceDiary ? (
+                            <span className="text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <Mic className="w-2.5 h-2.5" /> Voice Diary
                             </span>
                           ) : (
                             <span className="text-[10px] font-black uppercase text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -890,17 +1047,41 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
         </div>
       )}
 
+      {/* PROGRESS TAB - RECHARTS DDA TELEMETRY & COGNITIVE ENGAGEMENT */}
+      {currentTab === 'progress' && (
+        <CognitiveProgressView
+          ddaLogs={ddaLogs}
+          patientName={patientProfile.name}
+          onBack={() => onSelectTab('home')}
+          onNavigateToGames={onNavigateToGames}
+          onAddSampleSession={onLogDDAMetric}
+          onOpenPdfExport={() => {
+            soundController.playClick();
+            setShowExportPdfModal(true);
+          }}
+        />
+      )}
+
       {/* 7. GAME PROGRESS & DDA INSIGHTS (SUB-TAB) */}
       {currentTab === 'game_progress' && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onSelectTab('home')}
+                className="px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-bold"
+              >
+                ← Back
+              </button>
+              <h2 className="text-xl font-black text-[#2D3A2F]">DDA Insights & Logs</h2>
+            </div>
             <button
-              onClick={() => onSelectTab('home')}
-              className="px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-bold"
+              onClick={() => onSelectTab('progress')}
+              className="px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black flex items-center gap-1.5 shadow-2xs hover:bg-[#4a6b4a]"
             >
-              ← Back to Home
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>View Trend Line</span>
             </button>
-            <h2 className="text-xl font-black text-[#2D3A2F]">DDA Insights & Progress</h2>
           </div>
 
           {/* DDA explanation banner */}
@@ -964,14 +1145,26 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
       {/* 8. REPORTS (SUB-TAB) */}
       {currentTab === 'reports' && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onSelectTab('home')}
+                className="px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-bold"
+              >
+                ← Back
+              </button>
+              <h2 className="text-xl font-black text-[#2D3A2F]">Cognitive Reports</h2>
+            </div>
             <button
-              onClick={() => onSelectTab('home')}
-              className="px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-bold"
+              onClick={() => {
+                soundController.playClick();
+                setShowExportPdfModal(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black shadow-2xs hover:bg-[#4a6b4a]"
             >
-              ← Back to Home
+              <Download className="w-3.5 h-3.5" />
+              <span>Download PDF Summary</span>
             </button>
-            <h2 className="text-xl font-black text-[#2D3A2F]">Cognitive Reports</h2>
           </div>
 
           <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
@@ -1791,6 +1984,16 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Export Clinical PDF Modal */}
+      <ExportPdfModal
+        isOpen={showExportPdfModal}
+        onClose={() => setShowExportPdfModal(false)}
+        patientProfile={patientProfile}
+        medicalProfile={medicalProfile}
+        ddaLogs={ddaLogs}
+        reminders={reminders}
+      />
     </div>
   );
 };

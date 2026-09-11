@@ -6,9 +6,16 @@ import { soundController } from '../../utils/audio';
 interface CaregiverSelectProps {
   onSelectRole: (role: AppRole) => void;
   onBack: () => void;
+  patientName?: string;
+  onOpenSetup?: () => void;
 }
 
-export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({ onSelectRole, onBack }) => {
+export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({ 
+  onSelectRole, 
+  onBack,
+  patientName = 'Player',
+  onOpenSetup,
+}) => {
   return (
     <div className="p-4 pb-24 space-y-5 animate-fadeIn">
       {/* Brand Header */}
@@ -56,7 +63,7 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({ onSelectRole, 
                   Primary Mode
                 </span>
                 <h3 className="text-lg font-black text-[#2D3A2F] mt-0.5">Player Mode (Elder Friendly)</h3>
-                <p className="text-xs text-[#2D3A2F]/75">Designed for Anita to enjoy games, stories, and calm</p>
+                <p className="text-xs text-[#2D3A2F]/75">Designed for {patientName} to enjoy games, stories, and calm</p>
               </div>
             </div>
             <span className="px-3.5 py-1.5 rounded-xl bg-[#5B825B] text-white font-black text-xs shrink-0">
@@ -85,7 +92,7 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({ onSelectRole, 
           <div>
             <h3 className="text-xl font-black text-[#2D3A2F]">Family Caregiver</h3>
             <p className="text-sm text-[#5A6E5D] mt-1">
-              Manage loved one's profile, memories, medical consultations, calendar appointments, and track adaptive cognitive game telemetry.
+              Manage {patientName}&apos;s profile, memories, medical consultations, calendar appointments, and track adaptive cognitive game telemetry.
             </p>
           </div>
 
@@ -124,6 +131,22 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({ onSelectRole, 
             <span className="px-4 py-2 rounded-xl bg-[#2D3A2F] text-white">Sign In →</span>
           </div>
         </div>
+
+        {/* Re-open Setup Button */}
+        {onOpenSetup && (
+          <div className="pt-2 text-center">
+            <button
+              onClick={() => {
+                soundController.playClick();
+                onOpenSetup();
+              }}
+              className="px-4 py-2.5 rounded-2xl bg-white border border-[#E0DCD3] text-xs font-extrabold text-[#5A6E5D] hover:bg-[#FAF8F5] transition-colors inline-flex items-center gap-2"
+            >
+              <ShieldCheck className="w-4 h-4 text-[#5B825B]" />
+              <span>Edit Setup & Profiles (Player, Medical, PIN)</span>
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="p-4 rounded-3xl bg-[#FDFBF7] border border-[#E0DCD3] flex items-center gap-3 text-xs text-[#5A6E5D]">

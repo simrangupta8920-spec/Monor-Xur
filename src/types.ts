@@ -1,4 +1,5 @@
 export type AppRole = 
+  | 'setup'
   | 'patient' 
   | 'caregiver_select' 
   | 'family_login' 
@@ -20,6 +21,7 @@ export type PatientSubView =
 
 export type FamilyCaregiverTab = 
   | 'home' 
+  | 'progress'
   | 'calendar' 
   | 'alerts' 
   | 'profile' 
@@ -32,7 +34,7 @@ export type FamilyCaregiverTab =
 
 export type AshaTab = 'home' | 'report' | 'tasks' | 'alerts';
 
-export type MemoryCategory = 'All' | 'Family' | 'People' | 'Places' | 'Special Moments';
+export type MemoryCategory = 'All' | 'Family' | 'People' | 'Places' | 'Special Moments' | 'Voice Diary';
 
 export interface Memory {
   id: string;
@@ -40,10 +42,30 @@ export interface Memory {
   person?: string;
   category: MemoryCategory;
   image: string;
-  mediaType?: 'photo' | 'video';
+  mediaType?: 'photo' | 'video' | 'audio';
+  audioUrl?: string;
   videoUrl?: string;
   description: string;
   date?: string;
+  isVoiceDiary?: boolean;
+  createdAt?: string;
+}
+
+export interface CaregiverAccount {
+  name: string;
+  relationship: string;
+  phone: string;
+  pin: string; // 4-digit security PIN set by caregiver
+  email?: string;
+  isPrimary?: boolean;
+}
+
+export interface AshaAccount {
+  workerId: string;
+  name: string;
+  phone: string;
+  subCentre: string;
+  passcode: string;
 }
 
 export interface PatientProfile {
@@ -57,6 +79,9 @@ export interface PatientProfile {
   about: string;
   majorCareIssue: string;
   avatar: string;
+  caregiver?: CaregiverAccount;
+  asha?: AshaAccount;
+  isConfigured?: boolean;
 }
 
 export interface MedicalConsultation {
@@ -71,6 +96,13 @@ export interface MedicalProfile {
   concerns: string[];
   consultations: MedicalConsultation[];
   careInfo: string;
+  stage?: string;
+  prescriptions?: string[];
+  allergies?: string[];
+  doctorName?: string;
+  doctorPhone?: string;
+  notes?: string;
+  lastVisit?: string;
 }
 
 export interface CalendarEvent {
@@ -79,6 +111,8 @@ export interface CalendarEvent {
   type: 'appointment' | 'routine' | 'event' | 'doctor' | 'family';
   time: string;
   date: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Reminder {
@@ -89,12 +123,16 @@ export interface Reminder {
   minutes: number;
   note?: string;
   completed?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CareTask {
   id: string;
   title: string;
   done: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AlertItem {
@@ -104,6 +142,8 @@ export interface AlertItem {
   description: string;
   time: string;
   acknowledged?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface EmergencyContact {
@@ -111,6 +151,8 @@ export interface EmergencyContact {
   name: string;
   relationship: string;
   phone: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AIAnalysisResult {

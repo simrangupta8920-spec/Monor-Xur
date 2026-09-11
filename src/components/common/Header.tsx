@@ -1,6 +1,7 @@
 import React from 'react';
 import { Gamepad2, Stethoscope, ArrowLeft, Phone } from 'lucide-react';
 import { AppRole } from '../../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
   role: AppRole;
@@ -49,7 +50,9 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <span className="font-black text-xl text-[#2D3A2F] block leading-tight tracking-tight">Monor Xur</span>
               <span className="text-xs font-bold text-[#5A6E5D] block">
-                {role === 'patient' 
+                {role === 'setup'
+                  ? 'First Time Setup & Profiles'
+                  : role === 'patient' 
                   ? 'Player Mode • Mind Explorer' 
                   : role === 'family' 
                   ? 'Family Companion Portal' 
@@ -70,6 +73,8 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
+        <PWAInstallButton compact />
+
         {role === 'patient' && onCallEmergency && (
           <button
             onClick={onCallEmergency}
@@ -91,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {role !== 'patient' && onSwitchRole && (
+        {role !== 'patient' && role !== 'setup' && onSwitchRole && (
           <button
             onClick={() => onSwitchRole('patient')}
             className="px-3.5 py-2 rounded-2xl border border-[#5B825B]/40 bg-[#EAF1E8] text-xs font-black text-[#5B825B] hover:bg-[#d8ebd5] transition-colors active:scale-95 shadow-xs flex items-center gap-1.5"

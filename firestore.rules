@@ -23,12 +23,15 @@ service cloud.firestore {
 
       // Medical profile subcollection
       match /medical/{medicalId} {
-        allow read, write: if isValidId(patientId) && isValidId(medicalId);
+        allow list: if isValidId(patientId);
+        allow get: if isValidId(patientId) && isValidId(medicalId);
+        allow create, update, delete: if isValidId(patientId) && isValidId(medicalId);
       }
 
       // Memories subcollection
       match /memories/{memoryId} {
-        allow read: if isValidId(patientId) && isValidId(memoryId);
+        allow list: if isValidId(patientId);
+        allow get: if isValidId(patientId) && isValidId(memoryId);
         allow create, update: if isValidId(patientId) && isValidId(memoryId)
           && request.resource.data.title is string
           && request.resource.data.title.size() > 0
@@ -38,7 +41,8 @@ service cloud.firestore {
 
       // Reminders subcollection
       match /reminders/{reminderId} {
-        allow read: if isValidId(patientId) && isValidId(reminderId);
+        allow list: if isValidId(patientId);
+        allow get: if isValidId(patientId) && isValidId(reminderId);
         allow create, update: if isValidId(patientId) && isValidId(reminderId)
           && request.resource.data.title is string
           && request.resource.data.title.size() > 0
@@ -48,7 +52,8 @@ service cloud.firestore {
 
       // Calendar Events subcollection
       match /events/{eventId} {
-        allow read: if isValidId(patientId) && isValidId(eventId);
+        allow list: if isValidId(patientId);
+        allow get: if isValidId(patientId) && isValidId(eventId);
         allow create, update: if isValidId(patientId) && isValidId(eventId)
           && request.resource.data.title is string
           && request.resource.data.title.size() > 0
@@ -58,25 +63,30 @@ service cloud.firestore {
 
       // Care Tasks subcollection
       match /care_tasks/{taskId} {
-        allow read, write: if isValidId(patientId) && isValidId(taskId);
+        allow list: if isValidId(patientId);
+        allow get: if isValidId(patientId) && isValidId(taskId);
+        allow create, update, delete: if isValidId(patientId) && isValidId(taskId);
       }
 
       // Alerts subcollection
       match /alerts/{alertId} {
-        allow read, write: if isValidId(patientId) && isValidId(alertId);
+        allow list: if isValidId(patientId);
+        allow get: if isValidId(patientId) && isValidId(alertId);
+        allow create, update, delete: if isValidId(patientId) && isValidId(alertId);
       }
 
       // Contacts subcollection
       match /contacts/{contactId} {
-        allow read, write: if isValidId(patientId) && isValidId(contactId);
+        allow list: if isValidId(patientId);
+        allow get: if isValidId(patientId) && isValidId(contactId);
+        allow create, update, delete: if isValidId(patientId) && isValidId(contactId);
       }
 
       // DDA Logs subcollection
       match /dda_logs/{logId} {
-        allow read: if isValidId(patientId) && isValidId(logId);
-        allow create: if isValidId(patientId) && isValidId(logId)
-          && request.resource.data.gameTitle is string
-          && request.resource.data.level is number;
+        allow list: if isValidId(patientId);
+        allow get: if isValidId(patientId) && isValidId(logId);
+        allow create: if isValidId(patientId) && isValidId(logId);
         allow update, delete: if isValidId(patientId) && isValidId(logId);
       }
     }

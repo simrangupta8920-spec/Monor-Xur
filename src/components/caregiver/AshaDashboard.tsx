@@ -15,6 +15,7 @@ interface AshaDashboardProps {
   onCallEmergency: () => void;
   patientProfile?: PatientProfile;
   medicalProfile?: MedicalProfile;
+  onOpenSetup?: () => void;
 }
 
 export const AshaDashboard: React.FC<AshaDashboardProps> = ({
@@ -26,6 +27,7 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
   onCallEmergency,
   patientProfile,
   medicalProfile,
+  onOpenSetup,
 }) => {
   const patient = patientProfile || DEFAULT_PATIENT;
   const completedTasks = tasks.filter((t) => t.done).length;
@@ -96,6 +98,45 @@ export const AshaDashboard: React.FC<AshaDashboardProps> = ({
             <div className="p-3 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3]">
               <h5 className="font-extrabold text-sm text-[#2D3A2F]">Dr. Meera Rao (Neurology)</h5>
               <p className="text-xs text-[#5B825B] font-semibold">Today, 11:00 AM • City Neuro Clinic</p>
+            </div>
+          </div>
+
+          {/* ASHA Worker Profile & Credentials */}
+          <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-[#5A6E5D]">Configured ASHA Worker</h4>
+                <p className="text-xs text-[#5B825B] font-extrabold">Active Community Healthcare Link</p>
+              </div>
+              {onOpenSetup && (
+                <button
+                  onClick={() => {
+                    soundController.playClick();
+                    onOpenSetup();
+                  }}
+                  className="px-3 py-1 rounded-xl bg-[#FDF0D5] text-[#A66E14] text-xs font-black hover:bg-[#fae7b9]"
+                >
+                  Edit Profile
+                </button>
+              )}
+            </div>
+            <div className="divide-y divide-[#EAE6DF] text-xs">
+              <div className="py-2 flex items-center justify-between">
+                <span className="text-[#5A6E5D] font-bold">Worker ID</span>
+                <span className="font-extrabold text-[#2D3A2F]">{patient.asha?.workerId || 'ASHA-001'}</span>
+              </div>
+              <div className="py-2 flex items-center justify-between">
+                <span className="text-[#5A6E5D] font-bold">Worker Name</span>
+                <span className="font-extrabold text-[#2D3A2F]">{patient.asha?.name || 'Sunita Das'}</span>
+              </div>
+              <div className="py-2 flex items-center justify-between">
+                <span className="text-[#5A6E5D] font-bold">Sub-Centre / Village</span>
+                <span className="font-extrabold text-[#2D3A2F]">{patient.asha?.subCentre || 'Kamrup Community Health Sub-Centre'}</span>
+              </div>
+              <div className="py-2 flex items-center justify-between">
+                <span className="text-[#5A6E5D] font-bold">Contact Phone</span>
+                <span className="font-extrabold text-[#2D3A2F]">{patient.asha?.phone || '+91 91234 56789'}</span>
+              </div>
             </div>
           </div>
         </div>

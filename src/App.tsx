@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   AppRole, PatientTab, PatientSubView, FamilyCaregiverTab, AshaTab, Memory, 
   DDAMetric, CalendarEvent, Reminder, AlertItem, EmergencyContact, 
-  PatientProfile, MedicalProfile 
+  PatientProfile, MedicalProfile, CaregiverAccount, AshaAccount, CareTask 
 } from './types';
 import { 
   INITIAL_PATIENT_PROFILE, INITIAL_MEDICAL_PROFILE, INITIAL_MEMORIES, INITIAL_REMINDERS, 
@@ -11,6 +11,7 @@ import {
 } from './data/mockData';
 import { Header } from './components/common/Header';
 import { PatientBottomNav, FamilyBottomNav, AshaBottomNav } from './components/common/BottomNav';
+import { InitialSetupPage } from './components/setup/InitialSetupPage';
 import { PatientHome } from './components/patient/PatientHome';
 import { MemoriesGallery } from './components/patient/MemoriesGallery';
 import { MemoryViewer } from './components/patient/MemoryViewer';
@@ -27,12 +28,51 @@ import { FamilyLogin } from './components/caregiver/FamilyLogin';
 import { AshaLogin } from './components/caregiver/AshaLogin';
 import { FamilyDashboard } from './components/caregiver/FamilyDashboard';
 import { AshaDashboard } from './components/caregiver/AshaDashboard';
+import { OfflineIndicator } from './components/common/OfflineIndicator';
+import { 
+  saveOfflineSnapshot, 
+  getOfflineSnapshot, 
+  queueOfflineMutation, 
+  getOfflineQueue, 
+  clearOfflineQueue 
+} from './services/offlineStorage';
 import { soundController } from './utils/audio';
-import { Phone, X } from 'lucide-react';
+import { Phone } from 'lucide-react';
+import { 
+  DEFAULT_PATIENT_ID,
+  subscribeToPatientProfile,
+  savePatientProfile,
+  subscribeToMedicalProfile,
+  saveMedicalProfile,
+  subscribeToMemories,
+  addMemoryToDb,
+  deleteMemoryFromDb,
+  subscribeToReminders,
+  saveReminderToDb,
+  saveRemindersListToDb,
+  deleteReminderFromDb,
+  subscribeToEvents,
+  saveCalendarEventToDb,
+  subscribeToAlerts,
+  saveAlertToDb,
+  subscribeToCareTasks,
+  saveCareTaskToDb,
+  subscribeToContacts,
+  saveContactToDb,
+} from './services/firebase';
 
 export function App() {
-  // Roles & View navigation
-  const [role, setRole] = useState<AppRole>('patient');
+  // Check if initial setup was previously completed or stored in offline snapshot
+  const cachedOfflineSnapshot = typeof window !== 'undefined' ? getOfflineSnapshot() : null;
+  const isSetupCompletedLocally = (typeof window !== 'undefined' && 
+    localStorage.getItem('monor_xur_setup_completed') === 'true') || 
+    Boolean(cachedOfflineSnapshot?.patientProfile?.name);
+
+  // Roles & View navigation - Default to 'setup' if no user profile configured
+  const [role, setRole] = useState<AppRole>(() => {
+    return isSetupCompletedLocally ? 'patient' : 'setup';
+  });
+
   const [patientTab, setPatientTab] = useState<PatientTab>('home');
   const [patientSubView, setPatientSubView] = useState<PatientSubView>('none');
   const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null);
@@ -40,19 +80,173 @@ export function App() {
   const [familyTab, setFamilyTab] = useState<FamilyCaregiverTab>('home');
   const [ashaTab, setAshaTab] = useState<AshaTab>('home');
 
-  // Application Data States (synced locally across modes)
-  const [patientProfile, setPatientProfile] = useState<PatientProfile>(INITIAL_PATIENT_PROFILE);
-  const [medicalProfile, setMedicalProfile] = useState<MedicalProfile>(INITIAL_MEDICAL_PROFILE);
-  const [memories, setMemories] = useState<Memory[]>(INITIAL_MEMORIES);
-  const [reminders, setReminders] = useState<Reminder[]>(INITIAL_REMINDERS);
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(INITIAL_CALENDAR_EVENTS);
+  // Application Data States (synced locally, offline storage, and with Firestore)
+  const [patientProfile, setPatientProfile] = useState<PatientProfile>(() => {
+    if (cachedOfflineSnapshot?.patientProfile?.name) {
+      return cachedOfflineSnapshot.patientProfile;
+    }
+    try {
+      const stored = localStorage.getItem('monor_xur_patient');
+      return stored ? JSON.parse(stored) : INITIAL_PATIENT_PROFILE;
+    } catch {
+      return INITIAL_PATIENT_PROFILE;
+    }
+  });
+
+  const [medicalProfile, setMedicalProfile] = useState<MedicalProfile>(() => {
+    if (cachedOfflineSnapshot?.medicalProfile?.stage) {
+      return cachedOfflineSnapshot.medicalProfile;
+    }
+    try {
+      const stored = localStorage.getItem('monor_xur_medical');
+      return stored ? JSON.parse(stored) : INITIAL_MEDICAL_PROFILE;
+    } catch {
+      return INITIAL_MEDICAL_PROFILE;
+    }
+  });
+
+  const [memories, setMemories] = useState<Memory[]>(() => {
+    if (cachedOfflineSnapshot?.memories && cachedOfflineSnapshot.memories.length > 0) {
+      return cachedOfflineSnapshot.memories;
+    }
+    return INITIAL_MEMORIES;
+  });
+
+  // Current daily plan reminders (accessible offline)
+  const [reminders, setReminders] = useState<Reminder[]>(() => {
+    if (cachedOfflineSnapshot?.reminders && cachedOfflineSnapshot.reminders.length > 0) {
+      return cachedOfflineSnapshot.reminders;
+    }
+    return INITIAL_REMINDERS;
+  });
+
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(() => {
+    if (cachedOfflineSnapshot?.calendarEvents && cachedOfflineSnapshot.calendarEvents.length > 0) {
+      return cachedOfflineSnapshot.calendarEvents;
+    }
+    return INITIAL_CALENDAR_EVENTS;
+  });
+
   const [alerts, setAlerts] = useState<AlertItem[]>(INITIAL_ALERTS);
-  const [tasks, setTasks] = useState(INITIAL_CARE_TASKS);
+
+  const [tasks, setTasks] = useState<CareTask[]>(() => {
+    if (cachedOfflineSnapshot?.tasks && cachedOfflineSnapshot.tasks.length > 0) {
+      return cachedOfflineSnapshot.tasks;
+    }
+    return INITIAL_CARE_TASKS;
+  });
+
   const [ddaLogs, setDdaLogs] = useState<DDAMetric[]>([]);
-  const [contacts] = useState<EmergencyContact[]>(EMERGENCY_CONTACTS);
+
+  const [contacts, setContacts] = useState<EmergencyContact[]>(() => {
+    if (cachedOfflineSnapshot?.contacts && cachedOfflineSnapshot.contacts.length > 0) {
+      return cachedOfflineSnapshot.contacts;
+    }
+    return EMERGENCY_CONTACTS;
+  });
 
   // Calling simulation modal
   const [callingContact, setCallingContact] = useState<EmergencyContact | null>(null);
+
+  // --- Background synchronization of offline queue when network reconnects ---
+  useEffect(() => {
+    const handleOnlineSync = async () => {
+      const queue = getOfflineQueue();
+      if (queue.length === 0) return;
+      console.log(`Monor Xur: Network online. Flushing ${queue.length} offline updates...`);
+      for (const item of queue) {
+        try {
+          if (item.type === 'toggle_reminder' || item.type === 'add_reminder') {
+            await saveReminderToDb(DEFAULT_PATIENT_ID, item.payload);
+          } else if (item.type === 'update_task') {
+            await saveCareTaskToDb(DEFAULT_PATIENT_ID, item.payload);
+          } else if (item.type === 'update_profile') {
+            await savePatientProfile(DEFAULT_PATIENT_ID, item.payload);
+          }
+        } catch (err) {
+          console.warn('Failed to flush offline queue item:', err);
+        }
+      }
+      clearOfflineQueue();
+    };
+
+    window.addEventListener('online', handleOnlineSync);
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      handleOnlineSync();
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnlineSync);
+    };
+  }, []);
+
+  // --- Real-time Firebase Synchronization & Offline Cache Update ---
+  useEffect(() => {
+    // 1. Patient Profile
+    const unsubPatient = subscribeToPatientProfile(DEFAULT_PATIENT_ID, (data) => {
+      if (data && data.name) {
+        setPatientProfile(data);
+        localStorage.setItem('monor_xur_setup_completed', 'true');
+        saveOfflineSnapshot({ patientProfile: data });
+      }
+    });
+
+    // 2. Medical Profile
+    const unsubMedical = subscribeToMedicalProfile(DEFAULT_PATIENT_ID, (data) => {
+      if (data) {
+        setMedicalProfile(data);
+        saveOfflineSnapshot({ medicalProfile: data });
+      }
+    });
+
+    // 3. Memories
+    const unsubMemories = subscribeToMemories(DEFAULT_PATIENT_ID, (data) => {
+      setMemories(data);
+      saveOfflineSnapshot({ memories: data });
+    });
+
+    // 4. Reminders (Daily plan)
+    const unsubReminders = subscribeToReminders(DEFAULT_PATIENT_ID, (data) => {
+      setReminders(data);
+      saveOfflineSnapshot({ reminders: data });
+    });
+
+    // 5. Calendar Events (Daily plan)
+    const unsubEvents = subscribeToEvents(DEFAULT_PATIENT_ID, (data: CalendarEvent[]) => {
+      setCalendarEvents(data);
+      saveOfflineSnapshot({ calendarEvents: data });
+    });
+
+    // 6. Alerts
+    const unsubAlerts = subscribeToAlerts(DEFAULT_PATIENT_ID, (data: AlertItem[]) => {
+      setAlerts(data);
+    });
+
+    // 7. Care Tasks
+    const unsubTasks = subscribeToCareTasks(DEFAULT_PATIENT_ID, (data) => {
+      setTasks(data);
+      saveOfflineSnapshot({ tasks: data });
+    });
+
+    // 8. Emergency Contacts
+    const unsubContacts = subscribeToContacts(DEFAULT_PATIENT_ID, (data) => {
+      if (data && data.length > 0) {
+        setContacts(data);
+        saveOfflineSnapshot({ contacts: data });
+      }
+    });
+
+    return () => {
+      unsubPatient();
+      unsubMedical();
+      unsubMemories();
+      unsubReminders();
+      unsubEvents();
+      unsubAlerts();
+      unsubTasks();
+      unsubContacts();
+    };
+  }, []);
 
   // Handlers
   const handleSwitchRole = (newRole: AppRole) => {
@@ -76,66 +270,183 @@ export function App() {
     setSelectedMemory(null);
   };
 
-  const handleToggleReminder = (id: string) => {
-    setReminders((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, completed: !r.completed } : r))
-    );
+  const handleCompleteSetup = async (data: {
+    patient: PatientProfile;
+    medical: MedicalProfile;
+    caregiver: CaregiverAccount;
+    asha?: AshaAccount;
+    emergencyContact: EmergencyContact;
+  }) => {
+    setPatientProfile(data.patient);
+    setMedicalProfile(data.medical);
+    setContacts([data.emergencyContact]);
+
+    localStorage.setItem('monor_xur_setup_completed', 'true');
+    localStorage.setItem('monor_xur_patient', JSON.stringify(data.patient));
+    localStorage.setItem('monor_xur_medical', JSON.stringify(data.medical));
+
+    try {
+      await savePatientProfile(DEFAULT_PATIENT_ID, data.patient);
+      await saveMedicalProfile(DEFAULT_PATIENT_ID, data.medical);
+      await saveContactToDb(DEFAULT_PATIENT_ID, data.emergencyContact);
+
+      // Create reminders based on prescriptions if user has no reminders yet
+      if (data.medical.prescriptions && data.medical.prescriptions.length > 0 && reminders.length === 0) {
+        const initialReminders: Reminder[] = data.medical.prescriptions.map((rx, i) => {
+          const isNight = rx.toLowerCase().includes('night') || rx.toLowerCase().includes('evening');
+          return {
+            id: `rx_${Date.now()}_${i}`,
+            title: `Take ${rx}`,
+            type: 'medicine',
+            time_label: isNight ? '08:00 PM' : '09:00 AM',
+            minutes: isNight ? 20 * 60 : 9 * 60,
+            note: 'Prescribed daily medicine',
+            completed: false,
+          };
+        });
+        await saveRemindersListToDb(DEFAULT_PATIENT_ID, initialReminders);
+      }
+    } catch (err) {
+      console.error('Error saving setup data to Firestore:', err);
+    }
+
+    soundController.playSuccess();
+    soundController.speak(`Welcome to Monor Xur, ${data.patient.name}!`);
+    handleSwitchRole('patient');
   };
 
-  const handleAddReminder = (reminder: Reminder) => {
-    setReminders((prev) => [reminder, ...prev]);
+  const handleUpdateAsha = async (updatedAsha: AshaAccount) => {
+    const updatedPatient: PatientProfile = {
+      ...patientProfile,
+      asha: updatedAsha,
+    };
+    setPatientProfile(updatedPatient);
+    await savePatientProfile(DEFAULT_PATIENT_ID, updatedPatient);
   };
 
-  const handleDeleteReminder = (id: string) => {
+  const handleToggleReminder = async (id: string) => {
+    const target = reminders.find((r) => r.id === id);
+    if (target) {
+      const updated = { ...target, completed: !target.completed };
+      const updatedList = reminders.map((r) => (r.id === id ? updated : r));
+      setReminders(updatedList);
+      saveOfflineSnapshot({ reminders: updatedList });
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        queueOfflineMutation({ type: 'toggle_reminder', payload: updated });
+      } else {
+        await saveReminderToDb(DEFAULT_PATIENT_ID, updated);
+      }
+    }
+  };
+
+  const handleAddReminder = async (reminder: Reminder) => {
+    const updatedList = [reminder, ...reminders];
+    setReminders(updatedList);
+    saveOfflineSnapshot({ reminders: updatedList });
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      queueOfflineMutation({ type: 'add_reminder', payload: reminder });
+    } else {
+      await saveReminderToDb(DEFAULT_PATIENT_ID, reminder);
+    }
+  };
+
+  const handleDeleteReminder = async (id: string) => {
     soundController.playClick();
-    setReminders((prev) => prev.filter((r) => r.id !== id));
+    const updatedList = reminders.filter((r) => r.id !== id);
+    setReminders(updatedList);
+    saveOfflineSnapshot({ reminders: updatedList });
+    await deleteReminderFromDb(DEFAULT_PATIENT_ID, id);
   };
 
-  const handleAddCalendarEvent = (event: CalendarEvent) => {
-    setCalendarEvents((prev) => [event, ...prev]);
+  const handleAddCalendarEvent = async (event: CalendarEvent) => {
+    const updatedList = [event, ...calendarEvents];
+    setCalendarEvents(updatedList);
+    saveOfflineSnapshot({ calendarEvents: updatedList });
+    await saveCalendarEventToDb(DEFAULT_PATIENT_ID, event);
   };
 
-  const handleAcknowledgeAlert = (id: string) => {
+  const handleAcknowledgeAlert = async (id: string) => {
     soundController.playClick();
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, acknowledged: true } : a))
-    );
+    const target = alerts.find((a) => a.id === id);
+    if (target) {
+      const updated = { ...target, acknowledged: true };
+      setAlerts((prev) => prev.map((a) => (a.id === id ? updated : a)));
+      await saveAlertToDb(DEFAULT_PATIENT_ID, updated);
+    }
   };
 
-  const handleToggleTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
-    );
+  const handleToggleTask = async (id: string) => {
+    const target = tasks.find((t) => t.id === id);
+    if (target) {
+      const updated = { ...target, done: !target.done };
+      const updatedTasks = tasks.map((t) => (t.id === id ? updated : t));
+      setTasks(updatedTasks);
+      saveOfflineSnapshot({ tasks: updatedTasks });
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        queueOfflineMutation({ type: 'update_task', payload: updated });
+      } else {
+        await saveCareTaskToDb(DEFAULT_PATIENT_ID, updated);
+      }
+    }
   };
 
   const handleLogDDAMetric = (metric: DDAMetric) => {
     setDdaLogs((prev) => [metric, ...prev]);
   };
 
-  const handleAddMemory = (memory: Memory) => {
-    setMemories((prev) => [memory, ...prev]);
+  const handleAddMemory = async (memory: Memory) => {
+    const updated = [memory, ...memories];
+    setMemories(updated);
+    saveOfflineSnapshot({ memories: updated });
+    await addMemoryToDb(DEFAULT_PATIENT_ID, memory);
   };
 
-  const handleDeleteMemory = (id: string) => {
+  const handleDeleteMemory = async (id: string) => {
     soundController.playClick();
-    setMemories((prev) => prev.filter((m) => m.id !== id));
+    const updated = memories.filter((m) => m.id !== id);
+    setMemories(updated);
+    saveOfflineSnapshot({ memories: updated });
+    await deleteMemoryFromDb(DEFAULT_PATIENT_ID, id);
   };
 
-  const handleUpdatePatientProfile = (updated: PatientProfile) => {
+  const handleUpdatePatientProfile = async (updated: PatientProfile) => {
     setPatientProfile(updated);
+    localStorage.setItem('monor_xur_patient', JSON.stringify(updated));
+    saveOfflineSnapshot({ patientProfile: updated });
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      queueOfflineMutation({ type: 'update_profile', payload: updated });
+    } else {
+      await savePatientProfile(DEFAULT_PATIENT_ID, updated);
+    }
   };
 
-  const handleUpdateMedicalProfile = (updated: MedicalProfile) => {
+  const handleUpdateMedicalProfile = async (updated: MedicalProfile) => {
     setMedicalProfile(updated);
+    localStorage.setItem('monor_xur_medical', JSON.stringify(updated));
+    saveOfflineSnapshot({ medicalProfile: updated });
+    await saveMedicalProfile(DEFAULT_PATIENT_ID, updated);
   };
 
   const triggerCallFamily = () => {
     soundController.playChime(440, 0.5);
-    setCallingContact(contacts[0]);
+    const activeContact = contacts[0] || (patientProfile.caregiver ? {
+      id: 'primary-caregiver',
+      name: patientProfile.caregiver.name,
+      relationship: patientProfile.caregiver.relationship,
+      phone: patientProfile.caregiver.phone,
+    } : null);
+    if (activeContact) {
+      setCallingContact(activeContact);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#2D3A2F] flex flex-col font-sans selection:bg-[#5B825B]/20">
+      <OfflineIndicator />
       {/* Top Header */}
       <Header
         role={role}
@@ -145,6 +456,17 @@ export function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-lg w-full mx-auto pb-6">
+        {/* ROLE 0: INITIAL FIRST INSTALL SETUP PAGE */}
+        {role === 'setup' && (
+          <InitialSetupPage
+            initialPatient={patientProfile.name ? patientProfile : undefined}
+            initialMedical={medicalProfile.stage ? medicalProfile : undefined}
+            onComplete={handleCompleteSetup}
+            onCancel={() => handleSwitchRole('patient')}
+            isEditing={Boolean(patientProfile.name && isSetupCompletedLocally)}
+          />
+        )}
+
         {/* ROLE 1: PATIENT MODE */}
         {role === 'patient' && (
           <div>
@@ -206,7 +528,7 @@ export function App() {
               <>
                 {patientTab === 'home' && (
                   <PatientHome
-                    patientName={patientProfile.name}
+                    patientName={patientProfile.name || 'Friend'}
                     onSelectTab={handlePatientSelectTab}
                     onSelectSubView={setPatientSubView}
                     reminders={reminders}
@@ -217,7 +539,9 @@ export function App() {
                 {patientTab === 'memories' && (
                   <MemoriesGallery
                     memories={memories}
+                    patientName={patientProfile.name || 'Friend'}
                     onOpenMemory={(mem) => setSelectedMemory(mem)}
+                    onAddMemory={handleAddMemory}
                   />
                 )}
 
@@ -233,6 +557,8 @@ export function App() {
                     onOpenCaregiverSelect={() => handleSwitchRole('caregiver_select')}
                     onCallEmergency={triggerCallFamily}
                     patientProfile={patientProfile}
+                    contacts={contacts}
+                    onOpenSetup={() => handleSwitchRole('setup')}
                   />
                 )}
               </>
@@ -245,6 +571,8 @@ export function App() {
           <CaregiverSelect
             onSelectRole={(r) => handleSwitchRole(r)}
             onBack={() => handleSwitchRole('patient')}
+            patientName={patientProfile.name || 'Player'}
+            onOpenSetup={() => handleSwitchRole('setup')}
           />
         )}
 
@@ -253,6 +581,9 @@ export function App() {
           <FamilyLogin
             onSuccess={() => handleSwitchRole('family')}
             onBack={() => handleSwitchRole('caregiver_select')}
+            patientName={patientProfile.name || 'Player'}
+            configuredPin={patientProfile.caregiver?.pin || '1234'}
+            onReopenSetup={() => handleSwitchRole('setup')}
           />
         )}
 
@@ -261,6 +592,8 @@ export function App() {
           <AshaLogin
             onSuccess={() => handleSwitchRole('asha')}
             onBack={() => handleSwitchRole('caregiver_select')}
+            configuredAsha={patientProfile.asha}
+            onUpdateAsha={handleUpdateAsha}
           />
         )}
 
@@ -280,6 +613,11 @@ export function App() {
             contacts={contacts}
             onCallContact={(c) => setCallingContact(c)}
             ddaLogs={ddaLogs}
+            onLogDDAMetric={handleLogDDAMetric}
+            onNavigateToGames={() => {
+              setRole('patient');
+              setPatientTab('play');
+            }}
             memories={memories}
             onAddMemory={handleAddMemory}
             onDeleteMemory={handleDeleteMemory}
@@ -287,6 +625,7 @@ export function App() {
             onUpdatePatientProfile={handleUpdatePatientProfile}
             medicalProfile={medicalProfile}
             onUpdateMedicalProfile={handleUpdateMedicalProfile}
+            onOpenSetup={() => handleSwitchRole('setup')}
           />
         )}
 
@@ -301,11 +640,12 @@ export function App() {
             onCallEmergency={triggerCallFamily}
             patientProfile={patientProfile}
             medicalProfile={medicalProfile}
+            onOpenSetup={() => handleSwitchRole('setup')}
           />
         )}
       </main>
 
-      {/* Persistent Bottom Nav according to role */}
+      {/* Persistent Bottom Nav according to role (hidden during setup) */}
       {role === 'patient' && (
         <PatientBottomNav
           activeTab={patientTab}
@@ -367,4 +707,5 @@ export function App() {
     </div>
   );
 }
+
 export default App;

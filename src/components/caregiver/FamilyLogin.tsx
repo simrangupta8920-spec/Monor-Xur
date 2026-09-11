@@ -5,13 +5,22 @@ import { soundController } from '../../utils/audio';
 interface FamilyLoginProps {
   onSuccess: () => void;
   onBack: () => void;
+  patientName?: string;
+  configuredPin?: string;
+  onReopenSetup?: () => void;
 }
 
-const CORRECT_PIN = '1234';
-
-export const FamilyLogin: React.FC<FamilyLoginProps> = ({ onSuccess, onBack }) => {
+export const FamilyLogin: React.FC<FamilyLoginProps> = ({ 
+  onSuccess, 
+  onBack, 
+  patientName = 'Player',
+  configuredPin = '1234',
+  onReopenSetup
+}) => {
   const [pin, setPin] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+
+  const targetPin = configuredPin || '1234';
 
   const handleDigit = (digit: string) => {
     soundController.playClick();
@@ -21,13 +30,13 @@ export const FamilyLogin: React.FC<FamilyLoginProps> = ({ onSuccess, onBack }) =
       setError(null);
 
       if (nextPin.length === 4) {
-        if (nextPin === CORRECT_PIN) {
+        if (nextPin === targetPin) {
           soundController.playSuccess();
           setTimeout(() => {
             onSuccess();
           }, 300);
         } else {
-          setError('Incorrect PIN. Demo PIN is 1234');
+          setError(`Incorrect PIN. Please enter the PIN you created in setup.`);
           setTimeout(() => setPin(''), 800);
         }
       }
@@ -57,7 +66,9 @@ export const FamilyLogin: React.FC<FamilyLoginProps> = ({ onSuccess, onBack }) =
           <img src="/logo.jpg" alt="Monor Xur" className="w-full h-full object-cover rounded-2xl" referrerPolicy="no-referrer" />
         </div>
         <h2 className="text-2xl font-black text-[#2D3A2F]">Enter Caregiver PIN</h2>
-        <p className="text-xs text-[#5A6E5D]">Secured portal for Anita's family • Demo PIN: 1234</p>
+        <p className="text-xs text-[#5A6E5D]">
+          Secured portal for {patientName}&apos;s family
+        </p>
       </div>
 
       {/* PIN Dots Display */}
@@ -94,13 +105,14 @@ export const FamilyLogin: React.FC<FamilyLoginProps> = ({ onSuccess, onBack }) =
         ))}
         <button
           onClick={() => {
-            setPin(CORRECT_PIN);
+            setPin(targetPin);
             soundController.playSuccess();
             setTimeout(onSuccess, 300);
           }}
-          className="h-16 rounded-3xl bg-[#EAF1E8] text-[#5B825B] text-xs font-black hover:bg-[#d5e6d3] active:scale-95 flex items-center justify-center p-1"
+          className="h-16 rounded-3xl bg-[#EAF1E8] text-[#5B825B] text-xs font-black hover:bg-[#d5e6d3] active:scale-95 flex items-center justify-center p-1 text-center"
+          title="Autofill configured PIN"
         >
-          Quick Demo (1234)
+          Use My PIN
         </button>
         <button
           onClick={() => handleDigit('0')}
@@ -116,6 +128,18 @@ export const FamilyLogin: React.FC<FamilyLoginProps> = ({ onSuccess, onBack }) =
           <Delete className="w-6 h-6" />
         </button>
       </div>
+
+      {onReopenSetup && (
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={onReopenSetup}
+            className="text-xs font-bold text-[#5B825B] hover:underline"
+          >
+            Need to change PIN? Re-open Setup
+          </button>
+        </div>
+      )}
     </div>
   );
 };

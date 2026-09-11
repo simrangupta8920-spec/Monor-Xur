@@ -5,6 +5,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb.svg?logo=react)](https://reactjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38b2ac.svg?logo=tailwind-css)](https://tailwindcss.com/)
+[![Recharts](https://img.shields.io/badge/Recharts-3.10-22c55e.svg)](https://recharts.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-Firestore-FFA611.svg?logo=firebase)](https://firebase.google.com/)
 [![Express](https://img.shields.io/badge/Express-5.2-lightgrey.svg?logo=express)](https://expressjs.com/)
 [![Google Gemini](https://img.shields.io/badge/AI-Gemini_3.8_Flash-orange.svg?logo=google)](https://ai.google.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933.svg?logo=node.js)](https://nodejs.org/)
@@ -25,10 +27,11 @@ Built around dignity, reminiscence therapy, and clinical pacing, Monor Xur bridg
          ┌───────────────────────────────┼───────────────────────────────┐
          ▼                               ▼                               ▼
   👵 Patient Mode                👨‍👩‍👧 Family Portal              🩺 ASHA Clinical Hub
- • Gentle, High-Contrast UI     • Remote Telemetry Tracking    • MMSE-Aligned Logbooks
- • Dynamic Difficulty (DDA)     • Memory & Video Uploads       • Home Visit Checklists
- • Reminiscence Photo/Video     • Medication Scheduling        • Cognitive Trend Reports
- • Calming Audio & Breathing    • Alert Notification Logs      • Vitals & BP Logging
+ • Gentle, High-Contrast UI     • Recharts DDA Trend Lines     • MMSE-Aligned Logbooks
+ • Dynamic Difficulty (DDA)     • Audio Diary & Photo Gallery  • Home Visit Checklists
+ • Voice Diaries (Web Speech)   • Remote Telemetry Tracking    • Cognitive Trend Reports
+ • Calming Audio & Breathing    • Medication Scheduling        • Vitals & BP Logging
+ • Emergency SOS & Reminders    • Cloud Firestore Live Sync    • AI Doctor Consultation Logs
 ```
 
 ---
@@ -38,16 +41,17 @@ Built around dignity, reminiscence therapy, and clinical pacing, Monor Xur bridg
 ### 1. 👵 Patient Experience (Persona: Anita Sharma, 68)
 Designed with gerontological UX principles—high contrast, calm natural earth tones, zero cognitive friction, large touch targets (≥48px), and gentle auditory confirmation.
 
-- **Warm Daily Greeting**: Instant orientation to time of day, date, and comforting affirmations.
-- **Reminiscence Therapy Gallery**:
-  - Personal family photographs, videos, and voice recordings.
-  - Guided memory prompts connecting loved ones, cherished life stories, and favorite songs.
+- **Warm Daily Orientation**: Instant orientation to time of day, date, and comforting affirmations.
+- **Voice Diary & Reminiscence Therapy Gallery**:
+  - **Voice Diary Recording**: Integrates the browser's **Web SpeechRecognition API** for real-time speech-to-text transcription paired with **MediaRecorder** audio capture.
+  - **Elder-Friendly Voice Station**: Big tactile record controls, live waveform indicators, personalized themes (Serene Garden, Warm Sunset, Cozy Hearth), and instant audio playback.
+  - **Family Memories**: Personal family photographs, videos, and cherished life stories.
 - **Cognitive Stimulation Hub**:
   - **Memory Match Game**: Active paired-card recall with nature and comfort iconography.
   - **Photo Jigsaw Puzzle**: Reassemble familiar family pictures in 2×2, 3×3, or 4×4 arrangements.
 - **Mindful Relaxation & Sensory Hub**:
   - **Diaphragmatic Box Breathing**: Visual pulse animation following a 4-4-4-4 rhythm for anxiety reduction.
-  - **Soothing Soundscapes**: Synthesized 432 Hz / 528 Hz ambient raga tones and natural soundscapes.
+  - **Soothing Soundscapes**: Synthesized 432 Hz / 528 Hz ambient raga tones and natural soundscapes via the Web Audio API.
 - **Daily Living & Medication Support**:
   - Medication reminders with visual status chips and audio announcements.
   - Simple daily routines and one-tap emergency SOS quick-calling.
@@ -78,10 +82,27 @@ To prevent both frustration (which triggers agitation in dementia) and boredom, 
 ---
 
 ### 3. 👨‍👩‍👧 Family Caregiver Portal
-- **Real-Time Cognitive Monitoring**: Live telemetry of game plays, mistake velocity, and fatigue risk indicators.
-- **Memory Curation**: Upload and organize family photos, short celebration videos, and voice memos for the patient's reminiscence gallery.
-- **Routine Management**: Configure medication times, doctor visits, and daily hydration reminders.
-- **Safety Logs**: Immediate visibility into emergency SOS triggers and missed reminders.
+- **📈 Recharts DDA Cognitive Progress Visualizer**:
+  - Dedicated **Progress** tab featuring interactive charts powered by **Recharts**:
+    - **Cognitive Engagement Trend Line** (`AreaChart`): Gradient area trend tracking patient engagement score over time with a 75% target baseline reference line.
+    - **Speed & Difficulty Trajectory** (`LineChart`): Dual-axis tracking of decision latency (in seconds) against adaptive difficulty levels (1 to 5).
+    - **Mistakes & Hint Distribution** (`BarChart`): Error rate versus hint dependency monitoring.
+    - **Live Telemetry Rationale**: Transparent clinical breakdown explaining each difficulty adjustment made by the Gemini DDA engine.
+- **📄 Downloadable Clinical & Progress PDF Summary**:
+  - One-click vector PDF generation powered by **jsPDF** for medical consultations, ASHA reviews, and family records.
+  - Configurable sections:
+    - **Patient Profile & Clinical Baseline**: Full demographics, blood group, diagnosis, caregiver and emergency contacts.
+    - **Cognitive Engagement Trends & DDA Telemetry**: KPI summary cards, session-by-session speed and error log table, and AI adaptive rationales.
+    - **Medical Concerns & Doctor Consultations**: Primary medical concerns, physician care guidance, and complete visit history.
+    - **Daily Routine & Medication Adherence**: Scheduled tasks with compliance percentages.
+    - **Caregiver Observations**: Custom notes written by caregivers included directly in the report.
+    - **Standard Clinical Healthcare Disclaimer & Page Numbering**.
+- **🎙️ Media & Audio Diary Manager**:
+  - View and listen to patient voice diaries, upload celebration videos and photos, and filter items by Photo, Video, or Voice Diary.
+- **Routine & Calendar Management**:
+  - Configure medication times, doctor visits, and daily hydration reminders with real-time cloud synchronization.
+- **Safety Logs & Alert Feeds**:
+  - Instant visibility into emergency SOS triggers, missed reminders, and patient check-ins.
 
 ---
 
@@ -92,30 +113,57 @@ To prevent both frustration (which triggers agitation in dementia) and boredom, 
 
 ---
 
+### 5. ☁️ Real-Time Cloud Persistence (Firebase Firestore)
+- Resilient cloud database synchronization for:
+  - Patient & Medical Profiles
+  - Calendar Events & Appointments
+  - Reminders & Care Tasks
+  - Safety Alerts & SOS Logs
+  - Emergency Contacts
+  - Reminiscence Memories & Voice Diaries
+  - DDA Game Telemetry & Historical Metrics
+
+---
+
 ## 🛠️ Architecture & Tech Stack
 
 ```
 monor-xur/
-├── server.ts                # Express 5 backend with Vite SSR/SPA middleware
+├── server.ts                             # Express 5 backend with Vite SSR/SPA middleware
 ├── src/
-│   ├── main.tsx             # Application mount point
-│   ├── App.tsx              # Role management (Patient, Family, ASHA) & state sync
-│   ├── index.css            # Tailwind CSS 4 design token foundation
-│   ├── types.ts             # TypeScript interfaces for clinical data & DDA metrics
+│   ├── main.tsx                          # Application mount point
+│   ├── App.tsx                           # Role management (Patient, Family, ASHA) & state sync
+│   ├── index.css                         # Tailwind CSS 4 design token foundation
+│   ├── types.ts                          # TypeScript interfaces for clinical data & DDA metrics
 │   ├── components/
-│   │   ├── patient/         # Patient views (MemoryMatch, Puzzle, Relaxation, Gallery)
-│   │   ├── caregiver/       # Family & ASHA worker dashboards, auth & telemetry
-│   │   └── common/          # Navigation, headers, DDA toast notifications
+│   │   ├── patient/
+│   │   │   ├── AudioDiaryRecorder.tsx   # SpeechRecognition + MediaRecorder voice journal modal
+│   │   │   ├── MemoriesGallery.tsx      # Reminiscence gallery with audio diary badges
+│   │   │   ├── MemoryViewer.tsx         # Media viewer with audio playback controls
+│   │   │   ├── MemoryMatchGame.tsx      # Adaptive paired-card recall game with DDA
+│   │   │   ├── PuzzleGame.tsx           # Reminiscence photo jigsaw with DDA
+│   │   │   └── RelaxationHub.tsx        # 4-4-4-4 diaphragmatic breathing & soundscapes
+│   │   ├── caregiver/
+│   │   │   ├── CognitiveProgressView.tsx # Recharts DDA visualizer & engagement trend lines
+│   │   │   ├── FamilyDashboard.tsx       # Caregiver hub, routines, media & progress
+│   │   │   └── AshaDashboard.tsx         # Community health worker clinical portal
+│   │   └── common/                       # Navigation (BottomNav), headers, DDA notifications
 │   ├── data/
-│   │   └── mockData.ts      # Clinical profiles, reminders, emergency contacts
+│   │   └── mockData.ts                   # Clinical baseline profiles, reminders, emergency contacts
 │   ├── services/
-│   │   └── aiService.ts     # Client bridge to /api/ai endpoints
+│   │   ├── aiService.ts                  # Client bridge to /api/ai endpoints
+│   │   └── firebase.ts                   # Firestore real-time listeners & persistence operations
 │   └── utils/
-│       └── audio.ts         # Synthesized Web Audio chimes & solfeggio frequencies
+│       ├── audio.ts                      # Synthesized Web Audio chimes & solfeggio frequencies
+│       └── pdfReportGenerator.ts         # Vector PDF report compiler for medical & DDA progress
 ```
 
 ### Technology Highlights:
 - **Frontend**: [React 18](https://react.dev/), [TypeScript 5](https://www.typescriptlang.org/), [Tailwind CSS v4](https://tailwindcss.com/)
+- **Data Visualization**: [Recharts 3.10](https://recharts.org/) (Interactive area charts, dual-axis line charts, bar distribution)
+- **PDF Report Generation**: [jsPDF](https://github.com/parallax/jsPDF) (Vector PDF document creation with formatted tables, KPIs, and multi-page layout)
+- **Voice Journaling**: Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`) + HTML5 `MediaRecorder`
+- **Cloud Database**: [Firebase Firestore](https://firebase.google.com/docs/firestore) (Live snapshot listeners, subdocument collections)
 - **Backend & Middleware**: [Express 5](https://expressjs.com/) with Node.js runtime, bundled via [esbuild](https://esbuild.github.io/)
 - **Generative AI**: [@google/genai](https://www.npmjs.com/package/@google/genai) (`gemini-3.8-flash` with structured JSON schema responses)
 - **Audio Engine**: Web Audio API (real-time harmonic synthesizers for relaxing frequencies at 396 Hz, 528 Hz, and binaural rhythms)
@@ -128,6 +176,7 @@ monor-xur/
 ### Prerequisites
 - **Node.js**: v18.0.0 or higher
 - **npm**: v9.0.0 or higher
+- **Modern Web Browser**: Chrome, Edge, or Safari with microphone permissions enabled for voice diaries.
 - **Google Gemini API Key** *(Optional for local heuristic fallback, required for live Gemini intelligence)*: [Get an API Key](https://aistudio.google.com/)
 
 ---
@@ -151,7 +200,7 @@ monor-xur/
    cp .env.example .env
    ```
 
-   Add your Gemini API key:
+   Add your configuration:
    ```env
    GEMINI_API_KEY=your_gemini_api_key_here
    ```
@@ -185,6 +234,7 @@ monor-xur/
    - High color contrast ratios (≥4.5:1 for standard text, ≥7:1 for headers).
    - Large clickable touch targets (≥48×48px) for older hands with tremors or reduced motor control.
    - Auditory feedback options for every critical screen interaction.
+   - Microphone permission declarations in `metadata.json` for secure browser speech recognition.
 4. **Non-Stigmatizing Clinical Design**: The UI deliberately avoids medicalized alert colors, clinical jargon, or alarmist failure prompts.
 
 ---

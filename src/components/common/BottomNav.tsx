@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Puzzle, Image as ImageIcon, Settings, Calendar, Bell, User, ClipboardList, BarChart3 } from 'lucide-react';
+import { Home, Puzzle, Image as ImageIcon, Settings, Calendar, Bell, User, ClipboardList, BarChart3, TrendingUp } from 'lucide-react';
 import { PatientTab, FamilyCaregiverTab, AshaTab } from '../../types';
 
 interface PatientNavProps {
@@ -48,6 +48,7 @@ interface FamilyNavProps {
 export const FamilyBottomNav: React.FC<FamilyNavProps> = ({ activeTab, onSelectTab, alertCount = 0 }) => {
   const tabs: { key: FamilyCaregiverTab; label: string; icon: React.FC<{ className?: string }>; badge?: number }[] = [
     { key: 'home', label: 'Home', icon: Home },
+    { key: 'progress', label: 'Progress', icon: TrendingUp },
     { key: 'calendar', label: 'Calendar', icon: Calendar },
     { key: 'alerts', label: 'Alerts', icon: Bell, badge: alertCount },
     { key: 'profile', label: 'Profile', icon: User },
