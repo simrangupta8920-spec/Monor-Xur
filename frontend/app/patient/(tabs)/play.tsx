@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { Image } from "expo-image";
 import { Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,14 +12,15 @@ import { fonts, makeStyles, radius, spacing, type, useTheme } from "@/src/theme"
 const HERO = "https://images.unsplash.com/photo-1730804518415-75297e8d2a41?crop=entropy&cs=srgb&fm=jpg&w=900&q=80";
 
 const GAMES = [
-  { title: "Memory Match", subtitle: "Find the matching pairs", icon: Brain },
-  { title: "Picture Pairs", subtitle: "Match the pictures", icon: Cards },
-  { title: "Word Recall", subtitle: "Remember the words", icon: TextAa },
-  { title: "Number Fun", subtitle: "Simple number games", icon: Hash },
-  { title: "Spot the Difference", subtitle: "Find what changed", icon: MagnifyingGlass },
+  { title: "Memory Match", subtitle: "Find the matching pairs", icon: Brain, route: "/patient/games/memory-match" },
+  { title: "Picture Pairs", subtitle: "Match the pictures", icon: Cards, route: null },
+  { title: "Word Recall", subtitle: "Remember the words", icon: TextAa, route: null },
+  { title: "Number Fun", subtitle: "Simple number games", icon: Hash, route: null },
+  { title: "Spot the Difference", subtitle: "Find what changed", icon: MagnifyingGlass, route: null },
 ];
 
 export default function PatientPlay() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const styles = useStyles();
   const { colors } = useTheme();
@@ -38,7 +40,7 @@ export default function PatientPlay() {
           subtitle={g.subtitle}
           tint={colors.tileGames}
           icon={(c, size) => <g.icon size={size} color={c} weight="fill" />}
-          onPress={() => toast("This game is coming soon", "info")}
+          onPress={() => (g.route ? router.push(g.route as any) : toast("This game is coming soon", "info"))}
           testID={`game-${g.title}`}
         />
       ))}

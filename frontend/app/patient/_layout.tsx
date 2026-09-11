@@ -9,6 +9,7 @@ export default function PatientLayout() {
       <Stack.Screen name="relaxation-breathing" />
       <Stack.Screen name="daily-life" />
       <Stack.Screen name="memory-viewer" />
+      <Stack.Screen name="games/memory-match" />
     </Stack>
   );
 }

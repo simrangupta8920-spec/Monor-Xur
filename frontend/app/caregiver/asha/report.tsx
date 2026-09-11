@@ -7,6 +7,7 @@ import { Card } from "@/src/components/ui/Card";
 import { Screen } from "@/src/components/ui/Screen";
 import { StatCard } from "@/src/components/ui/StatCard";
 import { AlertsView } from "@/src/features/AlertsView";
+import { DDAInsightsView } from "@/src/features/DDAInsightsView";
 import { RoleGuard, Role } from "@/src/auth/rbac";
 import { DISCLAIMER, REPORTS } from "@/src/data/caregiver";
 import { fonts, makeStyles, spacing, type, useTheme } from "@/src/theme";
@@ -63,6 +64,9 @@ export default function AshaReport() {
 
           <Text style={styles.sectionLabel}>Care-related alerts</Text>
           <AlertsView />
+
+          <Text style={styles.sectionLabel}>Adaptive difficulty</Text>
+          <DDAInsightsView />
 
           <Text style={styles.disclaimer}>{DISCLAIMER}</Text>
         </Screen>
