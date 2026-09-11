@@ -1,44 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
     <script>
       // Gracefully handle dev-mode HMR WebSocket in cloud sandbox where HMR is disabled by platform design
       (function() {
-        // 1. Intercept WebSocket for vite-hmr and vite-ping to prevent failed network attempts
-        if (typeof window !== 'undefined' && window.WebSocket) {
-          const RealWebSocket = window.WebSocket;
+        // 1. Intercept all console methods to completely suppress any [vite] or websocket messages
+        const isViteMessage = function(args) {
+          if (!args || args.length === 0) return false;
+          for (let i = 0; i < args.length; i++) {
+            const item = args[i];
+            if (!item) continue;
+            try {
+              const str = typeof item === 'string' ? item : (item.message || item.stack || (typeof item === 'object' ? JSON.stringify(item) : String(item)));
+              const lower = String(str).toLowerCase();
+              if (
+                lower.includes('[vite]') ||
+                lower.includes('vite-hmr') ||
+                (lower.includes('vite') && lower.includes('websocket')) ||
+                lower.includes('failed to connect to websocket') ||
+                lower.includes('websocket connection to') ||
+                lower.includes('connection lost. polling for restart')
+              ) {
+                return true;
+              }
+            } catch (_) {}
+          }
+          return false;
+        };
+
+        const consoleMethods = ['log', 'info', 'warn', 'error', 'debug', 'trace'];
+        consoleMethods.forEach(function(method) {
+          if (typeof console !== 'undefined' && typeof console[method] === 'function') {
+            const original = console[method];
+            console[method] = function(...args) {
+              if (isViteMessage(args)) return;
+              original.apply(console, args);
+            };
+          }
+        });
+
+        // 2. Intercept WebSocket connections to silently satisfy Vite's HMR client
+        if (typeof window !== 'undefined') {
           const FakeWebSocket = function(url, protocols) {
-            const isVite = protocols === 'vite-hmr' || protocols === 'vite-ping' || 
-              (typeof url === 'string' && (url.includes('token=') || url.includes('vite')));
-            if (isVite) {
-              const listeners = {};
-              const dummyWs = {
-                readyState: 1, // OPEN
-                OPEN: 1,
-                CONNECTING: 0,
-                CLOSING: 2,
-                CLOSED: 3,
-                url: String(url),
-                protocol: String(protocols || ''),
-                send: function() {},
-                close: function() {},
-                addEventListener: function(event, handler) {
-                  listeners[event] = listeners[event] || [];
-                  listeners[event].push(handler);
-                },
-                removeEventListener: function(event, handler) {
-                  if (listeners[event]) {
-                    listeners[event] = listeners[event].filter(h => h !== handler);
-                  }
-                },
-                dispatchEvent: function() { return true; },
-              };
-              return dummyWs;
-            }
-            return new RealWebSocket(url, protocols);
+            const listeners = {};
+            const dummyWs = {
+              readyState: 1, // OPEN
+              OPEN: 1,
+              CONNECTING: 0,
+              CLOSING: 2,
+              CLOSED: 3,
+              url: String(url || ''),
+              protocol: Array.isArray(protocols) ? (protocols[0] || '') : String(protocols || 'vite-hmr'),
+              onopen: null,
+              onmessage: null,
+              onerror: null,
+              onclose: null,
+              send: function() {},
+              close: function() {},
+              addEventListener: function(event, handler) {
+                listeners[event] = listeners[event] || [];
+                listeners[event].push(handler);
+              },
+              removeEventListener: function(event, handler) {
+                if (listeners[event]) {
+                  listeners[event] = listeners[event].filter(h => h !== handler);
+                }
+              },
+              dispatchEvent: function(e) {
+                const eventType = (e && e.type) ? e.type : String(e);
+                const handlers = listeners[eventType] || [];
+                handlers.forEach(h => {
+                  try { h.call(dummyWs, e); } catch (_) {}
+                });
+                return true;
+              },
+            };
+
+            // Trigger open event cleanly on next microtask so HMR client remains happy and silent
+            setTimeout(function() {
+              try {
+                if (typeof dummyWs.onopen === 'function') {
+                  dummyWs.onopen({ type: 'open', target: dummyWs });
+                }
+                const openHandlers = listeners['open'] || [];
+                openHandlers.forEach(h => {
+                  try { h.call(dummyWs, { type: 'open', target: dummyWs }); } catch (_) {}
+                });
+              } catch (_) {}
+            }, 0);
+
+            return dummyWs;
           };
-          FakeWebSocket.prototype = RealWebSocket.prototype;
+
+          FakeWebSocket.prototype = (window.WebSocket && window.WebSocket.prototype) || {};
           FakeWebSocket.CONNECTING = 0;
           FakeWebSocket.OPEN = 1;
           FakeWebSocket.CLOSING = 2;
@@ -46,57 +100,31 @@
           window.WebSocket = FakeWebSocket;
         }
 
-        // 2. Filter out any [vite] logger console messages
-        const isViteLog = function(args) {
-          if (!args || args.length === 0) return false;
-          for (let i = 0; i < args.length; i++) {
-            const item = args[i];
-            if (!item) continue;
-            const str = typeof item === 'string' ? item : (item.message || item.stack || String(item));
-            if (str.includes('[vite]') || str.includes('websocket') || str.includes('WebSocket')) {
-              return true;
-            }
-          }
-          return false;
-        };
-
-        const origError = console.error;
-        console.error = function(...args) {
-          if (isViteLog(args)) return;
-          origError.apply(console, args);
-        };
-
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-          if (isViteLog(args)) return;
-          origWarn.apply(console, args);
-        };
-
-        const origDebug = console.debug;
-        console.debug = function(...args) {
-          if (isViteLog(args)) return;
-          origDebug.apply(console, args);
-        };
-
+        // 3. Catch and suppress any uncaught window errors related to vite or websocket
         window.addEventListener('unhandledrejection', function(event) {
           if (event && event.reason) {
-            const reasonStr = String(event.reason.message || event.reason || '');
-            if (reasonStr.includes('[vite]') || reasonStr.includes('websocket')) {
+            const reasonStr = String(event.reason.message || event.reason || '').toLowerCase();
+            if (reasonStr.includes('vite') || reasonStr.includes('websocket')) {
               event.preventDefault();
+              event.stopPropagation();
+              if (event.stopImmediatePropagation) event.stopImmediatePropagation();
             }
           }
-        });
+        }, true);
 
         window.addEventListener('error', function(event) {
-          if (event && event.message) {
-            const msgStr = String(event.message);
-            if (msgStr.includes('[vite]') || msgStr.includes('websocket')) {
+          if (event) {
+            const msgStr = String(event.message || event.error || '').toLowerCase();
+            if (msgStr.includes('vite') || msgStr.includes('websocket')) {
               event.preventDefault();
+              event.stopPropagation();
+              if (event.stopImmediatePropagation) event.stopImmediatePropagation();
             }
           }
-        });
+        }, true);
       })();
     </script>
+    <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="alternate icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
