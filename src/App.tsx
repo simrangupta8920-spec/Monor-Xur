@@ -39,6 +39,8 @@ import {
   saveDdaLogs
 } from './services/offlineStorage';
 import { soundController } from './utils/audio';
+import { useSundowningState } from './hooks/useSundowningState';
+import { SundowningCalmBanner } from './components/patient/SundowningCalmBanner';
 import { Phone } from 'lucide-react';
 import { 
   DEFAULT_PATIENT_ID,
@@ -160,6 +162,9 @@ export function App() {
 
   // Calling simulation modal
   const [callingContact, setCallingContact] = useState<EmergencyContact | null>(null);
+
+  // Sundowning Evening Calming Automation state (4:30 PM - 7:30 PM)
+  const sundowningState = useSundowningState(patientProfile);
 
   // --- Background synchronization of offline queue when network reconnects ---
   useEffect(() => {
@@ -538,7 +543,11 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#2D3A2F] flex flex-col font-sans selection:bg-[#5B825B]/20">
+    <div className={`min-h-screen flex flex-col font-sans selection:bg-[#5B825B]/20 transition-colors duration-700 ${
+      sundowningState.isActive 
+        ? 'bg-[#FFFBF0] text-[#382813]' 
+        : 'bg-[#FDFBF7] text-[#2D3A2F]'
+    }`}>
       <OfflineIndicator />
       {/* Top Header */}
       <Header
@@ -563,6 +572,18 @@ export function App() {
         {/* ROLE 1: PATIENT MODE */}
         {role === 'patient' && (
           <div>
+            {/* Sundowning Evening Calming Banner (4:30 PM - 7:30 PM or Caregiver Preview) */}
+            {patientSubView === 'none' && !selectedMemory && (
+              <div className="px-4 pt-3 pb-2">
+                <SundowningCalmBanner
+                  isActive={sundowningState.isActive}
+                  isManualOverride={sundowningState.isManualOverride}
+                  onOpenBreathing={() => setPatientSubView('breathing')}
+                  onOpenMusic={() => setPatientSubView('music')}
+                />
+              </div>
+            )}
+
             {/* Sub-view: Puzzle Game */}
             {patientSubView === 'puzzle' && (
               <PuzzleGame

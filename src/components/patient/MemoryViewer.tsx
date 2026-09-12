@@ -25,6 +25,9 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
   const current = memories[index];
   const isVideo = current?.mediaType === 'video' || Boolean(current?.videoUrl);
   const isVoiceDiary = current?.isVoiceDiary || current?.mediaType === 'audio' || Boolean(current?.audioUrl);
+  const hasVoiceSnippet = Boolean(current?.voiceSnippet);
+  const [isPlayingVoiceSnippet, setIsPlayingVoiceSnippet] = useState(false);
+  const voiceSnippetAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const stopAllMedia = () => {
     soundController.stopSpeaking();
@@ -36,6 +39,10 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
       audioRef.current.pause();
       setIsPlayingAudio(false);
     }
+    if (voiceSnippetAudioRef.current) {
+      voiceSnippetAudioRef.current.pause();
+      setIsPlayingVoiceSnippet(false);
+    }
   };
 
   const handleNext = () => {
@@ -46,6 +53,34 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
   const handlePrev = () => {
     stopAllMedia();
     setIndex((prev) => (prev - 1 + memories.length) % memories.length);
+  };
+
+  const togglePlayVoiceSnippet = () => {
+    soundController.playClick();
+    if (!current?.voiceSnippet) return;
+
+    if (!voiceSnippetAudioRef.current || voiceSnippetAudioRef.current.src !== current.voiceSnippet) {
+      const audio = new Audio(current.voiceSnippet);
+      audio.onended = () => setIsPlayingVoiceSnippet(false);
+      voiceSnippetAudioRef.current = audio;
+    }
+
+    if (isPlayingVoiceSnippet) {
+      voiceSnippetAudioRef.current.pause();
+      setIsPlayingVoiceSnippet(false);
+    } else {
+      if (isReading) {
+        soundController.stopSpeaking();
+        setIsReading(false);
+      }
+      if (isPlayingAudio && audioRef.current) {
+        audioRef.current.pause();
+        setIsPlayingAudio(false);
+      }
+      voiceSnippetAudioRef.current.currentTime = 0;
+      voiceSnippetAudioRef.current.play().catch(() => {});
+      setIsPlayingVoiceSnippet(true);
+    }
   };
 
   const togglePlayVoiceRecording = () => {
@@ -158,6 +193,11 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
                 <Mic className="w-3.5 h-3.5" /> {isHindi ? 'आवाज़ डायरी' : 'Voice Diary'}
               </span>
             )}
+            {hasVoiceSnippet && (
+              <span className="px-3 py-1 rounded-full bg-[#E8B25C] text-[#3D2504] text-xs font-black flex items-center gap-1 shadow-xs animate-pulse">
+                <Mic className="w-3.5 h-3.5" /> {current.voiceRecordedBy ? `${current.voiceRecordedBy}` : (isHindi ? 'पारिवारिक आवाज़' : 'Family Voice')}
+              </span>
+            )}
           </div>
 
           <button
@@ -239,6 +279,64 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
                   <span>{isPlayingAudio ? (isHindi ? 'रोकें' : 'Pause') : (isHindi ? 'सुनें' : 'Listen')}</span>
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Voice Reminiscence Audio Snippet (Daughter/Son's Voice) */}
+          {hasVoiceSnippet && (
+            <div className="p-4 rounded-3xl bg-linear-to-r from-[#FFF8ED] via-[#FDF3E1] to-[#FEEED1] border-2 border-[#E8B25C]/60 shadow-xs space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-[#E8B25C] text-[#3D2504] flex items-center justify-center shadow-xs">
+                    <Mic className="w-5 h-5 animate-bounce" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E8B25C]/30 text-[#8C651E]">
+                        {isHindi ? 'वॉइस रेमिनिसेंस' : 'Voice Reminiscence'}
+                      </span>
+                      {current.voiceSnippetDuration && (
+                        <span className="text-[11px] font-bold text-[#8C651E]">
+                          {current.voiceSnippetDuration}s {isHindi ? 'ऑडियो' : 'audio note'}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="text-sm font-black text-[#2D3A2F] mt-0.5">
+                      {isHindi 
+                        ? `${current.voiceRecordedBy || 'परिवार'} की असली आवाज़ सुनें` 
+                        : `Hear ${current.voiceRecordedBy || 'Family'}'s Real Voice`}
+                    </h4>
+                  </div>
+                </div>
+
+                <button
+                  onClick={togglePlayVoiceSnippet}
+                  className={`px-4 py-2.5 rounded-2xl text-xs font-black flex items-center gap-2 transition-all shadow-xs active:scale-95 ${
+                    isPlayingVoiceSnippet
+                      ? 'bg-[#C46A66] text-white animate-pulse'
+                      : 'bg-[#8C651E] text-white hover:bg-[#725217]'
+                  }`}
+                >
+                  {isPlayingVoiceSnippet ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+                  <span>
+                    {isPlayingVoiceSnippet 
+                      ? (isHindi ? 'रोकें' : 'Pause') 
+                      : (isHindi ? 'आवाज़ सुनें' : `Play ${current.voiceRecordedBy || 'Voice'}`)}
+                  </span>
+                </button>
+              </div>
+
+              {current.voicePromptText && (
+                <div className="p-3 rounded-2xl bg-white/80 border border-[#E8B25C]/40 text-xs font-semibold text-[#422D0A] italic">
+                  "{current.voicePromptText}"
+                </div>
+              )}
+
+              <p className="text-[10px] text-[#8C651E] font-medium">
+                {isHindi 
+                  ? '💡 अपनों की असली आवाज़ सुनने से गहरा भावनात्मक सुकून मिलता है और पुरानी यादें सहजता से ताज़ा होती हैं।'
+                  : "💡 Hearing a loved one's real voice triggers deeper emotional calming and memory recall than synthetic text."}
+              </p>
             </div>
           )}
 

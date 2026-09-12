@@ -5,6 +5,15 @@ class SoundController {
   private ambientGain: GainNode | null = null;
   private ambientOscs: OscillatorNode[] = [];
   public isAmbientPlaying = false;
+  public isSundowningActive = false;
+
+  setSundowningMode(active: boolean) {
+    this.isSundowningActive = active;
+  }
+
+  getSundowningMode(): boolean {
+    return this.isSundowningActive;
+  }
 
   private initCtx() {
     if (!this.ctx) {
@@ -18,7 +27,7 @@ class SoundController {
     }
   }
 
-  // Play gentle bell chime for breathing or matches
+  // Play gentle bell chime for breathing or matches (softened during evening sundowning)
   playChime(freq = 528, duration = 1.2) {
     try {
       this.initCtx();
@@ -26,11 +35,16 @@ class SoundController {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(freq * 0.98, this.ctx.currentTime + duration);
+      // In sundowning mode: reduce volume by 50% and soften higher frequencies to prevent agitation
+      const volumeMultiplier = this.isSundowningActive ? 0.45 : 1.0;
+      const targetFreq = this.isSundowningActive ? Math.min(freq, 480) : freq;
 
-      gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(targetFreq, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(targetFreq * 0.98, this.ctx.currentTime + duration);
+
+      const targetGain = 0.2 * volumeMultiplier;
+      gain.gain.setValueAtTime(targetGain, this.ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
 
       osc.connect(gain);
@@ -43,13 +57,28 @@ class SoundController {
     }
   }
 
-  // Subtle tap sound
+  // Subtle tap sound (softened to gentle sine tick in sundowning mode)
   playClick() {
     try {
       this.initCtx();
       if (!this.ctx) return;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
+
+      if (this.isSundowningActive) {
+        // Soft warm tick with sine wave
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(140, this.ctx.currentTime + 0.06);
+
+        gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.06);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.06);
+        return;
+      }
 
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(320, this.ctx.currentTime);
@@ -68,8 +97,18 @@ class SoundController {
     }
   }
 
-  // Celebration fanfare
+  // Celebration fanfare (gentle and unhurried during sundowning hours)
   playSuccess() {
+    if (this.isSundowningActive) {
+      // Warm, slower 3-tone peaceful chime
+      [392, 440, 523.25].forEach((freq, i) => {
+        setTimeout(() => {
+          this.playChime(freq, 1.2);
+        }, i * 220);
+      });
+      return;
+    }
+
     [440, 554.37, 659.25, 880].forEach((freq, i) => {
       setTimeout(() => {
         this.playChime(freq, 0.8);
@@ -77,18 +116,22 @@ class SoundController {
     });
   }
 
-  // Serene ambient drone for Relaxation Music
-  startAmbient(soundType: 'nature' | 'harp' | 'flute' | 'singing_bowl' = 'nature') {
+  // Serene ambient drone for Relaxation Music & Sundowning Raga
+  startAmbient(soundType: 'nature' | 'harp' | 'flute' | 'singing_bowl' | 'raga_yaman' = 'nature') {
     try {
       this.stopAmbient();
       this.initCtx();
       if (!this.ctx) return;
 
       this.ambientGain = this.ctx.createGain();
-      this.ambientGain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+      // Gentle volume, slightly softer in sundowning mode
+      const masterGain = this.isSundowningActive ? 0.055 : 0.08;
+      this.ambientGain.gain.setValueAtTime(masterGain, this.ctx.currentTime);
       this.ambientGain.connect(this.ctx.destination);
 
-      const baseFreqs = soundType === 'singing_bowl' 
+      const baseFreqs = soundType === 'raga_yaman'
+        ? [146.83, 220, 277.18, 329.63, 440] // Evening Raga Yaman (Tanpura D, A, C#, E drone)
+        : soundType === 'singing_bowl' 
         ? [432, 216, 648] 
         : soundType === 'harp' 
         ? [330, 392, 494, 587] 

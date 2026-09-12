@@ -195,6 +195,11 @@ export const MemoriesGallery: React.FC<MemoriesGalleryProps> = ({
                         <Mic className="w-2.5 h-2.5" /> {isHindi ? 'आवाज़' : 'Voice'}
                       </span>
                     )}
+                    {m.voiceSnippet && (
+                      <span className="px-2 py-0.5 rounded-full bg-[#E8B25C] text-[#3D2504] text-[10px] font-black flex items-center gap-1 shadow-xs">
+                        <Mic className="w-2.5 h-2.5" /> {m.voiceRecordedBy || (isHindi ? 'पारिवारिक आवाज़' : 'Family Voice')}
+                      </span>
+                    )}
                   </div>
 
                   {/* Play Button Overlay for Videos */}
@@ -220,7 +225,13 @@ export const MemoriesGallery: React.FC<MemoriesGalleryProps> = ({
                   <div>
                     <h4 className="font-extrabold text-base text-[#2D3A2F] leading-tight line-clamp-1">{m.title}</h4>
                     {m.person && <p className="text-xs font-semibold text-[#5B825B] mt-0.5">{m.person}</p>}
-                    <p className="text-xs text-[#5A6E5D] line-clamp-2 mt-1">{m.description}</p>
+                    {m.voicePromptText ? (
+                      <p className="text-xs text-[#8C651E] font-medium italic line-clamp-2 mt-1 bg-[#FFF9E6] px-2 py-0.5 rounded-lg border border-[#F0DC9D]/60">
+                        "{m.voicePromptText}"
+                      </p>
+                    ) : (
+                      <p className="text-xs text-[#5A6E5D] line-clamp-2 mt-1">{m.description}</p>
+                    )}
                   </div>
 
                   <div className="mt-3 flex items-center justify-between text-xs font-bold text-[#5B825B]">

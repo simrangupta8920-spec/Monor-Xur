@@ -3,7 +3,7 @@ import {
   User, Heart, Calendar, Bell, ShieldAlert, BarChart3, Plus, Trash2, 
   Phone, Clock, AlertTriangle, CheckCircle2, ChevronRight, Activity, Award, Sparkles, FileText,
   Edit3, Video, Image as ImageIcon, Upload, Eye, X, Stethoscope, Check, Play, Film, Mic, TrendingUp, Download,
-  Puzzle, Brain, ShieldCheck, Lock, History, Shield
+  Puzzle, Brain, ShieldCheck, Lock, History, Shield, SunMedium, Sun
 } from 'lucide-react';
 import { 
   FamilyCaregiverTab, CalendarEvent, Reminder, AlertItem, EmergencyContact, DDAMetric, Memory, 
@@ -15,6 +15,9 @@ import { useLanguage } from '../../context/LanguageContext';
 import { CognitiveProgressView } from './CognitiveProgressView';
 import { MemoryInsightsView } from './MemoryInsightsView';
 import { ExportPdfModal } from './ExportPdfModal';
+import { VoiceReminiscenceRecorder, VoiceReminiscenceData } from '../common/VoiceReminiscenceRecorder';
+import { generateDoctorVisitSummaryPdf } from '../../utils/pdfReportGenerator';
+import { createHarmonicVoiceSnippet } from '../../utils/audioSnippetGenerator';
 import { 
   computeGameStats, 
   getGameBreakdown, 
@@ -52,6 +55,18 @@ interface FamilyDashboardProps {
 }
 
 const SAMPLE_MEDIA_PRESETS = [
+  {
+    type: 'photo' as const,
+    label: 'Family Wedding + Voice Reminiscence (Priya)',
+    url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80',
+    title: "Rohan's Wedding in Jaipur",
+    person: 'Daughter Priya & Family',
+    category: 'Special Moments' as MemoryCategory,
+    desc: 'Papa and Priya smiling happily under the floral canopy at Rohan’s wedding in Jaipur, 2019.',
+    voicePromptText: "Papa, this was Rohan's wedding in Jaipur, 2019. You danced so happily with all of us and we shared sweets!",
+    voiceDuration: 14,
+    voiceRecordedBy: 'Daughter Priya',
+  },
   {
     type: 'video' as const,
     label: 'Family Celebration Video',
@@ -146,6 +161,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
   const [newMemoryDesc, setNewMemoryDesc] = useState('');
   const [newMemoryMediaUrl, setNewMemoryMediaUrl] = useState('');
   const [memoryUploadPreview, setMemoryUploadPreview] = useState<string | null>(null);
+  const [newMemoryVoiceSnippet, setNewMemoryVoiceSnippet] = useState<VoiceReminiscenceData | null>(null);
 
   // Filter for Memories in Caregiver view
   const [memoryFilter, setMemoryFilter] = useState<'All' | 'photo' | 'video' | 'audio'>('All');
@@ -153,6 +169,14 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
   // PDF Export Modal state
   const [showExportPdfModal, setShowExportPdfModal] = useState(false);
+
+  // One-click 1-Page Clinical Summary for Geriatrician/Neurologist visit
+  const handleExportDoctorSummary = () => {
+    soundController.playSuccess();
+    generateDoctorVisitSummaryPdf(patientProfile, medicalProfile, ddaLogs, reminders, {
+      caregiverNotes: 'Caregiver note: Patient routine and cognitive latency monitored. Evening calming active.',
+    });
+  };
 
   // Game-specific filter states
   const [reportsGameFilter, setReportsGameFilter] = useState<GameFilterType>('all');
@@ -345,6 +369,10 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
       videoUrl: newMemoryMediaType === 'video' ? mediaSrc : undefined,
       description: newMemoryDesc.trim(),
       date: 'Added Today',
+      voiceSnippet: newMemoryVoiceSnippet?.audioUrl,
+      voiceSnippetDuration: newMemoryVoiceSnippet?.duration,
+      voiceRecordedBy: newMemoryVoiceSnippet?.recordedBy,
+      voicePromptText: newMemoryVoiceSnippet?.promptText,
     };
 
     onAddMemory(newMem);
@@ -353,6 +381,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
     setNewMemoryDesc('');
     setNewMemoryMediaUrl('');
     setMemoryUploadPreview(null);
+    setNewMemoryVoiceSnippet(null);
     setShowAddMemoryModal(false);
     soundController.playSuccess();
   };
@@ -365,6 +394,18 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
     setNewMemoryDesc(preset.desc);
     setNewMemoryMediaUrl(preset.url);
     setMemoryUploadPreview(preset.url);
+
+    if (preset.voicePromptText) {
+      setNewMemoryVoiceSnippet({
+        audioUrl: createHarmonicVoiceSnippet(preset.voiceDuration || 14),
+        duration: preset.voiceDuration || 14,
+        recordedBy: preset.voiceRecordedBy || 'Daughter Priya',
+        promptText: preset.voicePromptText,
+      });
+    } else {
+      setNewMemoryVoiceSnippet(null);
+    }
+
     soundController.playClick();
   };
 
@@ -392,6 +433,13 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
+              <button
+                onClick={handleExportDoctorSummary}
+                className="px-3 py-1.5 rounded-xl bg-[#3D663D] text-white text-xs font-black hover:bg-[#2D4D2D] flex items-center gap-1 shadow-2xs transition-all active:scale-95"
+                title={tx('Export 1-Page Clinical Summary for Geriatrician visit', 'जेरियाट्रिशियन के लिए 1-पेज क्लीनिकल सारांश डाउनलोड करें')}
+              >
+                <Stethoscope className="w-3.5 h-3.5 text-emerald-200" /> {tx('Doctor Summary', 'डॉक्टर सारांश')}
+              </button>
               <button
                 onClick={() => {
                   soundController.playClick();
@@ -561,6 +609,77 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 <p className="text-[11px] text-[#5A6E5D]">{tx('Medicine & routines', 'दवा और दिनचर्या')}</p>
               </button>
 
+              {/* Sundowning Evening Calming Automation Card */}
+              <div className="p-4 rounded-3xl bg-linear-to-r from-[#FFF6E5] via-[#FFF0D4] to-[#FCE7BE] border-2 border-[#E8B25C]/70 shadow-xs col-span-2 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#E8B25C] text-[#3D2504] flex items-center justify-center shrink-0 shadow-xs">
+                      <SunMedium className="w-5 h-5 animate-spin-slow" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-black text-sm text-[#2D3A2F]">{tx('Sundowning Evening Calming Automation', 'शाम की सूयार्स्त शांति स्वचालन')}</h4>
+                        <span className="px-2 py-0.5 rounded-full bg-[#E8B25C] text-[#3D2504] text-[10px] font-black uppercase tracking-wider">
+                          4:30 PM - 7:30 PM
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#5A6E5D] mt-0.5">
+                        {tx('Dims bright glare to warm amber, reduces chime volume, and plays soothing Raga Yaman & 4-7-8 breathing.', 'आँखों को सुकून देने वाले एम्बर टोन, कम घंटी आवाज़ और शांत राग यमन संगीत।')}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      soundController.playClick();
+                      const currentMode = soundController.getSundowningMode();
+                      soundController.setSundowningMode(!currentMode);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white/90 border border-[#E8B25C] text-[#8C651E] text-xs font-black hover:bg-white shadow-2xs shrink-0"
+                  >
+                    {tx('Test / Toggle Audio', 'ऑडियो जांचें')}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-1 text-center text-xs">
+                  <div className="bg-white/80 p-2 rounded-xl border border-[#E8B25C]/40">
+                    <span className="block text-[10px] text-[#8C651E] font-bold">{tx('Warm Amber Filter', 'गर्म एम्बर फ़िल्टर')}</span>
+                    <strong className="text-[#2D3A2F] font-black">{tx('Auto-Active', 'स्वचालित सक्रिय')}</strong>
+                  </div>
+                  <div className="bg-white/80 p-2 rounded-xl border border-[#E8B25C]/40">
+                    <span className="block text-[10px] text-[#8C651E] font-bold">{tx('Chime Attenuation', 'धीमी घंटी आवाज़')}</span>
+                    <strong className="text-[#2D3A2F] font-black">{tx('-50% Volume', '-50% आवाज़')}</strong>
+                  </div>
+                  <div className="bg-white/80 p-2 rounded-xl border border-[#E8B25C]/40">
+                    <span className="block text-[10px] text-[#8C651E] font-bold">{tx('Evening Melody', 'शाम की धुन')}</span>
+                    <strong className="text-[#8C651E] font-black">Raga Yaman</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* 1-Page Doctor Visit Clinical Summary */}
+              <button
+                onClick={handleExportDoctorSummary}
+                className="p-3.5 rounded-2xl bg-linear-to-r from-[#EAF1E8] to-[#D9EADB] border-2 border-[#5B825B]/60 text-left hover:bg-[#D1E5D4] transition-colors col-span-2 flex items-center justify-between shadow-2xs active:scale-[0.99]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#3D663D] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                    <Stethoscope className="w-5 h-5 text-emerald-200" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-black text-sm text-[#2D3A2F]">{tx('Export 1-Page Doctor Summary (Geriatrician Visit)', '1-पेज डॉक्टर सारांश निर्यात (जेरियाट्रिशियन हेतु)')}</h4>
+                      <span className="px-2 py-0.2 rounded-full bg-[#3D663D] text-white text-[10px] font-black uppercase">
+                        1-Click PDF
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#5A6E5D]">{tx('30-day cognitive latency trends, processing speed, fatigue risk, and medication adherence.', '30-दिवसीय संज्ञानात्मक विलंबता, प्रसंस्करण गति, थकान जोखिम और दवा अनुपालन।')}</p>
+                  </div>
+                </div>
+                <span className="px-3 py-1.5 rounded-xl bg-[#3D663D] text-white text-xs font-black shadow-2xs">
+                  {tx('Export Now ↓', 'अभी निर्यात करें ↓')}
+                </span>
+              </button>
+
               <button
                 onClick={() => {
                   soundController.playClick();
@@ -574,7 +693,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Generate Clinical PDF Summary', 'चिकित्सीय पीडीएफ़ सारांश बनाएं')}</h4>
+                      <h4 className="font-extrabold text-sm text-[#2D3A2F]">{tx('Generate Multi-Page Longitudinal Dossier', 'बहु-पृष्ठीय विस्तृत डोजियर बनाएं')}</h4>
                       <span className="px-2 py-0.2 rounded-full bg-[#EAF1E8] text-[#5B825B] text-[10px] font-black uppercase">
                         {tx('Printable', 'प्रिंट योग्य')}
                       </span>
@@ -583,7 +702,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   </div>
                 </div>
                 <span className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[#2D3A2F] text-xs font-black">
-                  {tx('Export PDF ↓', 'पीडीएफ़ डाउनलोड करें ↓')}
+                  {tx('Options ↓', 'विकल्प ↓')}
                 </span>
               </button>
             </div>
@@ -1245,6 +1364,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
             soundController.playClick();
             setShowExportPdfModal(true);
           }}
+          onExportDoctorSummary={handleExportDoctorSummary}
         />
       )}
 
@@ -1434,16 +1554,26 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
               </button>
               <h2 className="text-xl font-black text-[#2D3A2F]">Cognitive Reports</h2>
             </div>
-            <button
-              onClick={() => {
-                soundController.playClick();
-                setShowExportPdfModal(true);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black shadow-2xs hover:bg-[#4a6b4a]"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Download PDF Summary</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportDoctorSummary}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#3D663D] text-white text-xs font-black shadow-2xs hover:bg-[#2D4D2D] active:scale-95 transition-all"
+                title="Printable 1-Page Summary for Doctor Visit"
+              >
+                <Stethoscope className="w-3.5 h-3.5 text-emerald-200" />
+                <span>{tx('1-Page Doctor Summary', '1-पेज डॉक्टर सारांश')}</span>
+              </button>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setShowExportPdfModal(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#5B825B] text-white text-xs font-black shadow-2xs hover:bg-[#4a6b4a]"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>{tx('Full PDF Dossier', 'विस्तृत पीडीएफ़')}</span>
+              </button>
+            </div>
           </div>
 
           {/* Reports Game Filter Bar */}
@@ -2197,6 +2327,17 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                   placeholder="Write a loving story or description that can be read aloud to Anita in Player Mode..."
                   className="w-full px-3.5 py-2 rounded-xl border border-[#E0DCD3] text-xs font-medium leading-relaxed focus:border-[#5B825B]"
                   required
+                />
+              </div>
+
+              {/* Voice Reminiscence: 15-second audio snippet in caregiver/loved one's real voice */}
+              <div className="pt-1">
+                <VoiceReminiscenceRecorder
+                  defaultRecordedBy={patientProfile.caregiver?.name || 'Daughter Priya'}
+                  defaultPromptText={newMemoryVoiceSnippet?.promptText || ''}
+                  initialAudioUrl={newMemoryVoiceSnippet?.audioUrl}
+                  initialDuration={newMemoryVoiceSnippet?.duration}
+                  onSaveVoiceSnippet={(voiceData: VoiceReminiscenceData | null) => setNewMemoryVoiceSnippet(voiceData)}
                 />
               </div>
 

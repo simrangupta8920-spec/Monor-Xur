@@ -4,7 +4,7 @@ import {
   Calendar, CheckSquare, Square, AlertCircle, Printer, Puzzle, Lock, KeyRound, ShieldCheck
 } from 'lucide-react';
 import { PatientProfile, MedicalProfile, DDAMetric, Reminder } from '../../types';
-import { generateMedicalProgressPdf } from '../../utils/pdfReportGenerator';
+import { generateMedicalProgressPdf, generateDoctorVisitSummaryPdf } from '../../utils/pdfReportGenerator';
 import { soundController } from '../../utils/audio';
 import { GameFilterType, getGameBreakdown } from '../../utils/gameAnalytics';
 import { encryptData } from '../../utils/crypto';
@@ -121,6 +121,34 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
     }
   };
 
+  const handleGenerateDoctorSummary = async () => {
+    setIsGenerating(true);
+    soundController.playClick();
+    try {
+      generateDoctorVisitSummaryPdf(patientProfile, medicalProfile, ddaLogs, reminders, {
+        caregiverNotes,
+      });
+
+      await logAuditEvent(DEFAULT_PATIENT_ID, {
+        action: 'exported_pdf',
+        actorRole: 'family',
+        actorName: patientProfile.caregiver?.name || 'Family Caregiver',
+        details: `Exported 1-Page Clinical Summary for doctor visit for ${patientProfile.name}.`,
+      });
+
+      soundController.playSuccess();
+      setIsGenerating(false);
+      setDownloadSuccess(true);
+      setTimeout(() => {
+        setDownloadSuccess(false);
+        onClose();
+      }, 1500);
+    } catch (err) {
+      console.error('Failed to generate 1-page doctor visit summary:', err);
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
       <div className="bg-[#FDFBF7] w-full max-w-lg rounded-3xl border border-[#E0DCD3] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -171,6 +199,43 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
                   : tx('Baseline Telemetry', 'आरंभिक टेलीमेट्री')}
               </span>
             </div>
+          </div>
+
+          {/* Quick 1-Page Doctor Summary Export Option */}
+          <div className="p-4 rounded-3xl bg-linear-to-r from-[#EAF1E8] to-[#D5E6D7] border-2 border-[#5B825B] space-y-2.5 shadow-xs">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-[#3D663D] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                  <Stethoscope className="w-5 h-5 text-emerald-200" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-black text-xs text-[#1E331E] uppercase tracking-wide">
+                      {tx('1-Page Doctor Summary (Geriatrician Visit)', '1-पेज डॉक्टर सारांश (जेरियाट्रिशियन भेंट)')}
+                    </h4>
+                    <span className="px-2 py-0.5 rounded-full bg-[#3D663D] text-white text-[9px] font-black uppercase">
+                      Fast PDF
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#3D523E] mt-0.5 leading-snug">
+                    {tx(
+                      'Optimized for geriatrician/neurologist consultations: 30-day latency, morning vs evening sundowning divergence, medication adherence, & doctor annotation handwriting box.',
+                      'जेरियाट्रिशियन व न्यूरोलॉजिस्ट हेतु अनुकूलित: 30-दिवसीय विलंब, सुबह बनाम शाम का अंतर, दवा अनुपालन और डॉक्टर के लिए हस्तलिखित नोट बॉक्स।'
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={isGenerating}
+              onClick={handleGenerateDoctorSummary}
+              className="w-full py-2.5 px-3 rounded-xl bg-[#3D663D] hover:bg-[#2B4B2B] text-white font-black text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.99]"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>{tx('Export 1-Page Doctor Summary (PDF)', '1-पेज डॉक्टर सारांश डाउनलोड करें (PDF)')}</span>
+            </button>
           </div>
 
           {/* Game Analytics Scope Selection */}

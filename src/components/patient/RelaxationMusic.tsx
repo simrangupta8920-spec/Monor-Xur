@@ -7,7 +7,7 @@ interface RelaxationMusicProps {
   onBack: () => void;
 }
 
-type TrackType = 'nature' | 'harp' | 'flute' | 'singing_bowl';
+type TrackType = 'nature' | 'harp' | 'flute' | 'singing_bowl' | 'raga_yaman';
 
 interface TrackItem {
   id: TrackType;
@@ -15,6 +15,7 @@ interface TrackItem {
   subtitle: string;
   mood: string;
   color: string;
+  tag?: string;
 }
 
 export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
@@ -23,11 +24,12 @@ export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
 
   const tracks: TrackItem[] = [
     {
-      id: 'nature',
-      title: isHindi ? 'सुबह के वन पक्षी' : 'Morning Forest Birds',
-      subtitle: isHindi ? 'मधुर सुबह की चहचहाहट व ठंडी हवा' : 'Gentle morning birdsong and warm breeze',
-      mood: isHindi ? 'ताजगी व ऊर्जा' : 'Uplifting & Fresh',
-      color: '#EAF1E8',
+      id: 'raga_yaman',
+      title: isHindi ? 'संध्या राग यमन (तानपुरा व सितार)' : 'Evening Raga Yaman (Tanpura & Sitar)',
+      subtitle: isHindi ? 'गोधूलि वेला व संध्या कालीन शांति के लिए विशेष राग' : 'Tranquil evening drone for sundowning calming & peace',
+      mood: isHindi ? 'संध्या शांति व तनाव मुक्ति' : 'Evening Peace & Sundowning Relief',
+      color: '#FDEED9',
+      tag: isHindi ? 'संध्या काल के लिए' : 'Evening Recommendation',
     },
     {
       id: 'singing_bowl',
@@ -37,6 +39,13 @@ export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
       color: '#FDF0D5',
     },
     {
+      id: 'flute',
+      title: isHindi ? 'बांसुरी ध्यान संगीत' : 'Bamboo Flute Meditation',
+      subtitle: isHindi ? 'पारम्परिक मधुर बांसुरी की तान' : 'Melodious tranquil Indian bamboo notes',
+      mood: isHindi ? 'मन की शांति' : 'Peace of Mind',
+      color: '#F0D8D6',
+    },
+    {
       id: 'harp',
       title: isHindi ? 'शांत वीणा स्वर' : 'Peaceful Harp Harmonies',
       subtitle: isHindi ? 'मन को छूने वाले शांत तार' : 'Soft plucked strings with soothing progression',
@@ -44,11 +53,11 @@ export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
       color: '#D4E4E6',
     },
     {
-      id: 'flute',
-      title: isHindi ? 'बांसुरी ध्यान संगीत' : 'Bamboo Flute Meditation',
-      subtitle: isHindi ? 'पारम्परिक मधुर बांसुरी की तान' : 'Melodious tranquil Indian bamboo notes',
-      mood: isHindi ? 'मन की शांति' : 'Peace of Mind',
-      color: '#F0D8D6',
+      id: 'nature',
+      title: isHindi ? 'सुबह के वन पक्षी' : 'Morning Forest Birds',
+      subtitle: isHindi ? 'मधुर सुबह की चहचहाहट व ठंडी हवा' : 'Gentle morning birdsong and warm breeze',
+      mood: isHindi ? 'ताजगी व ऊर्जा' : 'Uplifting & Fresh',
+      color: '#EAF1E8',
     },
   ];
 

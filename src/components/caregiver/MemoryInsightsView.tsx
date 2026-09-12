@@ -4,7 +4,7 @@ import {
   TrendingUp, Activity, Brain, Clock, ShieldCheck, Sparkles, 
   AlertTriangle, ArrowUpRight, ArrowDownRight, Minus, RefreshCw, 
   HelpCircle, Calendar, Play, Download, FileText, CheckCircle2,
-  Sliders, Award, Zap, ChevronRight, Eye, Puzzle
+  Sliders, Award, Zap, ChevronRight, Eye, Puzzle, Stethoscope
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -36,6 +36,7 @@ interface MemoryInsightsViewProps {
   onNavigateToGames?: () => void;
   onAddSampleSession?: (metric: DDAMetric) => void;
   onOpenPdfExport?: () => void;
+  onExportDoctorSummary?: () => void;
 }
 
 export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
@@ -45,6 +46,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
   onNavigateToGames,
   onAddSampleSession,
   onOpenPdfExport,
+  onExportDoctorSummary,
 }) => {
   const { tx } = useLanguage();
   const [gameFilter, setGameFilter] = useState<GameFilterType>('all');
@@ -261,7 +263,21 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          {onExportDoctorSummary && (
+            <button
+              onClick={() => {
+                soundController.playClick();
+                onExportDoctorSummary();
+              }}
+              className="px-3.5 py-2 rounded-2xl bg-[#3D663D] text-white text-xs font-black flex items-center gap-1.5 shadow-2xs hover:bg-[#2B4B2B] transition-colors active:scale-95"
+              title={tx('Export 1-Page Clinical Summary for Doctor Visits', 'डॉक्टर की यात्रा के लिए 1-पेज क्लीनिकल सारांश')}
+            >
+              <Stethoscope className="w-3.5 h-3.5 text-emerald-200" />
+              <span>{tx('Doctor Summary (1-Page)', 'डॉक्टर सारांश (1-पेज)')}</span>
+            </button>
+          )}
+
           {onOpenPdfExport && (
             <button
               onClick={() => {
@@ -271,7 +287,7 @@ export const MemoryInsightsView: React.FC<MemoryInsightsViewProps> = ({
               className="px-3 py-2 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] text-xs font-extrabold text-[#2D3A2F] flex items-center gap-1.5 hover:bg-[#EAF1E8] transition-colors shadow-2xs"
             >
               <Download className="w-3.5 h-3.5 text-[#5B825B]" />
-              <span>{tx('Export Report', 'रिपोर्ट निर्यात')}</span>
+              <span>{tx('Full Dossier', 'विस्तृत रिपोर्ट')}</span>
             </button>
           )}
 
