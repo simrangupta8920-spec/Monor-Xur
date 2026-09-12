@@ -38,7 +38,7 @@ export const FamilyLogin: React.FC<FamilyLoginProps> = ({
             onSuccess();
           }, 300);
         } else {
-          setError(tx('Incorrect PIN. Please enter the PIN you created in setup.', 'गलत पिन। कृपया सेटअप में बनाया गया पिन दर्ज करें।'));
+          setError(tx('Incorrect PIN. Please enter the PIN you created in setup.', 'गलत पिन। कृपया सेटअप में बनाया गया पिन दर्ज करें।', 'ভুল পিন। অনুগ্ৰহ কৰি ছেটআপত আপুনি তৈয়াৰ কৰা পিন দিয়ক।'));
           setTimeout(() => setPin(''), 800);
         }
       }
@@ -57,20 +57,20 @@ export const FamilyLogin: React.FC<FamilyLoginProps> = ({
         <button
           onClick={onBack}
           className="p-2 rounded-2xl bg-white border border-[#E0DCD3] text-[#2D3A2F] hover:bg-[#EAF1E8]"
-          title={tx('Go back', 'वापस जाएं')}
+          title={tx('Go back', 'वापस जाएं', 'উভতি যাওক')}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <span className="text-xs font-bold text-[#5A6E5D]">{tx('Family Caregiver', 'पारिवारिक देखभालकर्ता')}</span>
+        <span className="text-xs font-bold text-[#5A6E5D]">{tx('Family Caregiver', 'पारिवारिक देखभालकर्ता', 'পৰিয়ালৰ সেৱাযত্নকাৰী')}</span>
       </div>
 
       <div className="space-y-2">
         <div className="w-16 h-16 mx-auto rounded-3xl overflow-hidden border-2 border-[#5B825B]/40 bg-[#FDFBF7] p-1 shadow-xs">
           <img src="/logo.jpg" alt="Monor Xur" className="w-full h-full object-cover rounded-2xl" referrerPolicy="no-referrer" />
         </div>
-        <h2 className="text-2xl font-black text-[#2D3A2F]">{tx('Enter Caregiver PIN', 'देखभालकर्ता पिन दर्ज करें')}</h2>
+        <h2 className="text-2xl font-black text-[#2D3A2F]">{tx('Enter Caregiver PIN', 'देखभालकर्ता पिन दर्ज करें', 'সেৱাযত্নকাৰী পিন দিয়ক')}</h2>
         <p className="text-xs text-[#5A6E5D]">
-          {tx(`Secured portal for ${patientName}'s family`, `${patientName} के परिवार के लिए सुरक्षित पोर्टल`)}
+          {tx(`Secured portal for ${patientName}'s family`, `${patientName} के परिवार के लिए सुरक्षित पोर्टल`, `${patientName}ৰ পৰিয়ালৰ বাবে সুৰক্ষিত প’ৰ্টেল`)}
         </p>
       </div>
 
@@ -113,9 +113,9 @@ export const FamilyLogin: React.FC<FamilyLoginProps> = ({
             setTimeout(onSuccess, 300);
           }}
           className="h-16 rounded-3xl bg-[#EAF1E8] text-[#5B825B] text-xs font-black hover:bg-[#d5e6d3] active:scale-95 flex items-center justify-center p-1 text-center"
-          title={tx('Autofill configured PIN', 'कॉन्फ़िगर किया गया पिन भरें')}
+          title={tx('Autofill configured PIN', 'कॉन्फ़िगर किया गया पिन भरें', 'নিৰ্ধাৰিত পিন স্বয়ংক্ৰিয়ভাৱে ভৰাওক')}
         >
-          {tx('Use My PIN', 'मेरा पिन उपयोग करें')}
+          {tx('Use My PIN', 'मेरा पिन उपयोग करें', 'মোৰ পিন দিয়ক')}
         </button>
         <button
           onClick={() => handleDigit('0')}
@@ -139,7 +139,7 @@ export const FamilyLogin: React.FC<FamilyLoginProps> = ({
             onClick={onReopenSetup}
             className="text-xs font-bold text-[#5B825B] hover:underline"
           >
-            {tx('Need to change PIN? Re-open Setup', 'पिन बदलना चाहते हैं? सेटअप पुनः खोलें')}
+            {tx('Need to change PIN? Re-open Setup', 'पिन बदलना चाहते हैं? सेटअप पुनः खोलें', 'পিন সলনি কৰিব বিচাৰে নেকি? ছেটআপ পুনৰ খোলক')}
           </button>
         </div>
       )}

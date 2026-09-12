@@ -1550,9 +1550,9 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                 onClick={() => onSelectTab('home')}
                 className="px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-bold"
               >
-                ← Back
+                ← {tx('Back', 'वापस')}
               </button>
-              <h2 className="text-xl font-black text-[#2D3A2F]">Cognitive Reports</h2>
+              <h2 className="text-xl font-black text-[#2D3A2F]">{tx('Cognitive Reports', 'संज्ञानात्मक रिपोर्ट्स')}</h2>
             </div>
             <div className="flex items-center gap-2">
               <button

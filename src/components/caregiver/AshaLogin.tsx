@@ -54,7 +54,7 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
       soundController.playSuccess();
       onSuccess();
     } else {
-      setError(tx(`Invalid credentials for ASHA mode. Expected ID: ${expectedId}`, `आशा मोड के लिए अमान्य क्रेडेंशियल। अपेक्षित आईडी: ${expectedId}`));
+      setError(tx(`Invalid credentials for ASHA mode. Expected ID: ${expectedId}`, `आशा मोड के लिए अमान्य क्रेडेंशियल। अपेक्षित आईडी: ${expectedId}`, `আশা ম’ডৰ বাবে ভুল প্ৰমাণপত্ৰ। প্ৰত্যাশিত আইডি: ${expectedId}`));
     }
   };
 
@@ -86,11 +86,11 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
         <button
           onClick={onBack}
           className="p-2 rounded-2xl bg-white border border-[#E0DCD3] text-[#2D3A2F] hover:bg-[#EAF1E8]"
-          title={tx('Go back', 'वापस जाएं')}
+          title={tx('Go back', 'वापस जाएं', 'উভতি যাওক')}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <span className="text-xs font-bold text-[#5A6E5D]">{tx('ASHA Health Worker', 'आशा स्वास्थ्य कार्यकर्ता')}</span>
+        <span className="text-xs font-bold text-[#5A6E5D]">{tx('ASHA Health Worker', 'आशा स्वास्थ्य कार्यकर्ता', 'আশা স্বাস্থ্যকৰ্মী')}</span>
       </div>
 
       <div className="text-center space-y-2">
@@ -98,12 +98,12 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
           <img src="/logo.jpg" alt="Monor Xur" className="w-full h-full object-cover rounded-2xl" referrerPolicy="no-referrer" />
         </div>
         <h2 className="text-2xl font-black text-[#2D3A2F]">
-          {isConfiguring ? tx('Configure ASHA Profile', 'आशा प्रोफ़ाइल कॉन्फ़िगर करें') : tx('Health Worker Login', 'स्वास्थ्य कार्यकर्ता लॉगिन')}
+          {isConfiguring ? tx('Configure ASHA Profile', 'आशा प्रोफ़ाइल कॉन्फ़िगर करें', 'আশা প্ৰ’ফাইল বিন্যাস কৰক') : tx('Health Worker Login', 'स्वास्थ्य कार्यकर्ता लॉगिन', 'স্বাস্থ্যকৰ্মী লগ ইন')}
         </h2>
         <p className="text-xs text-[#5A6E5D]">
           {isConfiguring 
-            ? tx('Set your worker ID, village sub-centre, and passcode', 'अपनी कार्यकर्ता आईडी, गांव उप-केंद्र और पासकोड सेट करें')
-            : tx('Access clinical reports and community player engagement', 'नैदानिक रिपोर्ट और सामुदायिक खिलाड़ी जुड़ाव देखें')}
+            ? tx('Set your worker ID, village sub-centre, and passcode', 'अपनी कार्यकर्ता आईडी, गांव उप-केंद्र और पासकोड सेट करें', 'আপোনাৰ কৰ্মী আইডি, গাঁও উপ-কেন্দ্ৰ আৰু পাছক’ড নিৰ্ধাৰণ কৰক')
+            : tx('Access clinical reports and community player engagement', 'नैदानिक रिपोर्ट और सामुदायिक खिलाड़ी जुड़ाव देखें', 'চিকিৎসা প্ৰতিবেদন আৰু সম্প্ৰদায়ৰ খেলুৱৈৰ অংশগ্ৰহণ চাওক')}
         </p>
       </div>
 
@@ -111,7 +111,7 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4 bg-white p-5 rounded-3xl border border-[#E0DCD3] shadow-xs">
           <div>
             <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-              {tx('ASHA Worker ID', 'आशा कार्यकर्ता आईडी')}
+              {tx('ASHA Worker ID', 'आशा कार्यकर्ता आईडी', 'আশা কৰ্মী আইডি')}
             </label>
             <input
               type="text"
@@ -125,7 +125,7 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
 
           <div>
             <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-              {tx('Security Passcode', 'सुरक्षा पासकोड')}
+              {tx('Security Passcode', 'सुरक्षा पासकोड', 'সুৰক্ষা পাছক’ড')}
             </label>
             <input
               type="password"
@@ -143,7 +143,7 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
             type="submit"
             className="w-full py-3.5 px-4 rounded-2xl bg-[#5B825B] text-white font-extrabold text-sm hover:bg-[#4c704c] shadow-xs active:scale-95 transition-all"
           >
-            {tx('Sign In to ASHA Portal', 'आशा पोर्टल में लॉगिन करें')}
+            {tx('Sign In to ASHA Portal', 'आशा पोर्टल में लॉगिन करें', 'আশা প’ৰ্টেলত প্ৰৱেশ কৰক')}
           </button>
 
           {/* Configure Worker Mode Option */}
@@ -157,7 +157,7 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
               className="text-xs font-bold text-[#5B825B] hover:underline flex items-center justify-center gap-1.5 mx-auto"
             >
               <Settings className="w-3.5 h-3.5" />
-              <span>{tx('Configure / Register ASHA Worker Mode', 'आशा कार्यकर्ता मोड कॉन्फ़िगर / पंजीकृत करें')}</span>
+              <span>{tx('Configure / Register ASHA Worker Mode', 'आशा कार्यकर्ता मोड कॉन्फ़िगर / पंजीकृत करें', 'আশা কৰ্মী ম’ড বিন্যাস / পঞ্জীয়ন কৰক')}</span>
             </button>
           </div>
         </form>
@@ -166,7 +166,7 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
         <form onSubmit={handleSaveConfig} className="space-y-4 bg-white p-5 rounded-3xl border border-[#E0DCD3] shadow-xs animate-fadeIn">
           <div>
             <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-              {tx('Your Worker ID', 'आपकी कार्यकर्ता आईडी')}
+              {tx('Your Worker ID', 'आपकी कार्यकर्ता आईडी', 'আপোনাৰ কৰ্মী আইডি')}
             </label>
             <input
               type="text"
@@ -180,7 +180,7 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
 
           <div>
             <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-              {tx('Worker Name', 'कार्यकर्ता का नाम')}
+              {tx('Worker Name', 'कार्यकर्ता का नाम', 'কৰ্মীৰ নাম')}
             </label>
             <input
               type="text"
@@ -194,7 +194,7 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
 
           <div>
             <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-              {tx('Contact Phone', 'संपर्क फोन')}
+              {tx('Contact Phone', 'संपर्क फोन', 'যোগাযোগৰ নম্বৰ')}
             </label>
             <input
               type="tel"
@@ -207,7 +207,7 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
 
           <div>
             <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-              {tx('Sub-Centre / Village / Ward', 'उप-केंद्र / गांव / वार्ड')}
+              {tx('Sub-Centre / Village / Ward', 'उप-केंद्र / गांव / वार्ड', 'উপ-কেন্দ্ৰ / গাঁও / ৱাৰ্ড')}
             </label>
             <input
               type="text"
@@ -220,7 +220,7 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
 
           <div>
             <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1">
-              {tx('New Security Passcode', 'नया सुरक्षा पासकोड')}
+              {tx('New Security Passcode', 'नया सुरक्षा पासकोड', 'নতুন সুৰক্ষা পাছক’ড')}
             </label>
             <input
               type="password"
@@ -234,7 +234,7 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
 
           {configSaved && (
             <div className="p-2.5 rounded-xl bg-[#EAF1E8] text-[#3D663D] text-xs font-bold flex items-center justify-center gap-1">
-              <Check className="w-4 h-4" /> {tx('ASHA Profile saved!', 'आशा प्रोफ़ाइल सहेज ली गई!')}
+              <Check className="w-4 h-4" /> {tx('ASHA Profile saved!', 'आशा प्रोफ़ाइल सहेज ली गई!', 'আশা প্ৰ’ফাইল সংৰক্ষিত হ’ল!')}
             </div>
           )}
 
@@ -244,13 +244,13 @@ export const AshaLogin: React.FC<AshaLoginProps> = ({
               onClick={() => setIsConfiguring(false)}
               className="px-3.5 py-2.5 rounded-xl bg-[#F4F1EA] text-[#2D3A2F] text-xs font-bold hover:bg-[#EAE5DC]"
             >
-              {tx('Cancel', 'रद्द करें')}
+              {tx('Cancel', 'रद्द करें', 'বাতিল কৰক')}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 px-4 rounded-xl bg-[#5B825B] text-white text-xs font-black hover:bg-[#4a6b4a] transition-colors"
             >
-              {tx('Save ASHA Configuration', 'आशा कॉन्फ़िगरेशन सहेजें')}
+              {tx('Save ASHA Configuration', 'आशा कॉन्फ़िगरेशन सहेजें', 'আশা বিন্যাস সংৰক্ষণ কৰক')}
             </button>
           </div>
         </form>

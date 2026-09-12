@@ -37,7 +37,7 @@ const SYMBOL_ICONS = [
 
 const LEVEL_CONFIG: Record<number, { labelEn: string; labelHi: string; labelAs: string; pairs: number; hints: number }> = {
   1: { labelEn: 'Easy (3 Pairs)', labelHi: 'सरल (3 जोड़े)', labelAs: 'সহজ (৩টা জোৰা)', pairs: 3, hints: 4 },
-  2: { labelEn: 'Medium (4 Pairs)', labelHi: 'मध्यम (4 जोड़े)', labelAs: 'मध्यम (४টা জোৰা)', pairs: 4, hints: 3 },
+  2: { labelEn: 'Medium (4 Pairs)', labelHi: 'मध्यम (4 जोड़े)', labelAs: 'মধ্যম (৪টা জোৰা)', pairs: 4, hints: 3 },
   3: { labelEn: 'Hard (6 Pairs)', labelHi: 'बड़ा (6 जोड़े)', labelAs: 'ডাঙৰ (৬টা জোৰা)', pairs: 6, hints: 2 },
 };
 

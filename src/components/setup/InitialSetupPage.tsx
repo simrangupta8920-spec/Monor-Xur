@@ -1151,10 +1151,10 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             {/* Summary Reassurance Box */}
             <div className="p-4 rounded-2xl bg-[#EAF1E8]/70 border border-[#5B825B]/20 text-xs text-[#2D3A2F] space-y-1.5">
               <div className="font-extrabold text-[#3D663D] flex items-center gap-1.5">
-                <Check className="w-4 h-4" /> {tx('Ready to Launch', 'आरंभ करने के लिए तैयार')}
+                <Check className="w-4 h-4" /> {tx('Ready to Launch', 'आरंभ करने के लिए तैयार', 'আৰম্ভ কৰিবলৈ সাজু')}
               </div>
               <p className="text-[11px] text-[#556657]">
-                {tx('Player:', 'खिलाड़ी:')} <strong>{name || 'Player'}</strong> ({age} {tx('yrs', 'वर्ष')}, {region}) • {tx('Caregiver PIN:', 'देखभालकर्ता पिन:')} <strong>••••</strong>
+                {tx('Player:', 'खिलाड़ी:', 'খেলুৱৈ:')} <strong>{name || 'Player'}</strong> ({age} {tx('yrs', 'वर्ष', 'বছৰ')}, {region}) • {tx('Caregiver PIN:', 'देखभालकर्ता पिन:', 'সেৱাযত্নকাৰী পিন:')} <strong>••••</strong>
               </p>
             </div>
 
@@ -1174,12 +1174,13 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 <div className="text-xs text-[#2D3A2F] leading-relaxed">
                   <span className="font-extrabold text-[#2D3A2F] flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-[#3D663D]" />
-                    <span>{tx('DPDP Act 2023 Consent & Care Coordination Authorization *', 'DPDP अधिनियम 2023 सहमति एवं देखभाल समन्वय प्राधिकरण *')}</span>
+                    <span>{tx('DPDP Act 2023 Consent & Care Coordination Authorization *', 'DPDP अधिनियम 2023 सहमति एवं देखभाल समन्वय प्राधिकरण *', 'DPDP আইন ২০২৩ সন্মতি আৰু সেৱা সমন্বয় কৰ্তৃত্ব *')}</span>
                   </span>
                   <p className="mt-1 text-[11px] text-[#4A5D4C]">
                     {tx(
                       `I grant verifiable digital consent under India's Digital Personal Data Protection (DPDP) Act, 2023 to securely process and store routine medication schedules, elder well-being logs, and cognitive telemetry strictly for the care of ${name || 'the player'}. Access is strictly scoped to designated family caregivers and accredited ASHA workers.`,
-                      `मैं भारत के डिजिटल व्यक्तिगत डेटा संरक्षण (DPDP) अधिनियम, 2023 के तहत ${name || 'खिलाड़ी'} की देखभाल के लिए दवा समय सारिणी, बुजुर्ग स्वास्थ्य लॉग और संज्ञानात्मक टेलीमेट्री को सुरक्षित रूप से संसाधित और संग्रहीत करने के लिए डिजिटल सहमति प्रदान करता/करती हूं। यह पहुंच केवल नामित परिवार और आशा कार्यकर्ताओं तक सीमित है।`
+                      `मैं भारत के डिजिटल व्यक्तिगत डेटा संरक्षण (DPDP) अधिनियम, 2023 के तहत ${name || 'खिलाड़ी'} की देखभाल के लिए दवा समय सारिणी, बुजुर्ग स्वास्थ्य लॉग और संज्ञानात्मक टेलीमेट्री को सुरक्षित रूप से संसाधित और संग्रहीत करने के लिए डिजिटल सहमति प्रदान करता/करती हूं। यह पहुंच केवल नामित परिवार और आशा कार्यकर्ताओं तक सीमित है।`,
+                      `মই ভাৰতৰ ডিজিটেল ব্যক্তিগত তথ্য সুৰক্ষা (DPDP) আইন ২০২৩ অনুসৰি ${name || 'খেলুৱৈ'}ৰ যত্নৰ বাবে নিয়মীয়া ঔষধৰ সময়সূচী, জেষ্ঠ্যৰ স্বাস্থ্যৰ তথ্য আৰু বৌদ্ধিক টেলিমেট্ৰী সুৰক্ষিতভাৱে প্ৰক্ৰিয়াকৰণ আৰু সংৰক্ষণ কৰিবলৈ ডিজিটেল সন্মতি জনাইছো। এই প্ৰৱেশাধিকাৰ কেৱল নিৰ্ধাৰিত পৰিয়াল আৰু স্বীকৃতিপ্ৰাপ্ত আশা স্বাস্থ্যকৰ্মীৰ মাজত কঠোৰভাৱে সীমাবদ্ধ।`
                     )}
                   </p>
                 </div>
@@ -1194,7 +1195,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 className="px-4 py-3 rounded-2xl bg-[#F4F1EA] text-[#2D3A2F] font-extrabold text-xs flex items-center gap-1.5 hover:bg-[#EAE5DC]"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>{tx('Back', 'पीछे')}</span>
+                <span>{tx('Back', 'पीछे', 'উভতি যাওক')}</span>
               </button>
 
               <button
@@ -1202,7 +1203,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 className="flex-1 py-3.5 px-4 rounded-2xl bg-[#5B825B] text-white font-black text-sm flex items-center justify-center gap-2 hover:bg-[#4a6b4a] shadow-md active:scale-95 transition-all"
               >
                 <Sparkles className="w-4 h-4 text-[#FDF0D5]" />
-                <span>{isEditing ? tx('Save & Return to App', 'सहेजें और ऐप पर वापस जाएं') : tx('Complete Setup & Launch', 'सेटअप पूर्ण करें और शुरू करें')}</span>
+                <span>{isEditing ? tx('Save & Return to App', 'सहेजें और ऐप पर वापस जाएं', 'সংৰক্ষণ কৰক আৰু উভতি যাওক') : tx('Complete Setup & Launch', 'सेटअप पूर्ण करें और शुरू करें', 'ছেটআপ সম্পূৰ্ণ কৰক আৰু আৰম্ভ কৰক')}</span>
               </button>
             </div>
           </div>

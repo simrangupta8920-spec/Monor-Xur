@@ -34,20 +34,20 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
           </div>
           <div>
             <h2 className="text-xl font-black text-[#2D3A2F] leading-tight">
-              {tx('Caregiver Portals', 'देखभालकर्ता पोर्टल')}
+              {tx('Caregiver Portals', 'देखभालकर्ता पोर्टल', 'সেৱাযত্নকাৰী প’ৰ্টেল')}
             </h2>
             <p className="text-xs text-[#5A6E5D]">
-              {tx('Choose your access portal or return to play', 'अपना एक्सेस पोर्टल चुनें या खेलने के लिए वापस जाएं')}
+              {tx('Choose your access portal or return to play', 'अपना एक्सेस पोर्टल चुनें या खेलने के लिए वापस जाएं', 'আপোনাৰ প্ৰৱেশ প’ৰ্টেল বাছক বা খেলিবলৈ উভতি যাওক')}
             </p>
           </div>
         </div>
         <button
           onClick={onBack}
           className="px-3 py-2 rounded-2xl bg-[#EAF1E8] border border-[#5B825B]/30 text-xs font-black text-[#5B825B] flex items-center gap-1.5 hover:bg-[#d8ebd5] active:scale-95"
-          title={tx('Return to Player Mode', 'प्लेयर मोड पर लौटें')}
+          title={tx('Return to Player Mode', 'प्लेयर मोड पर लौटें', 'প্লেয়াৰ ম’ডলৈ উভতি যাওক')}
         >
           <Gamepad2 className="w-3.5 h-3.5" />
-          <span>{tx('Player Mode', 'प्लेयर मोड')}</span>
+          <span>{tx('Player Mode', 'प्लेयर मोड', 'প্লেয়াৰ ম’ড')}</span>
         </button>
       </div>
 
@@ -67,18 +67,22 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
               </div>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-[#5B825B] bg-white/80 px-2 py-0.5 rounded-full">
-                  {tx('Primary Mode', 'मुख्य मोड')}
+                  {tx('Primary Mode', 'मुख्य मोड', 'প্ৰাথমিক ম’ড')}
                 </span>
                 <h3 className="text-lg font-black text-[#2D3A2F] mt-0.5">
-                  {tx('Player Mode (Elder Friendly)', 'प्लेयर मोड (बुजुर्गों के अनुकूल)')}
+                  {tx('Player Mode (Elder Friendly)', 'प्लेयर मोड (बुजुर्गों के अनुकूल)', 'প্লেয়াৰ ম’ড (জেষ্ঠ্যসুলভ)')}
                 </h3>
                 <p className="text-xs text-[#2D3A2F]/75">
-                  {tx(`Designed for ${patientName} to enjoy games, stories, and calm`, `${patientName} के लिए खेल, कहानियां और शांति का आनंद लेने के लिए डिज़ाइन किया गया`)}
+                  {tx(
+                    `Designed for ${patientName} to enjoy games, stories, and calm`,
+                    `${patientName} के लिए खेल, कहानियां और शांति का आनंद लेने के लिए डिज़ाइन किया गया`,
+                    `${patientName}ৰ বাবে খেল, সাধু আৰু শান্তি উপভোগ কৰিবলৈ নিৰ্মিত`
+                  )}
                 </p>
               </div>
             </div>
             <span className="px-3.5 py-1.5 rounded-xl bg-[#5B825B] text-white font-black text-xs shrink-0">
-              {tx('Enter →', 'प्रवेश करें →')}
+              {tx('Enter →', 'प्रवेश करें →', 'সোমাওক →')}
             </span>
           </div>
         </div>
@@ -96,26 +100,27 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
               <Users className="w-7 h-7" />
             </div>
             <span className="px-3 py-1 rounded-full bg-[#EAF1E8] text-[#5B825B] text-xs font-black">
-              {tx('Full Care Access', 'पूर्ण देखभाल पहुंच')}
+              {tx('Full Care Access', 'पूर्ण देखभाल पहुंच', 'সম্পূৰ্ণ সেৱা প্ৰৱেশাধিকাৰ')}
             </span>
           </div>
 
           <div>
             <h3 className="text-xl font-black text-[#2D3A2F]">
-              {tx('Family Caregiver', 'पारिवारिक देखभालकर्ता')}
+              {tx('Family Caregiver', 'पारिवारिक देखभालकर्ता', 'পৰিয়ালৰ সেৱাযত্নকাৰী')}
             </h3>
             <p className="text-sm text-[#5A6E5D] mt-1">
               {tx(
                 `Manage ${patientName}'s profile, memories, medical consultations, calendar appointments, and track adaptive cognitive game telemetry.`,
-                `${patientName} की प्रोफ़ाइल, यादें, चिकित्सा परामर्श, कैलेंडर अपॉइंटमेंट प्रबंधित करें और गेम टेलीमेट्री ट्रैक करें।`
+                `${patientName} की प्रोफ़ाइल, यादें, चिकित्सा परामर्श, कैलेंडर अपॉइंटमेंट प्रबंधित करें और गेम टेलीमेट्री ट्रैक करें।`,
+                `${patientName}ৰ প্ৰ’ফাইল, স্মৃতি, চিকিৎসাজনিত পৰামৰ্শ, কেলেণ্ডাৰৰ সময়সূচী নিয়ন্ত্ৰণ কৰক আৰু বৌদ্ধিক খেলৰ তথ্য পৰ্যবেক্ষণ কৰক।`
               )}
             </p>
           </div>
 
           <div className="pt-2 flex items-center justify-between text-xs font-black text-[#5B825B]">
-            <span>{tx('Secured via 4-digit PIN', '4-अंकीय पिन द्वारा सुरक्षित')}</span>
+            <span>{tx('Secured via 4-digit PIN', '4-अंकीय पिन द्वारा सुरक्षित', '৪-অংকৰ পিনৰ দ্বাৰা সুৰক্ষিত')}</span>
             <span className="px-4 py-2 rounded-xl bg-[#5B825B] text-white">
-              {tx('Enter PIN →', 'पिन दर्ज करें →')}
+              {tx('Enter PIN →', 'पिन दर्ज करें →', 'পিন দিয়ক →')}
             </span>
           </div>
         </div>
@@ -133,26 +138,27 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
               <Stethoscope className="w-7 h-7 text-[#E8B25C]" />
             </div>
             <span className="px-3 py-1 rounded-full bg-[#FDF0D5] text-[#332610] text-xs font-black">
-              {tx('Field & Community', 'क्षेत्र और समुदाय')}
+              {tx('Field & Community', 'क्षेत्र और समुदाय', 'ক্ষেত্ৰ আৰু সম্প্ৰদায়')}
             </span>
           </div>
 
           <div>
             <h3 className="text-xl font-black text-[#2D3A2F]">
-              {tx('ASHA / Health Worker', 'आशा / स्वास्थ्य कार्यकर्ता')}
+              {tx('ASHA / Health Worker', 'आशा / स्वास्थ्य कार्यकर्ता', 'আশা / স্বাস্থ্যকৰ্মী')}
             </h3>
             <p className="text-sm text-[#5A6E5D] mt-1">
               {tx(
                 'Focused community health worker portal with cognitive status reports, follow-up checklist, and clinical guidance disclaimers.',
-                'संज्ञानात्मक स्थिति रिपोर्ट, फॉलो-अप चेकलिस्ट और नैदानिक मार्गदर्शन के साथ सामुदायिक स्वास्थ्य कार्यकर्ता पोर्टल।'
+                'संज्ञानात्मक स्थिति रिपोर्ट, फॉलो-अप चेकलिस्ट और नैदानिक मार्गदर्शन के साथ सामुदायिक स्वास्थ्य कार्यकर्ता पोर्टल।',
+                'বৌদ্ধিক স্থিতিৰ প্ৰতিবেদন, পৰৱৰ্তী পৰীক্ষাৰ তালিকা আৰু চিকিৎসা পৰামৰ্শৰ সৈতে আশা স্বাস্থ্যকৰ্মীৰ বিশেষ প’ৰ্টেল।'
               )}
             </p>
           </div>
 
           <div className="pt-2 flex items-center justify-between text-xs font-black text-[#5A6E5D]">
-            <span>{tx('Worker ID & Password', 'कार्यकर्ता आईडी और पासवर्ड')}</span>
+            <span>{tx('Worker ID & Password', 'कार्यकर्ता आईडी और पासवर्ड', 'কৰ্মী আইডি আৰু পাছৱৰ্ড')}</span>
             <span className="px-4 py-2 rounded-xl bg-[#2D3A2F] text-white">
-              {tx('Sign In →', 'लॉग इन करें →')}
+              {tx('Sign In →', 'लॉग इन करें →', 'লগ ইন কৰক →')}
             </span>
           </div>
         </div>
@@ -168,7 +174,7 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
               className="px-4 py-2.5 rounded-2xl bg-white border border-[#E0DCD3] text-xs font-extrabold text-[#5A6E5D] hover:bg-[#FAF8F5] transition-colors inline-flex items-center gap-2"
             >
               <ShieldCheck className="w-4 h-4 text-[#5B825B]" />
-              <span>{tx('Edit Setup & Profiles (Player, Medical, PIN)', 'सेटअप और प्रोफ़ाइल संपादित करें (प्लेयर, मेडिकल, पिन)')}</span>
+              <span>{tx('Edit Setup & Profiles (Player, Medical, PIN)', 'सेटअप और प्रोफ़ाइल संपादित करें (प्लेयर, मेडिकल, पिन)', 'ছেটআপ আৰু প্ৰ’ফাইল সম্পাদনা কৰক (খেলুৱৈ, চিকিৎসা, পিন)')}</span>
             </button>
           </div>
         )}
@@ -179,7 +185,8 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
         <span>
           {tx(
             'Caregiver authentication keeps private memories, medical details, and routines safe and organized.',
-            'देखभालकर्ता प्रमाणीकरण निजी यादों, चिकित्सा विवरणों और दिनचर्या को सुरक्षित और व्यवस्थित रखता है।'
+            'देखभालकर्ता प्रमाणीकरण निजी यादों, चिकित्सा विवरणों और दिनचर्या को सुरक्षित और व्यवस्थित रखता है।',
+            'সেৱাযত্নকাৰীৰ প্ৰমাণীকৰণে ব্যক্তিগত স্মৃতি, চিকিৎসা তথ্য আৰু দৈনন্দিন নিয়মসমূহ সুৰক্ষিত আৰু শৃংখলিত কৰি ৰাখে।'
           )}
         </span>
       </div>

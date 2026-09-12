@@ -24,7 +24,7 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
 }) => {
   const [largeText, setLargeText] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const { language, setLanguage, t, isHindi, isAssamese } = useLanguage();
+  const { language, setLanguage, t, tx, isHindi, isAssamese } = useLanguage();
 
   const playerName = patientProfile?.name || (isAssamese ? 'খেলুৱৈ' : isHindi ? 'खिलाड़ी' : 'Player');
   const playerFullName = patientProfile?.fullName || (isAssamese ? 'মনৰ অন্বেষক' : isHindi ? 'माइंड एक्सप्लोरर' : 'Mind Explorer');

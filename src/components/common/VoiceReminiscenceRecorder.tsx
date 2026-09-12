@@ -27,7 +27,7 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
   initialDuration,
   onSaveVoiceSnippet,
 }) => {
-  const { tx, isHindi } = useLanguage();
+  const { tx, isHindi, language } = useLanguage();
 
   const [isRecording, setIsRecording] = useState(false);
   const [secondsElapsed, setSecondsElapsed] = useState(0);
@@ -109,7 +109,8 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
       setMicPermissionError(
         tx(
           'Microphone permission blocked or unavailable. You can use the instant sample family voice note below!',
-          'माइक्रोफ़ोन अनुमति अनुपलब्ध है। आप नीचे दिए गए नमूना पारिवारिक वॉइस नोट का उपयोग कर सकते हैं!'
+          'माइक्रोफ़ोन अनुमति अनुपलब्ध है। आप नीचे दिए गए नमूना पारिवारिक वॉइस नोट का उपयोग कर सकते हैं!',
+          'মাইক্ৰ’ফ’নৰ অনুমতি দিয়া নাই বা উপলব্ধ নহয়। আপুনি তলৰ নমুনা পৰিয়ালৰ ভইচ বাৰ্তা ব্যৱহাৰ কৰিব পাৰে!'
         )
       );
     }
@@ -161,11 +162,14 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
   const handleUseSampleVoice = () => {
     soundController.playSuccess();
     // Synthesize warm audio tone or sample URL
-    const samplePrompt = isHindi 
+    const samplePrompt = language === 'as'
+      ? 'দেউতা, এইখন ২০১৯ চনত জয়পুৰত ৰোহণৰ বিয়াৰ আছিল। আপুনি আমাৰ সকলোৰে সৈতে বহুত আনন্দৰে হাঁহিছিল!'
+      : isHindi 
       ? 'पिताजी, यह 2019 में जयपुर में रोहन की शादी थी। आप हम सब के साथ बहुत खुश होकर नाचे थे!'
       : "Papa, this was Rohan's wedding in Jaipur, 2019. You were smiling so warmly with all of us!";
 
-    setRecordedBy(isHindi ? 'बेटी प्रिया' : 'Daughter Priya');
+    const recBy = language === 'as' ? 'জীয়াৰী প্ৰিয়া' : (isHindi ? 'बेटी प्रिया' : 'Daughter Priya');
+    setRecordedBy(recBy);
     setPromptText(samplePrompt);
     setDuration(12);
 
@@ -176,7 +180,7 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
     onSaveVoiceSnippet({
       audioUrl: sampleDataUrl,
       duration: 12,
-      recordedBy: isHindi ? 'बेटी प्रिया' : 'Daughter Priya',
+      recordedBy: recBy,
       promptText: samplePrompt,
     });
   };
@@ -232,12 +236,13 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
           </div>
           <div>
             <h4 className="text-xs font-black text-[#2D3A2F]">
-              {tx('Voice Reminiscence (15s Audio in Your Voice)', 'वॉइस रेमिनिसेंस (अपनी आवाज़ में 15 सेकंड)')}
+              {tx('Voice Reminiscence (15s Audio in Your Voice)', 'वॉइस रेमिनिसेंस (अपनी आवाज़ में 15 सेकंड)', 'ভইচ ৰেমিনিচেন্স (আপোনাৰ নিজৰ মাতত ১৫ ছেকেণ্ড)')}
             </h4>
             <p className="text-[11px] text-[#5A6E5D]">
               {tx(
                 "A loved one's real voice triggers deeper calming & recall than robotic text.",
-                'प्रियजन की असली आवाज़ सुनने से गहरा भावनात्मक सुकून व स्मृति सक्रियता मिलती है।'
+                'प्रियजन की असली आवाज़ सुनने से गहरा भावनात्मक सुकून व स्मृति सक्रियता मिलती है।',
+                'মৰমৰ আপোনজনৰ প্ৰকৃত মাতে ৰবটিক পাঠ্যতকৈ গভীৰ প্ৰশান্তি আৰু স্মৃতি জগাই তোলে।'
               )}
             </p>
           </div>
@@ -250,7 +255,7 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
             className="text-[11px] font-black text-[#5B825B] bg-[#EAF1E8] px-2.5 py-1 rounded-xl hover:bg-[#d8e6d5] transition-colors flex items-center gap-1"
           >
             <Sparkles className="w-3 h-3 text-[#5B825B]" />
-            <span>{tx('Use Sample Voice', 'नमूना आवाज़')}</span>
+            <span>{tx('Use Sample Voice', 'नमूना आवाज़', 'নমুনা মাত ব্যৱহাৰ কৰক')}</span>
           </button>
         )}
       </div>
@@ -263,7 +268,7 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
             onClick={handleUseSampleVoice}
             className="px-2 py-1 rounded-lg bg-amber-600 text-white text-[11px] font-bold shrink-0"
           >
-            {tx('Use Sample', 'नमूना लगाएं')}
+            {tx('Use Sample', 'नमूना लगाएं', 'নমুনা দিয়ক')}
           </button>
         </div>
       )}
@@ -273,7 +278,7 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
         <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-center space-y-2 animate-pulse">
           <div className="flex items-center justify-center gap-2 text-red-600 font-black text-sm">
             <span className="w-3 h-3 rounded-full bg-red-600 animate-ping" />
-            <span>{tx('Recording Loving Voice...', 'आवाज़ रिकॉर्ड हो रही है...')}</span>
+            <span>{tx('Recording Loving Voice...', 'आवाज़ रिकॉर्ड हो रही है...', 'মৰমৰ মাত ৰেকৰ্ডিং হৈ আছে...')}</span>
             <span className="font-mono text-base">{secondsElapsed}s / {MAX_DURATION_SEC}s</span>
           </div>
 
@@ -288,7 +293,8 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
           <p className="text-[11px] text-red-700 font-medium">
             {tx(
               'Speak gently (e.g. "Papa, this was Rohan\'s wedding in Jaipur, 2019...")',
-              'प्यार से बोलें (उदा: "पिताजी, यह 2019 में रोहन की शादी थी...")'
+              'प्यार से बोलें (उदा: "पिताजी, यह 2019 में रोहन की शादी थी...")',
+              'মৰমেৰে কওক (যেনে "দেউতা, এইখন ২০১৯ চনত জয়পুৰত ৰোহণৰ বিয়াৰ আছিল...")'
             )}
           </p>
 
@@ -298,7 +304,7 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
             className="px-4 py-1.5 rounded-xl bg-red-600 text-white text-xs font-black flex items-center gap-1.5 mx-auto shadow-xs hover:bg-red-700"
           >
             <Square className="w-3.5 h-3.5 fill-current" />
-            <span>{tx('Finish Recording', 'रिकॉर्डिंग समाप्त करें')}</span>
+            <span>{tx('Finish Recording', 'रिकॉर्डिंग समाप्त करें', 'ৰেকৰ্ডিং সমাপ্ত কৰক')}</span>
           </button>
         </div>
       )}
@@ -309,7 +315,7 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded-full bg-[#5B825B] text-white text-[10px] font-black uppercase">
-                {tx('Voice Recorded', 'आवाज़ रिकॉर्डेड')}
+                {tx('Voice Recorded', 'आवाज़ रिकॉर्डेड', 'মাত সংৰক্ষিত')}
               </span>
               <span className="text-xs font-black text-[#2D3A2F]">
                 {recordedBy} ({duration}s)
@@ -327,14 +333,14 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
                 }`}
               >
                 {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                <span>{isPlaying ? tx('Pause', 'रोकें') : tx('Preview Voice', 'आवाज़ सुनें')}</span>
+                <span>{isPlaying ? tx('Pause', 'रोकें', 'ৰখাওক') : tx('Preview Voice', 'आवाज़ सुनें', 'মাত শুনক')}</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleReset}
                 className="p-1.5 rounded-xl bg-white text-[#5A6E5D] hover:text-[#C46A66] border border-[#E0DCD3]"
-                title={tx('Record Again', 'पुनः रिकॉर्ड करें')}
+                title={tx('Record Again', 'पुनः रिकॉर्ड करें', 'পুনৰ ৰেকৰ্ড কৰক')}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
@@ -344,7 +350,7 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
           {/* Transcript / Spoken Prompt */}
           <div>
             <label className="block text-[11px] font-black text-[#2D3A2F] mb-1">
-              {tx('What was said in your voice snippet?', 'आपने क्या संदेश बोला?')}
+              {tx('What was said in your voice snippet?', 'आपने क्या संदेश बोला?', 'আপুনি কি বাৰ্তা ক’লে?')}
             </label>
             <input
               type="text"
@@ -374,7 +380,7 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
             className="flex-1 py-2 rounded-xl bg-[#5B825B] text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-2xs hover:bg-[#4d704d] transition-all"
           >
             <Mic className="w-4 h-4" />
-            <span>{tx('Record 15s Voice Note', '15 सेकंड वॉइस नोट रिकॉर्ड करें')}</span>
+            <span>{tx('Record 15s Voice Note', '15 सेकंड वॉइस नोट रिकॉर्ड करें', '১৫ ছেকেণ্ড ভইচ নোট ৰেকৰ্ড কৰক')}</span>
           </button>
 
           <input
