@@ -663,5 +663,5 @@ CMD ["node", "dist/server.cjs"]
 ---
 
 <p align="center">
-  Crafted with care for <strong>Anita Sharma</strong> and families everywhere navigating memory challenges.
+  Crafted with care for people and families everywhere navigating memory challenges.
 </p>
