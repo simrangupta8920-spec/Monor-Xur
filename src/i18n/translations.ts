@@ -1,6 +1,6 @@
-// Comprehensive Bilingual Translations for Monor Xur (English & Hindi)
+// Comprehensive Trilingual Translations for Monor Xur (English, Hindi & Assamese / অসমীয়া)
 
-export type Language = 'en' | 'hi';
+export type Language = 'en' | 'hi' | 'as';
 
 export interface Translations {
   [key: string]: string | undefined;
@@ -59,6 +59,7 @@ export interface Translations {
   languageSettingSub: string;
   englishLabel: string;
   hindiLabel: string;
+  assameseLabel: string;
   activeBadge: string;
   offlineReadiness: string;
   cloudSynced: string;
@@ -245,6 +246,7 @@ export const translations: Record<Language, Translations> = {
     languageSettingSub: 'Switch entire app interface and all spoken voices between English and Hindi.',
     englishLabel: 'English',
     hindiLabel: 'हिन्दी (Hindi)',
+    assameseLabel: 'অসমীয়া (Assamese)',
     activeBadge: 'Active',
     offlineReadiness: 'Offline Readiness',
     cloudSynced: 'Cloud Synced',
@@ -430,6 +432,7 @@ export const translations: Record<Language, Translations> = {
     languageSettingSub: 'पूरे ऐप की भाषा और बोलने वाली सभी आवाज़ों को हिन्दी और अंग्रेज़ी में बदलें।',
     englishLabel: 'English (अंग्रेज़ी)',
     hindiLabel: 'हिन्दी (Hindi)',
+    assameseLabel: 'অসমীয়া (असमिया)',
     activeBadge: 'सक्रिय',
     offlineReadiness: 'ऑफ़लाइन तैयारी',
     cloudSynced: 'क्लाउड से जुड़ा',
@@ -557,6 +560,192 @@ export const translations: Record<Language, Translations> = {
     languageSwitchedText: 'भाषा हिन्दी पर सेट कर दी गई है।',
     puzzleSuccessVoice: 'बहुत खूब! आपने पहेली पूरी कर ली।',
     memorySuccessVoice: 'बधाई हो! आपने सभी जोड़े मिला लिए हैं।',
+  },
+
+  as: {
+    // Navigation & Role Headers
+    monorXur: 'মনৰ সুৰ',
+    playerMode: 'প্লেয়াৰ ম’ড • মনৰ অন্বেষক',
+    familyPortal: 'পৰিয়াল সংগী প’ৰ্টেল',
+    ashaWorker: 'আশা স্বাস্থ্যকৰ্মী',
+    caregiverPortal: 'সেৱাযত্নকাৰী প’ৰ্টেল',
+    returnToPlayer: 'প্লেয়াৰ ম’ড',
+    caregiver: 'সেৱাযত্নকাৰী',
+    emergencyCall: 'জৰুৰীকালীন কল',
+    setupAndProfiles: 'প্ৰাৰম্ভিক প্ৰস্তুতি আৰু প্ৰ’ফাইল',
+    goBack: 'উভতি যাওক',
+
+    // Bottom Navigation
+    navHome: 'ঘৰ',
+    navPlay: 'খেলক',
+    navMemories: 'স্মৃতিমালা',
+    navSettings: 'ছেটিংছ',
+    navInsights: 'অন্তৰ্দৃষ্টি',
+    navProgress: 'অগ্ৰগতি',
+    navCalendar: 'কেলেণ্ডাৰ',
+    navAlerts: 'সতৰ্কবাৰ্তা',
+    navProfile: 'প্ৰ’ফাইল',
+    navReport: 'প্ৰতিবেদন',
+    navTasks: 'কামকাজ',
+
+    // Patient Home
+    activeSession: 'সক্ৰিয় অধিবেশন',
+    hello: 'নমস্কাৰ, {name}!',
+    helloWelcome: 'নমস্কাৰ, স্বাগতম!',
+    playButtonText: 'খেলক',
+    playButtonSub: 'খেল আৰম্ভ কৰিবলৈ টিপক',
+    tileMemories: 'স্মৃতিমালা',
+    tileMemoriesSub: 'পৰিয়াল আৰু আপোন স্মৃতি',
+    tileGames: 'খেল আৰু সাঁথৰ',
+    tileGamesSub: 'ছবিৰ সাঁথৰ আৰু মনৰ খেল',
+    tileRelaxation: 'বিৰাম আৰু শান্তি',
+    tileRelaxationSub: 'সুৰীয়া সংগীত আৰু উশাহৰ অভ্যাস',
+    tileDailyLife: 'দৈনন্দিন জীৱন',
+    tileDailyLifeSub: 'নিয়মীয়া কাম আৰু দিনলিপি',
+    upNext: 'পৰৱৰ্তী কাম',
+    view: 'চাওক',
+    callFamilyPrompt: '{name}ক কল কৰক',
+    callFamilyDefault: 'পৰিয়াল / জৰুৰীকালীন কল',
+    callFamilySub: 'এটা স্পৰ্শতে আপোনাৰ পৰিয়ালৰ সৈতে সংযোগ কৰক',
+    callNow: 'এতিয়াই কল কৰক',
+
+    // Settings
+    preferencesTitle: 'খেলুৱৈৰ পছন্দ আৰু ছেটিংছ',
+    preferencesSub: 'প্ৰদৰ্শন, শব্দ, ভাষা আৰু খেলৰ পছন্দসমূহ।',
+    activePlayer: 'সক্ৰিয় খেলুৱৈ',
+    mindExplorerLevel: 'মনৰ অন্বেষক • স্তৰ {level}',
+    languageSettingTitle: 'ভাষা বাছক (Language)',
+    languageSettingSub: 'সম্পূৰ্ণ এপৰ ভাষা আৰু কথা কোৱা মাতসমূহ অসমীয়া, ইংৰাজী বা হিন্দীলৈ সলনি কৰক।',
+    englishLabel: 'English (ইংৰাজী)',
+    hindiLabel: 'हिन्दी (হিন্দী)',
+    assameseLabel: 'অসমীয়া (Assamese)',
+    activeBadge: 'সক্ৰিয়',
+    offlineReadiness: 'অফলাইন প্ৰস্তুতি',
+    cloudSynced: 'ক্লাউডত সংৰক্ষিত',
+    offlineMode: 'অফলাইন ম’ড',
+    serviceWorkerActive: 'চাৰ্ভিচ ৱৰ্কাৰ সক্ৰিয়: ৰোগীৰ তথ্য আৰু দিনলিপি অফলাইন সংৰক্ষিত।',
+    cachedLocally: 'স্থানীয়ভাৱে সংৰক্ষিত',
+    coreProfile: 'মূল প্ৰ’ফাইল আৰু স্বাস্থ্যৰ স্তৰ',
+    todayDailyPlan: 'আজিৰ দিনলিপি আৰু ঔষধ',
+    routineItemsCount: '{count} টা নিয়মীয়া কাম',
+    installHomeScreen: 'সম্পূৰ্ণ অফলাইন অভিজ্ঞতাৰ বাবে হোম স্ক্ৰীনত যোগ কৰক:',
+    extraLargeText: 'ডাঙৰ আকাৰৰ আখৰ',
+    extraLargeTextSub: 'বুটাম আৰু কাহিনীৰ বিৱৰণ ডাঙৰ কৰক',
+    audioChimes: 'শব্দৰ সংকেত আৰু সুৰ',
+    audioChimesSub: 'বুটাম টিপিলে আৰু সঠিক মিলত শান্ত সুৰ',
+    testVoiceTitle: 'কথা কোৱা মাত পৰীক্ষা কৰক',
+    testVoiceSub: 'কাহিনী কোৱা নমুনা মাত শুনক',
+    playSample: 'নমুনা শুনক',
+    emergencyContactTitle: 'জৰুৰীকালীন যোগাযোগ',
+    emergencyContactUnconfigured: 'সেৱাযত্নকাৰী প’ৰ্টেলত জৰুৰীকালীন যোগাযোগ যোগ কৰক',
+    callBtn: 'কল কৰক',
+    caregiverDashboardTitle: 'সেৱাযত্নকাৰী প’ৰ্টেল',
+    caregiverDashboardSub: 'পৰিয়ালৰ সদস্য আৰু আশা স্বাস্থ্যকৰ্মীৰ বাবে',
+    switchToCaregiver: 'সেৱাযত্নকাৰী ম’ডলৈ যাওক →',
+    reconfigureProfile: '⚙️ খেলুৱৈ প্ৰ’ফাইল আৰু পিন সলনি কৰক',
+
+    // Games Hub
+    gamesHubTitle: 'মনৰ খেলৰ কেন্দ্ৰ',
+    gamesHubSub: 'শান্তি আৰু মানসিক সতেজতাৰ বাবে প্ৰস্তুত কৰা সহজ দিহাচৰ্চা।',
+    photoPuzzleTitle: 'ছবিৰ সাঁথৰ',
+    photoPuzzleDesc: 'পৰিয়ালৰ পুৰণি ছবি আৰু ঐতিহ্যৰ টুকুৰা সংযোগ কৰক।',
+    memoryMatchTitle: 'স্মৃতি মিলোৱা খেল',
+    memoryMatchDesc: 'পৰম্পৰাগত প্ৰতীক, চাহৰ কাপ আৰু প্ৰকৃতিৰ সঠিক জোৰা বিচাৰক।',
+    playNow: 'এতিয়াই খেলক',
+    difficultyLabel: 'স্তৰ {level}',
+    easy: 'সহজ',
+    medium: 'মধ্যমীয়া',
+    hard: 'কঠিন',
+    backToHome: 'ঘৰলৈ উভতি যাওক',
+    gameSessions: 'অধিবেশন',
+    gameAccuracy: 'সঠিকতা',
+
+    // Memory Match
+    memoryMatchHeader: 'স্মৃতি মিলোৱা খেল',
+    pairsFound: 'পোৱা জোৰা',
+    moves: 'পদক্ষেপ',
+    time: 'সময়',
+    hint: 'ইংগিত',
+    restart: 'পুনৰ আৰম্ভ কৰক',
+    wellDone: 'বৰ সুন্দৰ কাম!',
+    completedInMoves: 'আপুনি {moves} টা পদক্ষেপত সকলো জোৰা মিলাই দিলে!',
+    nextRound: 'পৰৱৰ্তী ৰাউণ্ড',
+    playAgain: 'আকৌ খেলক',
+
+    // Photo Puzzle
+    photoPuzzleHeader: 'ছবিৰ সাঁথৰ',
+    originalPhoto: 'মূল ছবি',
+    viewOriginal: 'সম্পূৰ্ণ ছবি চাওক',
+    tilesLeft: 'বাকী থকা টুকুৰা',
+    gridSize: 'গ্ৰিডৰ আকাৰ',
+    shuffle: 'সানমিহলি কৰক',
+    puzzleSolvedTitle: 'সাঁথৰ সমাধান হ’ল!',
+    listenToStory: 'কাহিনী শুনক',
+    stopVoice: 'মাত বন্ধ কৰক',
+
+    // Daily Life
+    dailyLifeTitle: 'আজিৰ দিনলিপি',
+    dailyLifeSub: 'আপোনাৰ দিনটোৰ বাবে আৰামদায়ক সময়সূচী আৰু সোঁৱৰণী।',
+    allCompleted: 'আজিৰ সকলো কাম সম্পূৰ্ণ হ’ল! বৰ ভাল লাগিল।',
+    markDone: 'সম্পূৰ্ণ হ’ল বুলি চিহ্নিত কৰক',
+    done: 'হৈ গ’ল',
+    morning: 'ৰাতিপুৱা',
+    afternoon: 'দুপৰীয়া',
+    evening: 'গধূলি',
+    night: 'ৰাতি',
+
+    // Relaxation
+    relaxationTitle: 'বিৰাম আৰু শান্তি',
+    relaxationSub: 'উশাহ-নিশাহৰ অভ্যাস আৰু শান্ত সুৰেৰে মন জুৰাওক।',
+    breathingTitle: 'শান্ত উশাহৰ অভ্যাস',
+    breathingSub: 'সুৰীয়া ঘণ্টাৰ সৈতে ৪-৪-৪ শান্ত উশাহ-নিশাহৰ চক্ৰ।',
+    breatheIn: 'উশাহ ভিতৰলৈ লওক...',
+    hold: 'ধৰি ৰাখক...',
+    breatheOut: 'উশাহ এৰি দিয়ক...',
+    startBreathing: 'উশাহৰ অভ্যাস আৰম্ভ কৰক',
+    pauseBreathing: 'ৰখাওক',
+    resumeBreathing: 'অব্যাহত ৰাখক',
+    musicTitle: 'শান্ত সংগীত আৰু সুৰ',
+    musicSub: 'অস্থিৰতা আৰু উদ্বেগ দূৰ কৰা শান্তিময় সংগীত।',
+    natureSounds: 'প্ৰকৃতি আৰু চৰাইৰ মাত',
+    fluteSounds: 'বাঁহীৰ সুৰ',
+    bowlSounds: 'ছিংগিং বাউল (৪৩২ হাৰ্টজ)',
+    harpSounds: 'সুৰীয়া বীণা সংগীত',
+    playMusic: 'সংগীত বজাওক',
+    stopMusic: 'সংগীত বন্ধ কৰক',
+
+    // Memories
+    memoriesTitle: 'পৰিয়ালৰ স্মৃতিমালা',
+    memoriesSub: 'আপোন ছবি, স্থান আৰু আপোনজনৰ মাতৰ কাহিনী।',
+    recordMemory: 'আপোনাৰ মাতত স্মৃতি যোগ কৰক',
+    allMemories: 'সকলো স্মৃতি',
+    familyTag: 'পৰিয়াল',
+    placesTag: 'স্থান',
+    cultureTag: 'সংস্কৃতি',
+    dailyTag: 'দৈনন্দিন জীৱন',
+    previous: 'পূৰ্বৱৰ্তী',
+    next: 'পৰৱৰ্তী',
+    close: 'বন্ধ কৰক',
+    back: 'উভতি যাওক',
+    cancel: 'বাতিল কৰক',
+
+    // Audio Diary
+    audioDiaryTitle: 'কণ্ঠৰ ডায়েৰী',
+    audioDiarySub: 'আপোনাৰ দিনটো বা কোনো বিশেষ স্মৃতিৰ বিষয়ে মন খুলি কওক।',
+    tapToSpeak: 'ক’বলৈ টিপক',
+    stopRecording: 'ৰেকৰ্ডিং সমাপ্ত কৰক',
+    listeningVoice: 'আপোনাৰ মাত শুনা হৈছে...',
+    readyToRecord: 'ৰেকৰ্ড কৰিবলৈ সাজু',
+    voiceRecorded: 'মাত ৰেকৰ্ড হ’ল',
+    playAudio: 'মাত শুনক',
+    saveToMemories: 'স্মৃতিত সাঁচি ৰাখক',
+
+    // Spoken System Voice Text
+    welcomeVoiceText: 'মনৰ সুৰলৈ আপোনাক স্বাগতম, {name}!',
+    testVoiceSpeechText: 'নমস্কাৰ {name}। কথা কোৱা মাত স্পষ্টভাৱে চলি আছে।',
+    languageSwitchedText: 'ভাষা অসমীয়ালৈ নিৰ্ধাৰণ কৰা হ’ল।',
+    puzzleSuccessVoice: 'বৰ সুন্দৰ কাম! আপুনি সাঁথৰটো সম্পূৰ্ণ কৰিলে।',
+    memorySuccessVoice: 'অভিনন্দন! আপুনি সকলো জোৰা অতি ধুনীয়াকৈ মিলাই দিলে।',
   },
 };
 

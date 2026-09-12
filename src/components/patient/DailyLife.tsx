@@ -11,7 +11,7 @@ interface DailyLifeProps {
 }
 
 export const DailyLife: React.FC<DailyLifeProps> = ({ reminders, onToggleReminder, onBack }) => {
-  const { t, isHindi } = useLanguage();
+  const { t, tx } = useLanguage();
   const completedCount = reminders.filter((r) => r.completed).length;
 
   return (
@@ -36,12 +36,14 @@ export const DailyLife: React.FC<DailyLifeProps> = ({ reminders, onToggleReminde
         <div className="flex items-center justify-between">
           <div>
             <span className="text-xs font-black uppercase tracking-wider block text-[#5B825B]">
-              {isHindi ? 'आज की दिनचर्या' : "Today's Routine"}
+              {tx("Today's Routine", 'आज की दिनचर्या', 'আজিৰ দিনলিপি')}
             </span>
             <h3 className="text-xl font-black">
-              {isHindi
-                ? `${completedCount} / ${reminders.length} कार्य पूर्ण`
-                : `${completedCount} of ${reminders.length} Completed`}
+              {tx(
+                `${completedCount} of ${reminders.length} Completed`,
+                `${completedCount} / ${reminders.length} कार्य पूर्ण`,
+                `${completedCount} / ${reminders.length} কাম সম্পূৰ্ণ`
+              )}
             </h3>
           </div>
           <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center font-black text-[#5B825B] text-lg shadow-xs">
@@ -95,7 +97,7 @@ export const DailyLife: React.FC<DailyLifeProps> = ({ reminders, onToggleReminde
                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                     item.type === 'medicine' ? 'bg-[#F0D8D6] text-[#C46A66]' : 'bg-[#FDF0D5] text-[#E8B25C]'
                   }`}>
-                    {item.type === 'medicine' ? (isHindi ? 'दवा' : 'medicine') : (isHindi ? 'कार्य' : item.type)}
+                    {item.type === 'medicine' ? tx('medicine', 'दवा', 'ঔষধ') : tx(item.type, 'कार्य', 'কাম')}
                   </span>
                 </div>
                 <h4 className={`font-extrabold text-base mt-0.5 leading-tight ${item.completed ? 'line-through text-gray-500' : 'text-[#2D3A2F]'}`}>

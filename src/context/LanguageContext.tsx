@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { Language, Translations, translations, formatTranslation } from '../i18n/translations';
+import { getAssameseTranslation } from '../i18n/assameseDictionary';
 import { soundController } from '../utils/audio';
 
 interface LanguageContextType {
@@ -7,10 +8,11 @@ interface LanguageContextType {
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
   t: (key: keyof Translations | string, params?: Record<string, string | number>) => string;
-  tx: (en: string, hi: string) => string;
+  tx: (en: string, hi: string, as?: string) => string;
   isHindi: boolean;
+  isAssamese: boolean;
   formatLocalizedDate: (date: Date) => string;
-  speak: (textEn: string, textHi: string, onEnd?: () => void) => void;
+  speak: (textEn: string, textHi: string, onEnd?: () => void, textAs?: string) => void;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -21,7 +23,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === 'en' || stored === 'hi') {
+      if (stored === 'en' || stored === 'hi' || stored === 'as') {
         return stored;
       }
     }
@@ -42,7 +44,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, []);
 
   const toggleLanguage = useCallback(() => {
-    setLanguage(language === 'en' ? 'hi' : 'en');
+    setLanguage(language === 'en' ? 'hi' : language === 'hi' ? 'as' : 'en');
   }, [language, setLanguage]);
 
   useEffect(() => {
@@ -62,7 +64,10 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   );
 
   const tx = useCallback(
-    (en: string, hi: string): string => {
+    (en: string, hi: string, as?: string): string => {
+      if (language === 'as') {
+        return as || getAssameseTranslation(en, hi);
+      }
       return language === 'hi' ? hi : en;
     },
     [language]
@@ -71,6 +76,13 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   const formatLocalizedDate = useCallback(
     (date: Date): string => {
       try {
+        if (language === 'as') {
+          return new Intl.DateTimeFormat('as-IN', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+          }).format(date);
+        }
         if (language === 'hi') {
           return new Intl.DateTimeFormat('hi-IN', {
             weekday: 'long',
@@ -91,8 +103,10 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   );
 
   const speak = useCallback(
-    (textEn: string, textHi: string, onEnd?: () => void) => {
-      if (language === 'hi') {
+    (textEn: string, textHi: string, onEnd?: () => void, textAs?: string) => {
+      if (language === 'as') {
+        soundController.speak(textAs || getAssameseTranslation(textEn, textHi), onEnd, 'as');
+      } else if (language === 'hi') {
         soundController.speak(textHi, onEnd, 'hi');
       } else {
         soundController.speak(textEn, onEnd, 'en');
@@ -110,6 +124,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
         t,
         tx,
         isHindi: language === 'hi',
+        isAssamese: language === 'as',
         formatLocalizedDate,
         speak,
       }}

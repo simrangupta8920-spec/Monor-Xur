@@ -6,6 +6,7 @@ import { useLanguage } from '../../context/LanguageContext';
 interface SpeakButtonProps {
   textEn: string;
   textHi?: string;
+  textAs?: string;
   label?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
@@ -14,11 +15,12 @@ interface SpeakButtonProps {
 export const SpeakButton: React.FC<SpeakButtonProps> = ({
   textEn,
   textHi,
+  textAs,
   label,
   className = '',
   size = 'md',
 }) => {
-  const { isHindi } = useLanguage();
+  const { tx } = useLanguage();
   const [isSpeakingThis, setIsSpeakingThis] = useState(false);
 
   useEffect(() => {
@@ -42,11 +44,11 @@ export const SpeakButton: React.FC<SpeakButtonProps> = ({
     soundController.stopSpeaking();
     setIsSpeakingThis(true);
 
-    const spokenText = isHindi && textHi ? textHi : textEn;
     soundController.speakBilingual(
       textEn,
       textHi || textEn,
-      () => setIsSpeakingThis(false)
+      () => setIsSpeakingThis(false),
+      textAs
     );
   };
 
@@ -71,8 +73,8 @@ export const SpeakButton: React.FC<SpeakButtonProps> = ({
           ? 'bg-[#5B825B] text-white ring-3 ring-[#5B825B]/30 animate-pulse'
           : 'bg-[#F4F1EA] text-[#5B825B] hover:bg-[#EAF1E8] hover:text-[#2D3A2F] border border-[#DCD6CA]'
       } ${sizeClasses[size]} ${className}`}
-      title={isHindi ? 'बोलकर सुनें' : 'Listen aloud'}
-      aria-label={label || (isHindi ? 'निर्देश बोलकर सुनें' : 'Listen to instructions')}
+      title={tx('Listen aloud', 'बोलकर सुनें', 'শুনি চাওক')}
+      aria-label={label || tx('Listen to instructions', 'निर्देश बोलकर सुनें', 'নিৰ্দেশনা শুনি চাওক')}
     >
       {isSpeakingThis ? (
         <VolumeX className={iconSizes[size]} />

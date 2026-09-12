@@ -135,7 +135,7 @@ const PIECE_COORDINATES: Record<number, { bgPos: string; label: string; row: num
 };
 
 export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogDDAMetric, playerName = 'Player' }) => {
-  const { t, isHindi } = useLanguage();
+  const { t, tx, language, isHindi } = useLanguage();
 
   // Available personalized memories (filter for photo memories with valid image)
   const photoMemories = useMemo(() => {
@@ -310,8 +310,8 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     setIsSpeakingNarration(true);
     soundController.speak(textToSpeak, () => {
       setIsSpeakingNarration(false);
-    }, isHindi ? 'hi' : 'en');
-  }, [isHindi]);
+    }, language);
+  }, [language]);
 
   // Shuffle pieces helper
   const shufflePieces = useCallback((size: GridDimension) => {
@@ -809,9 +809,8 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     // and then "great work" or "good job" will come.
     const rawDescription = (currentPuzzle.description || currentPuzzle.title).trim();
     const formattedDesc = rawDescription.endsWith('.') || rawDescription.endsWith('।') ? rawDescription : `${rawDescription}.`;
-    const victorySpeech = isHindi
-      ? `${formattedDesc} बहुत बढ़िया काम! शाबाश!`
-      : `${formattedDesc} Great work! Good job!`;
+    const victoryAffirmation = tx('Great work! Good job!', 'बहुत बढ़िया काम! शाबाश!', 'বৰ ভাল কাম! শাবাছ!');
+    const victorySpeech = `${formattedDesc} ${victoryAffirmation}`;
     setNarrationText(victorySpeech);
 
     // Speak picture description first, then "Great work! Good job!"
@@ -1029,10 +1028,10 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
               setShowReferenceModal(true);
             }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white border border-[#E0DCD3] text-[#5A6E5D] font-extrabold text-xs hover:bg-[#F8F6F0] active:scale-95 shadow-xs"
-            title={isHindi ? 'पूरी तस्वीर देखें' : 'Peek at the full picture'}
+            title={tx('Peek at the full picture', 'पूरी तस्वीर देखें', 'সম্পূৰ্ণ ছবিখন চাওক')}
           >
             <Eye className="w-4 h-4 text-[#5B825B]" />
-            <span className="hidden sm:inline">{isHindi ? 'तस्वीर देखें' : 'Peek Photo'}</span>
+            <span className="hidden sm:inline">{tx('Peek Photo', 'तस्वीर देखें', 'ছবি চাওক')}</span>
           </button>
           
           <button
@@ -1040,11 +1039,13 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
               soundController.playClick();
               soundController.speakBilingual(
                 `${currentPuzzle.title}. ${currentPuzzle.description}`,
+                `${currentPuzzle.title}। ${currentPuzzle.description}`,
+                undefined,
                 `${currentPuzzle.title}। ${currentPuzzle.description}`
               );
             }}
             className="p-2 rounded-2xl bg-white border border-[#E0DCD3] text-[#5B825B] hover:bg-[#F8F6F0] active:scale-95 shadow-xs"
-            title={isHindi ? 'कहानी सुनें' : 'Read story aloud'}
+            title={tx('Read story aloud', 'कहानी सुनें', 'কাহিনী শুনক')}
           >
             <Volume2 className="w-4 h-4" />
           </button>
@@ -1057,25 +1058,26 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2.5 py-0.5 rounded-full bg-[#FDF0D5] text-[#332610] text-xs font-black uppercase tracking-wider">
-                {isHindi ? 'फ़ोटो पहेली' : 'Photo Puzzle'}
+                {tx('Photo Puzzle', 'फ़ोटो पहेली', 'ছবিৰ ধাঁধা')}
               </span>
               <span className="text-xs font-bold text-[#5B825B] flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" /> {totalPieces} {isHindi ? 'टुकड़े' : 'Pieces'} ({gridSize}×{gridSize})
+                <Sparkles className="w-3.5 h-3.5" /> {totalPieces} {tx('Pieces', 'टुकड़े', 'টুকুৰা')} ({gridSize}×{gridSize})
               </span>
             </div>
             <h2 className="text-2xl font-black text-[#2D3A2F]">
-              {isHindi ? 'तस्वीर जोड़ें' : 'Puzzle: Put It Back'}
+              {tx('Puzzle: Put It Back', 'तस्वीर जोड़ें', 'ছবি জোৰা লগাওক')}
             </h2>
           </div>
 
           <div className="flex items-center gap-2 sm:self-center">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-[#EAF1E8] border border-[#5B825B]/30 text-xs font-black text-[#5B825B]">
               <Heart className="w-3.5 h-3.5 fill-current" />
-              <span>{isHindi ? 'अपनी गति से खेलें' : 'No rush • Take your time'}</span>
+              <span>{tx('No rush • Take your time', 'अपनी गति से खेलें', 'ধীৰে-সুস্থে খেলক • কোনো খৰখেদা নাই')}</span>
             </span>
             <SpeakButton
               textEn="Photo puzzle. Tap any piece to select it, then tap an empty slot on the board to place it. Enjoy putting the picture together peacefully."
               textHi="चित्र पहेली। किसी भी टुकड़े पर टैप करें, फिर खाली जगह पर रखकर तस्वीर पूरी करें। आराम से खेलें।"
+              textAs="ছবিৰ ধাঁধা। যিকোনো টুকুৰা বাছনি কৰিবলৈ টিপক, তাৰ পিছত ব’ৰ্ডৰ খালী স্থানত ৰাখক। শান্তভাৱে ছবিখন সম্পূৰ্ণ কৰক।"
               size="sm"
             />
           </div>
@@ -1091,7 +1093,9 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
               } else {
                 soundController.speakBilingual(
                   'No personal photos uploaded yet. You can play Default Mode with Mango and other treasures!',
-                  'अभी कोई व्यक्तिगत फोटो अपलोड नहीं हुई है। आप मैंगो और अन्य सुंदर तस्वीरों के साथ डिफ़ॉल्ट मोड खेल सकते हैं!'
+                  'अभी कोई व्यक्तिगत फोटो अपलोड नहीं हुई है। आप मैंगो और अन्य सुंदर तस्वीरों के साथ डिफ़ॉल्ट मोड खेल सकते हैं!',
+                  undefined,
+                  'এতিয়ালৈ কোনো ব্যক্তিগত ফটো আপলোড কৰা হোৱা নাই। আপুনি আম আৰু আন ধুনীয়া ছবিৰ সৈতে খেলিব পাৰে!'
                 );
                 setMode('default');
               }
@@ -1104,7 +1108,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
           >
             <Heart className={`w-4 h-4 ${mode === 'personalized' ? 'fill-current' : ''}`} />
             <span>
-              {isHindi ? 'पारिवारिक यादें' : 'Personalized'} {hasCaregiverUploadedMemories ? `(${photoMemories.length})` : `(0 ${isHindi ? 'तस्वीरें' : 'Photos'})`}
+              {tx('Personalized', 'पारिवारिक यादें', 'পৰিয়ালৰ স্মৃতি')} {hasCaregiverUploadedMemories ? `(${photoMemories.length})` : `(0 ${tx('Photos', 'तस्वीरें', 'ছবি')})`}
             </span>
           </button>
 
@@ -1120,7 +1124,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             }`}
           >
             <ImageIcon className="w-4 h-4" />
-            <span>{isHindi ? 'सुंदर चित्र (मैंगो)' : 'Default Mode (Mango)'}</span>
+            <span>{tx('Default Mode (Mango)', 'सुंदर चित्र (मैंगो)', 'ডিফল্ট ছবি (আম)')}</span>
           </button>
         </div>
 
@@ -1129,7 +1133,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
           <div className="flex items-center gap-2">
             <span className="text-xs font-black uppercase tracking-wider text-[#2D3A2F] flex items-center gap-1.5">
               <Sliders className="w-3.5 h-3.5 text-[#5B825B]" />
-              {isHindi ? 'पहेली का आकार:' : 'Puzzle Size:'}
+              {tx('Puzzle Size:', 'पहेली का आकार:', 'ধাঁধাৰ আকাৰ:')}
             </span>
             <div className="inline-flex rounded-xl bg-white p-1 border border-[#E0DCD3] shadow-2xs">
               {([2, 3, 4] as GridDimension[]).map((size) => (
@@ -1150,7 +1154,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
 
           <span className="text-xs font-bold text-[#5B825B] flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
-            <span>{isHindi ? 'शांति से टुकड़े जोड़ें' : 'Piece together with joy'}</span>
+            <span>{tx('Piece together with joy', 'शांति से टुकड़े जोड़ें', 'শান্তভাৱে টুকুৰা জোৰা দিয়ক')}</span>
           </span>
         </div>
 

@@ -19,44 +19,68 @@ interface TrackItem {
 }
 
 export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
-  const { t, isHindi } = useLanguage();
+  const { t, tx } = useLanguage();
   const [activeTrack, setActiveTrack] = useState<TrackType | null>(null);
 
   const tracks: TrackItem[] = [
     {
       id: 'raga_yaman',
-      title: isHindi ? 'संध्या राग यमन (तानपुरा व सितार)' : 'Evening Raga Yaman (Tanpura & Sitar)',
-      subtitle: isHindi ? 'गोधूलि वेला व संध्या कालीन शांति के लिए विशेष राग' : 'Tranquil evening drone for sundowning calming & peace',
-      mood: isHindi ? 'संध्या शांति व तनाव मुक्ति' : 'Evening Peace & Sundowning Relief',
+      title: tx(
+        'Evening Raga Yaman (Tanpura & Sitar)',
+        'संध्या राग यमन (तानपुरा व सितार)',
+        'সন্ধ্যা ৰাগ য়মন (তানপুৰা আৰু চিতাৰ)'
+      ),
+      subtitle: tx(
+        'Tranquil evening drone for sundowning calming & peace',
+        'गोधूलि वेला व संध्या कालीन शांति के लिए विशेष राग',
+        'গধূলিৰ শান্তি আৰু অস্থিৰতা দূৰ কৰিবলৈ বিশেষ ৰাগ'
+      ),
+      mood: tx('Evening Peace & Sundowning Relief', 'संध्या शांति व तनाव मुक्ति', 'সন্ধ্যাৰ শান্তি আৰু মানসিক আৰাম'),
       color: '#FDEED9',
-      tag: isHindi ? 'संध्या काल के लिए' : 'Evening Recommendation',
+      tag: tx('Evening Recommendation', 'संध्या काल के लिए', 'সন্ধ্যাৰ বাবে উপযোগী'),
     },
     {
       id: 'singing_bowl',
-      title: isHindi ? 'तिब्बती सिंगिंग बाउल (432Hz)' : 'Tibetan Singing Bowl (432Hz)',
-      subtitle: isHindi ? 'मानसिक शांति और एकाग्रता के लिए गहरी गूंज' : 'Deep resonance for mental calm and focus',
-      mood: isHindi ? 'गहरा सुकून' : 'Deep Calm',
+      title: tx('Tibetan Singing Bowl (432Hz)', 'तिब्बती सिंगिंग बाउल (432Hz)', 'তিব্বতী ছিংগিং বাউল (৪৩২Hz)'),
+      subtitle: tx(
+        'Deep resonance for mental calm and focus',
+        'मानसिक शांति और एकाग्रता के लिए गहरी गूंज',
+        'মানসিক শান্তি আৰু একাগ্ৰতাৰ বাবে গভীৰ অনুৰণন'
+      ),
+      mood: tx('Deep Calm', 'गहरा सुकून', 'গভীৰ প্ৰশান্তি'),
       color: '#FDF0D5',
     },
     {
       id: 'flute',
-      title: isHindi ? 'बांसुरी ध्यान संगीत' : 'Bamboo Flute Meditation',
-      subtitle: isHindi ? 'पारम्परिक मधुर बांसुरी की तान' : 'Melodious tranquil Indian bamboo notes',
-      mood: isHindi ? 'मन की शांति' : 'Peace of Mind',
+      title: tx('Bamboo Flute Meditation', 'बांसुरी ध्यान संगीत', 'বাঁহীৰ ধ্যান সংগীত'),
+      subtitle: tx(
+        'Melodious tranquil Indian bamboo notes',
+        'पारम्परिक मधुर बांसुरी की तान',
+        'পৰম্পৰাগত সুৰীয়া বাঁহীৰ সুৰ'
+      ),
+      mood: tx('Peace of Mind', 'मन की शांति', 'মনৰ শান্তি'),
       color: '#F0D8D6',
     },
     {
       id: 'harp',
-      title: isHindi ? 'शांत वीणा स्वर' : 'Peaceful Harp Harmonies',
-      subtitle: isHindi ? 'मन को छूने वाले शांत तार' : 'Soft plucked strings with soothing progression',
-      mood: isHindi ? 'सुकूनदायक' : 'Gentle Comfort',
+      title: tx('Peaceful Harp Harmonies', 'शांत वीणा स्वर', 'শান্ত বীণাৰ সুৰ'),
+      subtitle: tx(
+        'Soft plucked strings with soothing progression',
+        'मन को छूने वाले शांत तार',
+        'মন জুৰোৱা শান্ত বীণাৰ তাঁৰৰ ধ্বনি'
+      ),
+      mood: tx('Gentle Comfort', 'सुकूनदायक', 'আৰামদায়ক'),
       color: '#D4E4E6',
     },
     {
       id: 'nature',
-      title: isHindi ? 'सुबह के वन पक्षी' : 'Morning Forest Birds',
-      subtitle: isHindi ? 'मधुर सुबह की चहचहाहट व ठंडी हवा' : 'Gentle morning birdsong and warm breeze',
-      mood: isHindi ? 'ताजगी व ऊर्जा' : 'Uplifting & Fresh',
+      title: tx('Morning Forest Birds', 'सुबह के वन पक्षी', 'ৰাতিপুৱাৰ বনৰীয়া চৰাই'),
+      subtitle: tx(
+        'Gentle morning birdsong and warm breeze',
+        'मधुर सुबह की चहचहाहट व ठंडी हवा',
+        'পুৱাৰ চৰাইৰ মাতেৰে সতেজ বতাহ'
+      ),
+      mood: tx('Uplifting & Fresh', 'ताजगी व ऊर्जा', 'সতেজ আৰু প্ৰাণৱন্ত'),
       color: '#EAF1E8',
     },
   ];
@@ -106,7 +130,7 @@ export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
             </div>
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider block text-[#EAF1E8]">
-                {isHindi ? 'अभी बज रहा है' : 'Now Playing'}
+                {tx('Now Playing', 'अभी बज रहा है', 'এতিয়া বাজি আছে')}
               </span>
               <h4 className="font-extrabold text-base">
                 {tracks.find((t) => t.id === activeTrack)?.title}

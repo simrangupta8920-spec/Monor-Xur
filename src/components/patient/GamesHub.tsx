@@ -12,7 +12,7 @@ interface GamesHubProps {
 }
 
 export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, ddaLogs = [] }) => {
-  const { t, tx, isHindi } = useLanguage();
+  const { t, tx, language } = useLanguage();
 
   const gamesStats = useMemo(() => {
     const isToday = (timestamp: number) => {
@@ -37,20 +37,12 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
 
     // Warm, non-clinical affirmations instead of levels and rounds logged
     const puzzleAffirmation = puzzlePlayedToday
-      ? isHindi
-        ? 'शानदार अभ्यास! आपने आज खेला है।'
-        : 'Wonderful effort! You enjoyed this today.'
-      : isHindi
-      ? 'आराम से अपनी पसंद की तस्वीर जोड़ें।'
-      : 'Take your time and enjoy putting pictures together.';
+      ? tx('Wonderful effort! You enjoyed this today.', 'शानदार अभ्यास! आपने आज खेला है।', 'সুন্দৰ প্ৰচেষ্টা! আপুনি আজি এইটো খেলিলে।')
+      : tx('Take your time and enjoy putting pictures together.', 'आराम से अपनी पसंद की तस्वीर जोड़ें।', 'আৰামেৰে নিজৰ পছন্দৰ ছবিখন জোৰা লগাওক।');
 
     const memoryAffirmation = memoryPlayedToday
-      ? isHindi
-        ? 'बहुत सुंदर! सभी जोड़े मन को शांति देते हैं।'
-        : 'Well done! Finding pairs brings joy.'
-      : isHindi
-      ? 'अपनी गति से खेलें, कोई जल्दी नहीं।'
-      : 'Play at your own gentle pace, no rush.';
+      ? tx('Well done! Finding pairs brings joy.', 'बहुत सुंदर! सभी जोड़े मन को शांति देते हैं।', 'বৰ ভাল হ’ল! জোৰা বিচাৰি পালে আনন্দ লাগে।')
+      : tx('Play at your own gentle pace, no rush.', 'अपनी गति से खेलें, कोई जल्दी नहीं।', 'নিজৰ শান্ত গতিত খেলক, কোনো খৰখেদা নাই।');
 
     return {
       puzzlePlayedToday,
@@ -58,20 +50,23 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
       puzzleAffirmation,
       memoryAffirmation,
     };
-  }, [ddaLogs, isHindi]);
+  }, [ddaLogs, language]);
 
   const games = [
     {
       id: 'puzzle' as PatientSubView,
       title: t('photoPuzzleTitle'),
-      desc: isHindi 
-        ? 'तस्वीर के टुकड़ों को अपनी गति से जोड़ें। सुंदर पारिवारिक और प्रकृति के चित्र।'
-        : 'Put photo pieces together gently. Beautiful family and nature pictures.',
-      badge: isHindi ? 'सुखद चित्र पहेली' : 'Relaxed & Joyful Puzzle',
+      desc: tx(
+        'Put photo pieces together gently. Beautiful family and nature pictures.',
+        'तस्वीर के टुकड़ों को अपनी गति से जोड़ें। सुंदर पारिवारिक और प्रकृति के चित्र।',
+        'ছবিৰ টুকুৰাবোৰ লাহে লাহে জোৰা লগাওক। ধুনীয়া পৰিয়াল আৰু প্ৰকৃতিৰ ছবি।'
+      ),
+      badge: tx('Relaxed & Joyful Puzzle', 'सुखद चित्र पहेली', 'শান্তিময় ছবিৰ ধাঁধা'),
       playedToday: gamesStats.puzzlePlayedToday,
       affirmation: gamesStats.puzzleAffirmation,
       audioPromptEn: 'Photo puzzle. Tap to put photo pieces together gently without any rush.',
       audioPromptHi: 'चित्र पहेली। अपनी पसंद के टुकड़ों को आराम से जोड़ें। कोई जल्दी नहीं है।',
+      audioPromptAs: 'ছবিৰ ধাঁধা। কোনো খৰখেদা নকৰি ছবিৰ টুকুৰাবোৰ শান্তভাৱে জোৰা লগাবলৈ টিপক।',
       accent: '#FDF0D5',
       textColor: '#332610',
       icon: Puzzle,
@@ -81,14 +76,17 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
     {
       id: 'memory_match' as PatientSubView,
       title: t('memoryMatchTitle'),
-      desc: isHindi
-        ? 'मिलते-जुलते सुंदर चित्रों के जोड़े ढूंढें। फूल, सूरज, चिड़िया और बिल्ली।'
-        : 'Find matching pairs of friendly pictures. Flowers, sun, birds, and cats.',
-      badge: isHindi ? 'शांत जोड़े मिलाना' : 'Gentle Pair Matching',
+      desc: tx(
+        'Find matching pairs of friendly pictures. Flowers, sun, birds, and cats.',
+        'मिलते-जुलते सुंदर चित्रों के जोड़े ढूंढें। फूल, सूरज, चिड़िया और बिल्ली।',
+        'মিলা ছবিৰ জোৰা বিচাৰক। ফুল, সূৰ্য, চৰাই আৰু মেকুৰী।'
+      ),
+      badge: tx('Gentle Pair Matching', 'शांत जोड़े मिलाना', 'শান্ত জোৰা মিলোৱা'),
       playedToday: gamesStats.memoryPlayedToday,
       affirmation: gamesStats.memoryAffirmation,
       audioPromptEn: 'Memory matching game. Tap cards to find friendly matching pictures.',
       audioPromptHi: 'जोड़े मिलाने का खेल। कार्ड पलटें और एक जैसे सुंदर चित्र ढूंढें।',
+      audioPromptAs: 'জোৰা মিলোৱা খেল। কাৰ্ড লুটিয়াই একে ধৰণৰ ধুনীয়া ছবিবোৰ বিচাৰি উলিয়াওক।',
       accent: '#EAF1E8',
       textColor: '#1E3B1E',
       icon: Brain,
@@ -105,12 +103,12 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
           <div className="flex items-center gap-2 text-[#5B825B]">
             <Heart className="w-5 h-5 fill-[#5B825B]" />
             <span className="font-extrabold text-sm uppercase tracking-wide">
-              {tx('Gentle Play & Joy', 'आनंदमय और शांत खेल')}
+              {tx('Gentle Play & Joy', 'आनंदमय और शांत खेल', 'আনন্দময় আৰু শান্ত খেল')}
             </span>
           </div>
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#EAF1E8] text-[#5B825B] font-extrabold text-xs">
             <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
-            {tx('Take Your Time', 'आराम से खेलें')}
+            {tx('Take Your Time', 'आराम से खेलें', 'ধীৰে-সুস্থে খেলক')}
           </span>
         </div>
 
@@ -120,13 +118,15 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
             <p className="text-sm text-[#5A6E5D] mt-1 leading-relaxed">
               {tx(
                 'Simple and calming pastimes to delight the senses and spark fond memories.',
-                'मन को सुकून देने वाले सरल खेल। अपनी गति से खेलें और शांति का अनुभव करें।'
+                'मन को सुकून देने वाले सरल खेल। अपनी गति से खेलें और शांति का अनुभव करें।',
+                'মন শান্ত কৰা সৰল খেল। নিজৰ গতিত খেলি স্মৃতি সজীৱ কৰক।'
               )}
             </p>
           </div>
           <SpeakButton
             textEn="Games Zone. Simple and calming pastimes. Take your time, enjoy at your own gentle pace."
             textHi="खेल का कमरा। मन को सुकून देने वाले सरल खेल। अपनी गति से आराम से खेलें।"
+            textAs="খেলৰ কোঠা। মন শান্ত কৰা সৰল খেল। নিজৰ গতিত আৰামেৰে খেলক আৰু আনন্দ উপভোগ কৰক।"
             size="lg"
           />
         </div>
@@ -160,13 +160,14 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame, currentLevel, 
                       </span>
                       {game.playedToday && (
                         <span className="flex items-center gap-1 text-[11px] font-bold text-[#5B825B]">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> {tx('Enjoyed Today', 'आज खेला गया')}
+                          <CheckCircle2 className="w-3.5 h-3.5" /> {tx('Enjoyed Today', 'आज खेला गया', 'আজি খেলা হ’ল')}
                         </span>
                       )}
                     </div>
                     <SpeakButton
                       textEn={game.audioPromptEn}
                       textHi={game.audioPromptHi}
+                      textAs={game.audioPromptAs}
                       size="sm"
                     />
                   </div>

@@ -16,6 +16,7 @@ const DIARY_THEMES = [
     id: 'garden',
     name: 'Serene Garden',
     hindiName: 'शांत बगीचा',
+    assameseName: 'শান্ত বাগিচা',
     url: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&auto=format&fit=crop&q=80',
     color: 'from-emerald-500/30 to-teal-700/30',
   },
@@ -23,6 +24,7 @@ const DIARY_THEMES = [
     id: 'sunset',
     name: 'Warm Sunset',
     hindiName: 'सुंदर सूर्यास्त',
+    assameseName: 'সুন্দৰ সূৰ্যাস্ত',
     url: 'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?w=800&auto=format&fit=crop&q=80',
     color: 'from-amber-500/30 to-rose-700/30',
   },
@@ -30,6 +32,7 @@ const DIARY_THEMES = [
     id: 'hearth',
     name: 'Cozy Memories',
     hindiName: 'सुखद यादें',
+    assameseName: 'মৰমৰ স্মৃতি',
     url: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=800&auto=format&fit=crop&q=80',
     color: 'from-orange-500/30 to-amber-800/30',
   },
@@ -37,6 +40,7 @@ const DIARY_THEMES = [
     id: 'sky',
     name: 'Calm River',
     hindiName: 'शांत नदी',
+    assameseName: 'শান্ত নৈ',
     url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80',
     color: 'from-sky-500/30 to-blue-700/30',
   },
@@ -47,7 +51,7 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
   onSave,
   onClose,
 }) => {
-  const { t, isHindi } = useLanguage();
+  const { t, tx, language, isHindi, isAssamese } = useLanguage();
 
   // Speech Recognition state
   const [isListening, setIsListening] = useState(false);
@@ -88,7 +92,7 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = isHindi ? 'hi-IN' : 'en-US';
+      recognition.lang = language === 'as' ? 'as-IN' : language === 'hi' ? 'hi-IN' : 'en-US';
 
       recognition.onresult = (event: any) => {
         let currentInterim = '';
@@ -157,7 +161,7 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
         URL.revokeObjectURL(audioUrl);
       }
     };
-  }, [isHindi]);
+  }, [language]);
 
   // Timer handling
   useEffect(() => {
@@ -343,7 +347,11 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
                 {t('recordMemory')}
               </h3>
               <p className="text-xs text-[#5A6E5D]">
-                {isHindi ? 'खुलकर बोलें—आपकी बातें एक सुरक्षित याद बन जाएंगी' : 'Speak freely—your words become a saved memory'}
+                {tx(
+                  'Speak freely—your words become a saved memory',
+                  'खुलकर बोलें—आपकी बातें एक सुरक्षित याद बन जाएंगी',
+                  'মন খুলি কওক—আপোনাৰ কথাই হ’ব এটি মধুৰ স্মৃতি'
+                )}
               </p>
             </div>
           </div>
@@ -381,14 +389,14 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
                   <>
                     <Square className="w-8 h-8 fill-current" />
                     <span className="text-[11px] font-black tracking-wide uppercase">
-                      {isHindi ? 'रोकें' : 'Stop'}
+                      {tx('Stop', 'रोकें', 'ৰখাওক')}
                     </span>
                   </>
                 ) : (
                   <>
                     <Mic className="w-9 h-9" />
                     <span className="text-[11px] font-black tracking-wide uppercase">
-                      {isHindi ? 'बोलें' : 'Speak'}
+                      {tx('Speak', 'बोलें', 'কওক')}
                     </span>
                   </>
                 )}
@@ -401,17 +409,25 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
                 <span className={`w-2 h-2 rounded-full ${isListening ? 'bg-red-500 animate-ping' : 'bg-[#5B825B]'}`} />
                 <span>
                   {isListening 
-                    ? (isHindi ? 'आपकी आवाज़ सुन रहे हैं...' : 'Listening to your voice...') 
+                    ? tx('Listening to your voice...', 'आपकी आवाज़ सुन रहे हैं...', 'আপোনাৰ কথা শুনি থকা হৈছে...') 
                     : transcript 
-                    ? (isHindi ? 'आवाज़ रिकॉर्ड हो गई' : 'Voice recorded') 
-                    : (isHindi ? 'रिकॉर्ड करने के लिए तैयार' : 'Ready to record')}
+                    ? tx('Voice recorded', 'आवाज़ रिकॉर्ड हो गई', 'কণ্ঠ বাণীবদ্ধ হ’ল') 
+                    : tx('Ready to record', 'रिकॉर्ड करने के लिए तैयार', 'কণ্ঠ ৰেকৰ্ড কৰিবলৈ সাজু')}
                 </span>
                 <span className="text-[#5A6E5D] font-mono">({formatTime(recordingTime)})</span>
               </div>
               <p className="text-xs text-[#5A6E5D]">
                 {isListening 
-                  ? (isHindi ? 'अपने दिन, किसी प्रिय याद या मन की बात बताएं।' : 'Talk about your day, a favorite memory, or thoughts.') 
-                  : (isHindi ? 'बोलना शुरू करने के लिए माइक दबाएं।' : 'Tap the microphone to begin talking.')}
+                  ? tx(
+                      'Talk about your day, a favorite memory, or thoughts.',
+                      'अपने दिन, किसी प्रिय याद या मन की बात बताएं।',
+                      'আপোনাৰ দিনটো, প্ৰিয় স্মৃতি বা মনৰ কথা কওক।'
+                    ) 
+                  : tx(
+                      'Tap the microphone to begin talking.',
+                      'बोलना शुरू करने के लिए माइक दबाएं।',
+                      'কথা ক’বলৈ মাইক্ৰ’ফোনটো স্পৰ্শ কৰক।'
+                    )}
               </p>
             </div>
 
@@ -424,17 +440,17 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
                   className="px-4 py-2 rounded-xl bg-[#EAF1E8] text-[#5B825B] font-extrabold text-xs flex items-center gap-1.5 hover:bg-[#d9e9d6] transition-colors active:scale-95 shadow-2xs"
                 >
                   {isPlayingAudio ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-                  <span>{isPlayingAudio ? (isHindi ? 'रोकें' : 'Pause Voice') : (isHindi ? 'आवाज़ सुनें' : 'Listen Back')}</span>
+                  <span>{isPlayingAudio ? tx('Pause Voice', 'रोकें', 'ৰখাওক') : tx('Listen Back', 'आवाज़ सुनें', 'পুনৰ শুনক')}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleResetRecording}
                   className="px-3 py-2 rounded-xl bg-[#F5F2EB] text-[#5A6E5D] font-bold text-xs flex items-center gap-1 hover:bg-[#e8e4dc] transition-colors"
-                  title={isHindi ? 'मिटाएं' : 'Re-record'}
+                  title={tx('Re-record', 'मिटाएं', 'মচি পুনৰ কওক')}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>{isHindi ? 'मिटाएं व फिर बोलें' : 'Clear & Retry'}</span>
+                  <span>{tx('Clear & Retry', 'मिटाएं व फिर बोलें', 'মচক আৰু পুনৰ কওক')}</span>
                 </button>
               </div>
             )}
@@ -445,10 +461,10 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase text-[#5B825B] tracking-wide flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" />
-                {isHindi ? 'लिखी जा रही आवाज़' : 'Live Spoken Transcript'}
+                {tx('Live Spoken Transcript', 'लिखी जा रही आवाज़', 'লিপিভুক্ত হোৱা কণ্ঠ')}
               </span>
               <span className="text-[11px] font-semibold text-[#8C9E8E]">
-                {transcript ? `${transcript.split(' ').filter(Boolean).length} ${isHindi ? 'शब्द' : 'words'}` : (isHindi ? 'स्पष्ट बोलें' : 'Speak clearly')}
+                {transcript ? `${transcript.split(' ').filter(Boolean).length} ${tx('words', 'शब्द', 'শব্দ')}` : tx('Speak clearly', 'स्पष्ट बोलें', 'স্পষ্টকৈ কওক')}
               </span>
             </div>
 
@@ -464,7 +480,11 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
                 <span className="text-[#8C9E8E] italic">{interimText}...</span>
               ) : (
                 <span className="text-xs text-[#8C9E8E] italic block py-4 text-center">
-                  {isHindi ? '"मुझे याद आ रहा था जब हम सब बगीचे में गए थे और पक्षी गा रहे थे..."' : '"I was remembering when we visited the river park and the birds were singing..."'}
+                  {tx(
+                    '"I was remembering when we visited the river park and the birds were singing..."',
+                    '"मुझे याद आ रहा था जब हम सब बगीचे में गए थे और पक्षी गा रहे थे..."',
+                    '"মই মনত পেলাইছিলোঁ যেতিয়া আমি সকলোৱে নদীৰ পাৰলৈ ফুৰিবলৈ গৈছিলোঁ আৰু চৰাইবোৰে গাইছিল..."'
+                  )}
                 </span>
               )}
             </div>
@@ -473,7 +493,11 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
             <textarea
               value={transcript}
               onChange={(e) => setTranscript(e.target.value)}
-              placeholder={isHindi ? 'या यहाँ लिखकर बदलें...' : 'Or type/edit your spoken reflection here...'}
+              placeholder={tx(
+                'Or type/edit your spoken reflection here...',
+                'या यहाँ लिखकर बदलें...',
+                'বা ইয়াত আপোনাৰ কথা লিখি সলাওক...'
+              )}
               rows={2}
               className="w-full text-xs p-2.5 rounded-xl border border-[#E0DCD3] bg-white text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#5B825B]/40 resize-none"
             />
@@ -482,32 +506,32 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
           {/* Memory Details Setup */}
           <div className="bg-white rounded-2xl p-4 border border-[#E0DCD3] shadow-xs space-y-3">
             <span className="text-xs font-black uppercase text-[#5A6E5D] tracking-wide block">
-              {isHindi ? 'याद का विवरण' : 'Memory Card Details'}
+              {tx('Memory Card Details', 'याद का विवरण', 'স্মৃতি কাৰ্ডৰ বিৱৰণ')}
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-bold text-[#5A6E5D] block mb-1">
-                  {isHindi ? 'शीर्षक' : 'Title of this Entry'}
+                  {tx('Title of this Entry', 'शीर्षक', 'শিৰোনাম')}
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder={isHindi ? 'उदा. दोपहर की सैर' : 'e.g. Afternoon Garden Walk'}
+                  placeholder={tx('e.g. Afternoon Garden Walk', 'उदा. दोपहर की सैर', 'যেনে- দুপৰীয়াৰ বাগিচা ভ্ৰমণ')}
                   className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-[#E0DCD3] bg-[#FAF8F5] text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#5B825B]/40"
                 />
               </div>
 
               <div>
                 <label className="text-[11px] font-bold text-[#5A6E5D] block mb-1">
-                  {isHindi ? 'व्यक्ति / वक्ता' : 'Person / Author'}
+                  {tx('Person / Author', 'व्यक्ति / वक्ता', 'ব্যক্তি / বক্তা')}
                 </label>
                 <input
                   type="text"
                   value={person}
                   onChange={(e) => setPerson(e.target.value)}
-                  placeholder={isHindi ? 'उदा. दादी, राहुल' : 'e.g. Grandma, Rahul'}
+                  placeholder={tx('e.g. Grandma, Rahul', 'उदा. दादी, राहुल', 'যেনে- আইতা, ৰাহুল')}
                   className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-[#E0DCD3] bg-[#FAF8F5] text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#5B825B]/40"
                 />
               </div>
@@ -516,12 +540,18 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
             {/* Category selection */}
             <div>
               <label className="text-[11px] font-bold text-[#5A6E5D] block mb-1">
-                {isHindi ? 'श्रेणी' : 'Category'}
+                {tx('Category', 'श्रेणी', 'শ্ৰেণী')}
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {(['Voice Diary', 'Special Moments', 'Family', 'Places', 'People'] as MemoryCategory[]).map((cat) => {
                   let label: string = cat;
-                  if (isHindi) {
+                  if (language === 'as') {
+                    if (cat === 'Voice Diary') label = 'কণ্ঠ ডায়েৰী';
+                    if (cat === 'Special Moments') label = 'বিশেষ মুহূৰ্ত';
+                    if (cat === 'Family') label = 'পৰিয়াল';
+                    if (cat === 'Places') label = 'ঠাইসমূহ';
+                    if (cat === 'People') label = 'আপোন মানুহ';
+                  } else if (isHindi) {
                     if (cat === 'Voice Diary') label = 'आवाज़ डायरी';
                     if (cat === 'Special Moments') label = 'ख़ास पल';
                     if (cat === 'Family') label = 'परिवार';
@@ -552,7 +582,7 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
             {/* Backdrop Theme selector */}
             <div>
               <label className="text-[11px] font-bold text-[#5A6E5D] block mb-1">
-                {isHindi ? 'थीम तस्वीर' : 'Card Artwork Theme'}
+                {tx('Card Artwork Theme', 'थीम तस्वीर', 'কাৰ্ড চিত্ৰশৈলী')}
               </label>
               <div className="grid grid-cols-4 gap-2">
                 {DIARY_THEMES.map((theme) => {
@@ -572,7 +602,7 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
                       <img src={theme.url} alt={theme.name} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/30 flex items-end p-1">
                         <span className="text-[9px] font-black text-white leading-tight truncate">
-                          {isHindi ? theme.hindiName : theme.name}
+                          {language === 'as' ? (theme as any).assameseName : isHindi ? theme.hindiName : theme.name}
                         </span>
                       </div>
                       {isSelected && (
@@ -589,7 +619,11 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
 
           {!speechSupported && (
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
-              {isHindi ? 'सूचना: इस ब्राउज़र में माइक व टाइपिंग का उपयोग करके आवाज़ सहेजी जा रही है।' : 'Note: Speech recognition is using manual input & microphone audio capture in this browser environment.'}
+              {tx(
+                'Note: Speech recognition is using manual input & microphone audio capture in this browser environment.',
+                'सूचना: इस ब्राउज़र में माइक व टाइपिंग का उपयोग करके आवाज़ सहेजी जा रही है।',
+                'টোকা: এই ব্ৰাউজাৰ পৰিৱেশত মাইক্ৰ’ফোন অডিঅ’ আৰু হাতেৰে টাইপ কৰি কথা সাঁচি থোৱা হৈছে।'
+              )}
             </div>
           )}
         </div>
@@ -618,7 +652,7 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
             }`}
           >
             <Check className="w-4 h-4" />
-            <span>{isHindi ? 'यादों में सहेजें' : 'Save to Memories'}</span>
+            <span>{tx('Save to Memories', 'यादों में सहेजें', 'স্মৃতিত সাঁচক')}</span>
           </button>
         </div>
       </div>

@@ -27,7 +27,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
   emergencyContactName,
   caregiver,
 }) => {
-  const { t, tx, isHindi, formatLocalizedDate } = useLanguage();
+  const { t, tx, language, isHindi, formatLocalizedDate } = useLanguage();
   const todayStr = formatLocalizedDate(new Date());
   const nextReminder = reminders.find((r) => !r.completed);
 
@@ -52,12 +52,16 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
     morning: {
       periodEn: 'Morning Suggestion',
       periodHi: 'सुबह का सुझाव',
+      periodAs: 'ৰাতিপুৱাৰ পৰামৰ্শ',
       titleEn: 'Morning Bhajan & Gentle Tunes',
       titleHi: 'सुबह के भजन और शांत संगीत',
+      titleAs: 'ৰাতিপুৱাৰ ভজন আৰু শান্ত সুৰ',
       subEn: 'Peaceful melodies to welcome a tranquil, uplifting day.',
       subHi: 'शांत संगीत और भजनों के साथ दिन की सुखद और शांत शुरुआत करें।',
+      subAs: 'প্ৰশান্ত সুৰ আৰু ভক্তিগীতেৰে দিনটো আৰম্ভ কৰক।',
       actionEn: 'Listen & Relax',
       actionHi: 'सुनें और आनंद लें',
+      actionAs: 'শুনক আৰু আনন্দ লওক',
       icon: Sun,
       iconBg: '#E8B25C',
       bgGradient: 'from-[#FDF0D5] via-[#FFF9ED] to-[#FAF3E0]',
@@ -67,12 +71,16 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
     afternoon: {
       periodEn: 'Afternoon Suggestion',
       periodHi: 'दोपहर का सुझाव',
+      periodAs: 'দুপৰীয়াৰ পৰামৰ্শ',
       titleEn: 'Look at Family Memories',
       titleHi: 'पारिवारिक यादें और तस्वीरें देखें',
+      titleAs: 'পৰিয়ালৰ মৰমৰ স্মৃতি চাওক',
       subEn: 'Sweet photographs and warm voices of family and loved ones.',
       subHi: 'परिवार के अपनों की प्यारी तस्वीरें और मीठी आवाज़ों का आनंद लें।',
+      subAs: 'আপোনজনৰ মৰমৰ ছবি আৰু মিঠা মাতৰ আনন্দ লওক।',
       actionEn: 'Open Family Album',
       actionHi: 'यादों की झलक देखें',
+      actionAs: 'পৰিয়ালৰ এলবাম খোলক',
       icon: Heart,
       iconBg: '#C46A66',
       bgGradient: 'from-[#FCECEB] via-[#FFF5F5] to-[#F8E7E5]',
@@ -82,12 +90,16 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
     evening: {
       periodEn: 'Evening Suggestion',
       periodHi: 'शाम का सुझाव',
+      periodAs: 'সন্ধিয়াৰ পৰামৰ্শ',
       titleEn: 'Gentle Breathing & Quiet Rest',
       titleHi: 'शाम का शांत प्राणायाम और आराम',
+      titleAs: 'সন্ধিয়াৰ শান্ত উশাহ আৰু বিশ্ৰাম',
       subEn: 'Slow, peaceful guided breathing to unwind peacefully before sleep.',
       subHi: 'आराम से गहरी सांस लें और मन को शांत विश्राम दें।',
+      subAs: 'মন জুৰোৱাকৈ গভীৰ উশাহ লওক আৰু শান্তভাৱে বিশ্ৰাম কৰক।',
       actionEn: 'Start Gentle Breathing',
       actionHi: 'आरामदायक सांस लें',
+      actionAs: 'আৰামদায়ক উশাহ লওক',
       icon: Wind,
       iconBg: '#5B825B',
       bgGradient: 'from-[#EAF1E8] via-[#F4FAF2] to-[#E3EFE0]',
@@ -97,7 +109,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
   }[timeOfDay];
 
   const caregiverName = caregiver?.name || emergencyContactName || 'Priya Sharma';
-  const caregiverRel = caregiver?.relationship || (isHindi ? 'बेटी' : 'Daughter');
+  const caregiverRel = caregiver?.relationship || (language === 'as' ? 'জীয়াৰী' : isHindi ? 'बेटी' : 'Daughter');
   const caregiverPhoto = caregiver?.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80';
 
   const toggleSingleFocus = () => {
@@ -133,7 +145,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
               </span>
               <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#5B825B] bg-[#EAF1E8] px-2.5 py-0.5 rounded-full">
                 <Sparkles className="w-3 h-3 text-[#E8B25C]" />
-                {tx('Peaceful Day', 'सुखद दिन')}
+                {tx('Peaceful Day', 'सुखद दिन', 'শান্তিময় দিন')}
               </span>
             </div>
             <h2 className="text-2xl font-black text-[#2D3A2F] leading-tight mt-0.5">
@@ -147,6 +159,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
         <SpeakButton
           textEn={`Hello ${patientName || 'Friend'}. Welcome to Monor Xur. Take your time and enjoy your day.`}
           textHi={`नमस्ते ${patientName || 'जी'}। आपका स्वागत है। आराम से खेलें और शांति का आनंद लें।`}
+          textAs={`নমস্কাৰ ${patientName || 'দেউতা/মা'}। মনৰ সুৰলৈ আপোনাক স্বাগতম। আৰামেৰে খেলক আৰু আনন্দ উপভোগ কৰক।`}
           size="lg"
         />
       </div>
@@ -158,11 +171,12 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
           <div className={`bg-gradient-to-br ${singleFocusConfig.bgGradient} rounded-3xl p-5 sm:p-6 border-2 ${singleFocusConfig.borderColor} shadow-sm space-y-4`}>
             <div className="flex items-center justify-between">
               <span className="px-3 py-1 rounded-full bg-white/90 text-xs font-black uppercase tracking-wider text-[#2D3A2F] shadow-2xs">
-                {tx(singleFocusConfig.periodEn, singleFocusConfig.periodHi)}
+                {tx(singleFocusConfig.periodEn, singleFocusConfig.periodHi, singleFocusConfig.periodAs)}
               </span>
               <SpeakButton
                 textEn={`${singleFocusConfig.titleEn}. ${singleFocusConfig.subEn}`}
                 textHi={`${singleFocusConfig.titleHi}। ${singleFocusConfig.subHi}`}
+                textAs={`${singleFocusConfig.titleAs}। ${singleFocusConfig.subAs}`}
                 size="md"
               />
             </div>
@@ -176,10 +190,10 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
               </div>
               <div>
                 <h3 className="text-2xl sm:text-3xl font-black text-[#2D3A2F] leading-tight">
-                  {tx(singleFocusConfig.titleEn, singleFocusConfig.titleHi)}
+                  {tx(singleFocusConfig.titleEn, singleFocusConfig.titleHi, singleFocusConfig.titleAs)}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#5A6E5D] font-medium mt-1 leading-relaxed">
-                  {tx(singleFocusConfig.subEn, singleFocusConfig.subHi)}
+                  {tx(singleFocusConfig.subEn, singleFocusConfig.subHi, singleFocusConfig.subAs)}
                 </p>
               </div>
             </div>
@@ -193,7 +207,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
               className="w-full py-4 px-6 rounded-2xl bg-[#5B825B] hover:bg-[#4a6d4a] active:scale-[0.98] text-white font-black text-lg sm:text-xl shadow-md transition-all flex items-center justify-center gap-3 cursor-pointer"
             >
               <Play className="w-6 h-6 fill-current" />
-              <span>{tx(singleFocusConfig.actionEn, singleFocusConfig.actionHi)}</span>
+              <span>{tx(singleFocusConfig.actionEn, singleFocusConfig.actionHi, singleFocusConfig.actionAs)}</span>
             </button>
           </div>
 
@@ -207,7 +221,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
               className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-[#E0DCD3] text-xs font-bold text-[#5A6E5D] hover:text-[#2D3A2F] shadow-xs active:scale-95"
             >
               <Eye className="w-4 h-4 text-[#5B825B]" />
-              <span>{tx('Show All Activities', 'अन्य सभी गतिविधियाँ देखें')}</span>
+              <span>{tx('Show All Activities', 'अन्य सभी गतिविधियाँ देखें', 'অন্যান্য সকলো কাৰ্যকলাপ চাওক')}</span>
               <ChevronDown className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -320,7 +334,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-bold text-[#5A6E5D] hover:text-[#2D3A2F]"
               >
                 <ChevronUp className="w-3.5 h-3.5 text-[#5B825B]" />
-                <span>{tx('Back to Single-Focus View', 'सरल एकल दृश्य पर वापस जाएं')}</span>
+                <span>{tx('Back to Single-Focus View', 'सरल एकल दृश्य पर वापस जाएं', 'সৰল একক দৃশ্যলৈ উভতি যাওক')}</span>
               </button>
             </div>
           )}
@@ -346,6 +360,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             <SpeakButton
               textEn={`Upcoming reminder for ${nextReminder.time_label}: ${nextReminder.title}. ${nextReminder.note || ''}`}
               textHi={`${nextReminder.time_label} का अगला कार्य: ${nextReminder.title}। ${nextReminder.note || ''}`}
+              textAs={`${nextReminder.time_label}ৰ পৰৱৰ্তী কাম: ${nextReminder.title}। ${nextReminder.note || ''}`}
               size="sm"
             />
             <button
@@ -363,7 +378,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
         <button
           onClick={onCallFamily}
           className="w-full p-4 rounded-2xl bg-white border border-[#E0DCD3] shadow-xs flex items-center justify-between hover:bg-[#FDFBF7] active:scale-[0.99] transition-all cursor-pointer group"
-          aria-label={tx(`Call ${caregiverName}`, `${caregiverName} को फोन करें`)}
+          aria-label={tx(`Call ${caregiverName}`, `${caregiverName} को फोन करें`, `${caregiverName} লৈ ফোন কৰক`)}
         >
           <div className="flex items-center gap-3.5">
             {/* Familiar Smiling Face Portrait */}
@@ -381,13 +396,13 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
 
             <div className="text-left">
               <span className="text-[11px] font-black uppercase tracking-wider text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full inline-block mb-0.5">
-                {tx(`Family Caregiver (${caregiverRel})`, `परिवार की देखभालकर्ता (${caregiverRel})`)}
+                {tx(`Family Caregiver (${caregiverRel})`, `परिवार की देखभालकर्ता (${caregiverRel})`, `পৰিয়ালৰ যত্নকৰ্তা (${caregiverRel})`)}
               </span>
               <h4 className="font-black text-base sm:text-lg text-[#2D3A2F] leading-tight">
-                {tx(`Call ${caregiverName}`, `${caregiverName} को फोन करें`)}
+                {tx(`Call ${caregiverName}`, `${caregiverName} को फोन करें`, `${caregiverName} লৈ ফোন কৰক`)}
               </h4>
               <p className="text-xs text-[#5A6E5D] font-semibold mt-0.5">
-                {tx('Tap here to speak together immediately', 'एक स्पर्श से तुरंत बात करें')}
+                {tx('Tap here to speak together immediately', 'एक स्पर्श से तुरंत बात करें', 'এখন টিপিলে তৎক্ষণাত কথা পাতক')}
               </p>
             </div>
           </div>
@@ -396,6 +411,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             <SpeakButton
               textEn={`Tap here to call your caregiver, ${caregiverName} (${caregiverRel}).`}
               textHi={`देखभालकर्ता ${caregiverName} से बात करने के लिए यहाँ टैप करें।`}
+              textAs={`আপোনাৰ তত্ত্বাৱধায়ক ${caregiverName} (${caregiverRel}) লৈ কল কৰিবলৈ ইয়াত টিপক।`}
               size="md"
             />
             <span className="px-4 py-2.5 rounded-xl bg-[#5B825B] text-white text-xs font-black shadow-xs group-hover:bg-[#4a6b4a] transition-colors flex items-center gap-1.5">
@@ -413,11 +429,11 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
           className="hover:text-[#2D3A2F] underline decoration-dotted text-[11px] font-semibold transition-colors"
         >
           {isSingleFocus
-            ? tx('Mode: Single-Focus (Ultra-Simple)', 'मोड: एकल-ध्यान (अति-सरल)')
-            : tx('Switch to Ultra-Simple Home Mode', 'अति-सरल एकल-ध्यान मोड सक्रिय करें')}
+            ? tx('Mode: Single-Focus (Ultra-Simple)', 'मोड: एकल-ध्यान (अति-सरल)', 'পদ্ধতি: একক-মনোযোগ (অতি সৰল)')
+            : tx('Switch to Ultra-Simple Home Mode', 'अति-सरल एकल-ध्यान मोड सक्रिय करें', 'অতি সৰল একক দৃশ্য সক্ৰিয় কৰক')}
         </button>
         <span className="text-[11px] text-[#A0988A]">
-          Monor Xur • {tx('Elderly-Friendly Safe Play', 'वरिष्ठों हेतु सुरक्षित मंच')}
+          Monor Xur • {tx('Elderly-Friendly Safe Play', 'वरिष्ठों हेतु सुरक्षित मंच', 'জেষ্ঠসকলৰ বাবে সুৰক্ষিত মঞ্চ')}
         </span>
       </div>
     </div>

@@ -20,19 +20,18 @@ export const MemoriesGallery: React.FC<MemoriesGalleryProps> = ({
   onOpenMemory,
   onAddMemory
 }) => {
-  const { t, isHindi } = useLanguage();
+  const { t, tx } = useLanguage();
   const [activeCategory, setActiveCategory] = useState<MemoryCategory>('All');
   const [showRecorder, setShowRecorder] = useState(false);
 
   const getCategoryLabel = (cat: MemoryCategory) => {
-    if (!isHindi) return cat;
     switch (cat) {
-      case 'All': return 'सभी';
-      case 'Voice Diary': return 'आवाज़ डायरी';
-      case 'Family': return 'परिवार';
-      case 'People': return 'अपने लोग';
-      case 'Places': return 'स्थान';
-      case 'Special Moments': return 'ख़ास पल';
+      case 'All': return tx('All', 'सभी', 'সকলো');
+      case 'Voice Diary': return tx('Voice Diary', 'आवाज़ डायरी', 'কণ্ঠ ডায়েৰী');
+      case 'Family': return tx('Family', 'परिवार', 'পৰিয়াল');
+      case 'People': return tx('People', 'अपने लोग', 'আপোন মানুহ');
+      case 'Places': return tx('Places', 'स्थान', 'ঠাইসমূহ');
+      case 'Special Moments': return tx('Special Moments', 'ख़ास पल', 'বিশেষ মুহূৰ্ত');
       default: return cat;
     }
   };
@@ -84,24 +83,24 @@ export const MemoriesGallery: React.FC<MemoriesGalleryProps> = ({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-black uppercase text-[#5B825B] tracking-wider">
-                {isHindi ? 'बोलकर आवाज़ डायरी' : 'Spoken Audio Diary'}
+                {tx('Spoken Audio Diary', 'बोलकर आवाज़ डायरी', 'কণ্ঠৰে কোৱা ডায়েৰী')}
               </span>
               <span className="px-1.5 py-0.5 rounded-md bg-[#5B825B]/15 text-[10px] font-bold text-[#5B825B]">
-                {isHindi ? 'आवाज़ से लिखावट' : 'Speech-to-Text'}
+                {tx('Speech-to-Text', 'आवाज़ से लिखावट', 'কথাৰ পৰা লেখালৈ')}
               </span>
             </div>
             <h3 className="font-extrabold text-base text-[#2D3A2F] leading-tight mt-0.5">
-              {isHindi ? 'अपने विचार या आज की कोई बात रिकॉर्ड करें' : "Record your thoughts or today's stories"}
+              {tx("Record your thoughts or today's stories", 'अपने विचार या आज की कोई बात रिकॉर्ड करें', 'আপোনাৰ মনৰ কথা বা আজিৰ অভিজ্ঞতা ৰেকৰ্ড কৰক')}
             </h3>
             <p className="text-xs text-[#5A6E5D]">
-              {isHindi ? 'बोलने के लिए यहाँ दबाएँ। आपकी आवाज़ याद के रूप में सहेज ली जाएगी।' : 'Tap here to talk. Your voice will be preserved as a memory entry.'}
+              {tx('Tap here to talk. Your voice will be preserved as a memory entry.', 'बोलने के लिए यहाँ दबाएँ। आपकी आवाज़ याद के रूप में सहेज ली जाएगी।', 'কথা ক’বলৈ ইয়াত টিপক। আপোনাৰ কণ্ঠ স্মৃতি হিচাপে সংৰক্ষণ কৰা হ’ব।')}
             </p>
           </div>
         </div>
 
         <div className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white text-xs font-bold text-[#5B825B] shadow-2xs">
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          <span>{isHindi ? 'अभी रिकॉर्ड करें' : 'Record Now'}</span>
+          <span>{tx('Record Now', 'अभी रिकॉर्ड करें', 'এতিয়াই ৰেকৰ্ড কৰক')}</span>
         </div>
       </div>
 
@@ -136,13 +135,13 @@ export const MemoriesGallery: React.FC<MemoriesGalleryProps> = ({
           </div>
           <h3 className="text-lg font-black text-[#2D3A2F]">
             {activeCategory === 'Voice Diary' 
-              ? (isHindi ? 'अभी कोई आवाज़ डायरी रिकॉर्ड नहीं हुई है' : 'No voice diaries recorded yet')
-              : (isHindi ? 'अभी कोई यादें सहेजी नहीं गई हैं' : 'No memories saved yet')}
+              ? tx('No voice diaries recorded yet', 'अभी कोई आवाज़ डायरी रिकॉर्ड नहीं हुई है', 'এতিয়ালৈ কোনো কণ্ঠ ডায়েৰী ৰেকৰ্ড হোৱা নাই')
+              : tx('No memories saved yet', 'अभी कोई यादें सहेजी नहीं गई हैं', 'এতিয়ালৈ কোনো স্মৃতি সংৰক্ষণ কৰা হোৱা নাই')}
           </h3>
           <p className="text-xs text-[#5A6E5D] max-w-xs mx-auto leading-relaxed">
             {activeCategory === 'Voice Diary' 
-              ? (isHindi ? 'अपनी पहली बोलती डायरी शुरू करने के लिए ऊपर दिए गए रिकॉर्ड बटन को दबाएँ!' : 'Tap the Record button above to start your first spoken audio journal!') 
-              : (isHindi ? 'परिवार के सदस्य यहाँ सहेजने के लिए तस्वीरें, वीडियो और प्यार भरे संदेश जोड़ सकते हैं।' : 'Family members can upload photos, home videos, and loving voice notes to preserve here.')}
+              ? tx('Tap the Record button above to start your first spoken audio journal!', 'अपनी पहली बोलती डायरी शुरू करने के लिए ऊपर दिए गए रिकॉर्ड बटन को दबाएँ!', 'আপোনাৰ প্ৰথমটো কণ্ঠ ডায়েৰী আৰম্ভ কৰিবলৈ ওপৰৰ ৰেকৰ্ড বুটামটো টিপক!') 
+              : tx('Family members can upload photos, home videos, and loving voice notes to preserve here.', 'परिवार के सदस्य यहाँ सहेजने के लिए तस्वीरें, वीडियो और प्यार भरे संदेश जोड़ सकते हैं।', 'পৰিয়ালৰ সদস্যসকলে ইয়াত স্মৃতি সংৰক্ষণৰ বাবে ফটো, ভিডিঅ’ আৰু মৰমৰ কণ্ঠ বাৰ্তা যোগ কৰিব পাৰে।')}
           </p>
           {activeCategory === 'Voice Diary' && (
             <button
@@ -153,7 +152,7 @@ export const MemoriesGallery: React.FC<MemoriesGalleryProps> = ({
               className="mt-2 px-4 py-2 rounded-xl bg-[#5B825B] text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-xs"
             >
               <Mic className="w-4 h-4" />
-              <span>{isHindi ? 'पहली ऑडियो डायरी रिकॉर्ड करें' : 'Record First Audio Diary'}</span>
+              <span>{tx('Record First Audio Diary', 'पहली ऑडियो डायरी रिकॉर्ड करें', 'প্ৰথমটো কণ্ঠ ডায়েৰী ৰেকৰ্ড কৰক')}</span>
             </button>
           )}
         </div>
@@ -187,17 +186,17 @@ export const MemoriesGallery: React.FC<MemoriesGalleryProps> = ({
                     </span>
                     {isVideo && (
                       <span className="px-2 py-0.5 rounded-full bg-[#E8B25C] text-white text-[10px] font-black flex items-center gap-1 shadow-xs">
-                        <Video className="w-2.5 h-2.5" /> {isHindi ? 'वीडियो' : 'Video'}
+                        <Video className="w-2.5 h-2.5" /> {tx('Video', 'वीडियो', 'ভিডিঅ’')}
                       </span>
                     )}
                     {isVoiceDiary && (
                       <span className="px-2 py-0.5 rounded-full bg-[#5B825B] text-white text-[10px] font-black flex items-center gap-1 shadow-xs">
-                        <Mic className="w-2.5 h-2.5" /> {isHindi ? 'आवाज़' : 'Voice'}
+                        <Mic className="w-2.5 h-2.5" /> {tx('Voice', 'आवाज़', 'কণ্ঠস্বৰ')}
                       </span>
                     )}
                     {m.voiceSnippet && (
                       <span className="px-2 py-0.5 rounded-full bg-[#E8B25C] text-[#3D2504] text-[10px] font-black flex items-center gap-1 shadow-xs">
-                        <Mic className="w-2.5 h-2.5" /> {m.voiceRecordedBy || (isHindi ? 'पारिवारिक आवाज़' : 'Family Voice')}
+                        <Mic className="w-2.5 h-2.5" /> {m.voiceRecordedBy || tx('Family Voice', 'पारिवारिक आवाज़', 'পৰিয়ালৰ কণ্ঠ')}
                       </span>
                     )}
                   </div>
@@ -238,19 +237,19 @@ export const MemoriesGallery: React.FC<MemoriesGalleryProps> = ({
                     <span className="flex items-center gap-1">
                       {isVideo ? (
                         <>
-                          <Video className="w-3.5 h-3.5" /> {isHindi ? 'वीडियो देखें' : 'Watch Video'}
+                          <Video className="w-3.5 h-3.5" /> {tx('Watch Video', 'वीडियो देखें', 'ভিডিঅ’ চাওক')}
                         </>
                       ) : isVoiceDiary ? (
                         <>
-                          <Mic className="w-3.5 h-3.5" /> {isHindi ? 'सुनें व पढ़ें' : 'Listen & Read'}
+                          <Mic className="w-3.5 h-3.5" /> {tx('Listen & Read', 'सुनें व पढ़ें', 'শুনক আৰু পঢ়ক')}
                         </>
                       ) : (
                         <>
-                          <Volume2 className="w-3.5 h-3.5" /> {isHindi ? 'पढ़ें' : 'Read'}
+                          <Volume2 className="w-3.5 h-3.5" /> {tx('Read', 'पढ़ें', 'পঢ়ক')}
                         </>
                       )}
                     </span>
-                    <span className="text-[#5A6E5D]">{isHindi ? 'खोलें →' : 'Tap to open →'}</span>
+                    <span className="text-[#5A6E5D]">{tx('Tap to open →', 'खोलें →', 'খোলক →')}</span>
                   </div>
                 </div>
               </div>

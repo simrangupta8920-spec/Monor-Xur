@@ -1,4 +1,5 @@
 // Web Speech & Web Audio helpers for Monor Xur
+import { getAssameseTranslation } from '../i18n/assameseDictionary';
 
 class SoundController {
   private ctx: AudioContext | null = null;
@@ -177,9 +178,9 @@ class SoundController {
     }
   }
 
-  public currentLanguage: 'en' | 'hi' = 'en';
+  public currentLanguage: 'en' | 'hi' | 'as' = 'en';
 
-  setLanguage(lang: 'en' | 'hi') {
+  setLanguage(lang: 'en' | 'hi' | 'as') {
     this.currentLanguage = lang;
     try {
       if (typeof window !== 'undefined') {
@@ -191,18 +192,44 @@ class SoundController {
     }
   }
 
-  getLanguage(): 'en' | 'hi' {
+  getLanguage(): 'en' | 'hi' | 'as' {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('monor_xur_language');
-      if (stored === 'en' || stored === 'hi') {
+      if (stored === 'en' || stored === 'hi' || stored === 'as') {
         this.currentLanguage = stored;
       }
     }
     return this.currentLanguage;
   }
 
-  // Helper to translate common English voice prompts to Hindi when in Hindi mode
+  // Helper to translate common English voice prompts to Hindi or Assamese when active
   private translateSpokenPrompt(text: string): string {
+    if (this.currentLanguage === 'as') {
+      const phrasesAs: Record<string, string> = {
+        'No personal photos uploaded yet. You can play Default Mode with Mango and other treasures!':
+          'এতিয়ালৈকে কোনো ব্যক্তিগত ছবি আপল’ড কৰা হোৱা নাই। আপুনি আম আৰু অন্যান্য ঐতিহ্যৰ সৈতে ডিফল্ট ম’ড খেলিব পাৰে!',
+        'Wonderful job! You solved the puzzle.':
+          'বৰ সুন্দৰ কাম! আপুনি সাঁথৰটো সম্পূৰ্ণ কৰিলে।',
+        'Congratulations! You matched all pairs beautifully.':
+          'অভিনন্দন! আপুনি সকলো জোৰা অতি ধুনীয়াকৈ মিলাই দিলে।',
+        'Spoken voice reflection.':
+          'মাতৰ স্মৃতি।',
+      };
+      if (phrasesAs[text]) return phrasesAs[text];
+
+      const helloMatch = text.match(/^Hello\s+(.+?)\.\s+Read aloud is working warmly and clearly\.$/i);
+      if (helloMatch) {
+        return `নমস্কাৰ ${helloMatch[1]}। কথা কোৱা মাত স্পষ্টভাৱে চলি আছে।`;
+      }
+
+      const welcomeMatch = text.match(/^Welcome to Monor Xur,\s*(.+?)!$/i);
+      if (welcomeMatch) {
+        return `মনৰ সুৰলৈ আপোনাক স্বাগতম, ${welcomeMatch[1]}!`;
+      }
+
+      return getAssameseTranslation(text);
+    }
+
     if (this.currentLanguage !== 'hi') return text;
 
     // Direct phrase translations
@@ -236,13 +263,13 @@ class SoundController {
     return text;
   }
 
-  // Native Speech Synthesis for Read-Aloud with English & Hindi Support
-  speak(text: string, onEnd?: () => void, langOverride?: 'en' | 'hi') {
+  // Native Speech Synthesis for Read-Aloud with English, Hindi & Assamese Support
+  speak(text: string, onEnd?: () => void, langOverride?: 'en' | 'hi' | 'as') {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
 
     const targetLang = langOverride || this.getLanguage();
-    const processedText = targetLang === 'hi' ? this.translateSpokenPrompt(text) : text;
+    const processedText = targetLang === 'en' ? text : this.translateSpokenPrompt(text);
 
     const utterance = new SpeechSynthesisUtterance(processedText);
     utterance.rate = 0.88; // Gentle, slower rate for elderly comprehension
@@ -250,7 +277,20 @@ class SoundController {
     
     // Pick warm natural sounding voice matching the target language
     const voices = window.speechSynthesis.getVoices();
-    if (targetLang === 'hi') {
+    if (targetLang === 'as') {
+      utterance.lang = 'as-IN';
+      const asVoice = voices.find(v => 
+        v.lang === 'as-IN' || 
+        v.lang.startsWith('as') || 
+        v.name.toLowerCase().includes('assamese') || 
+        v.name.includes('অসমীয়া') ||
+        v.lang === 'bn-IN' || 
+        v.lang.startsWith('bn')
+      );
+      if (asVoice) {
+        utterance.voice = asVoice;
+      }
+    } else if (targetLang === 'hi') {
       utterance.lang = 'hi-IN';
       const hindiVoice = voices.find(v => 
         v.lang === 'hi-IN' || 
@@ -280,9 +320,15 @@ class SoundController {
     window.speechSynthesis.speak(utterance);
   }
 
-  speakBilingual(textEn: string, textHi: string, onEnd?: () => void) {
+  speakBilingual(textEn: string, textHi: string, onEnd?: () => void, textAs?: string) {
     const lang = this.getLanguage();
-    this.speak(lang === 'hi' ? textHi : textEn, onEnd, lang);
+    if (lang === 'as') {
+      this.speak(textAs || getAssameseTranslation(textEn, textHi), onEnd, 'as');
+    } else if (lang === 'hi') {
+      this.speak(textHi, onEnd, 'hi');
+    } else {
+      this.speak(textEn, onEnd, 'en');
+    }
   }
 
   stopSpeaking() {

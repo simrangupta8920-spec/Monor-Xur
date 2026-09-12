@@ -25,20 +25,20 @@ interface CardItem {
 
 // Concrete, real-world unmistakable symbols with high-contrast distinct colors & dual text labels
 const SYMBOL_ICONS = [
-  { icon: Flower2, nameEn: 'Flower', nameHi: 'फूल', color: '#E11D48', bg: '#FFF1F2', border: '#E11D48' },
-  { icon: Sun, nameEn: 'Sun', nameHi: 'सूरज', color: '#D97706', bg: '#FEF3C7', border: '#D97706' },
-  { icon: Trees, nameEn: 'Tree', nameHi: 'पेड़', color: '#15803D', bg: '#DCFCE7', border: '#15803D' },
-  { icon: Bird, nameEn: 'Bird', nameHi: 'चिड़िया', color: '#0284C7', bg: '#E0F2FE', border: '#0284C7' },
-  { icon: Cat, nameEn: 'Cat', nameHi: 'बिल्ली', color: '#EA580C', bg: '#FFEDD5', border: '#EA580C' },
-  { icon: Fish, nameEn: 'Fish', nameHi: 'मछली', color: '#0F766E', bg: '#CCFBF1', border: '#0F766E' },
-  { icon: Star, nameEn: 'Star', nameHi: 'तारा', color: '#CA8A04', bg: '#FEF9C3', border: '#CA8A04' },
-  { icon: Heart, nameEn: 'Heart', nameHi: 'दिल', color: '#BE123C', bg: '#FFE4E6', border: '#BE123C' },
+  { icon: Flower2, nameEn: 'Flower', nameHi: 'फूल', nameAs: 'ফুল', color: '#E11D48', bg: '#FFF1F2', border: '#E11D48' },
+  { icon: Sun, nameEn: 'Sun', nameHi: 'सूरज', nameAs: 'সূৰ্য', color: '#D97706', bg: '#FEF3C7', border: '#D97706' },
+  { icon: Trees, nameEn: 'Tree', nameHi: 'पेड़', nameAs: 'গছ', color: '#15803D', bg: '#DCFCE7', border: '#15803D' },
+  { icon: Bird, nameEn: 'Bird', nameHi: 'चिड़िया', nameAs: 'চৰাই', color: '#0284C7', bg: '#E0F2FE', border: '#0284C7' },
+  { icon: Cat, nameEn: 'Cat', nameHi: 'बिल्ली', nameAs: 'মেকুৰী', color: '#EA580C', bg: '#FFEDD5', border: '#EA580C' },
+  { icon: Fish, nameEn: 'Fish', nameHi: 'मछली', nameAs: 'মাছ', color: '#0F766E', bg: '#CCFBF1', border: '#0F766E' },
+  { icon: Star, nameEn: 'Star', nameHi: 'तारा', nameAs: 'তৰা', color: '#CA8A04', bg: '#FEF9C3', border: '#CA8A04' },
+  { icon: Heart, nameEn: 'Heart', nameHi: 'दिल', nameAs: 'হৃদয়', color: '#BE123C', bg: '#FFE4E6', border: '#BE123C' },
 ];
 
-const LEVEL_CONFIG: Record<number, { labelEn: string; labelHi: string; pairs: number; hints: number }> = {
-  1: { labelEn: 'Easy (3 Pairs)', labelHi: 'सरल (3 जोड़े)', pairs: 3, hints: 4 },
-  2: { labelEn: 'Medium (4 Pairs)', labelHi: 'मध्यम (4 जोड़े)', pairs: 4, hints: 3 },
-  3: { labelEn: 'Hard (6 Pairs)', labelHi: 'बड़ा (6 जोड़े)', pairs: 6, hints: 2 },
+const LEVEL_CONFIG: Record<number, { labelEn: string; labelHi: string; labelAs: string; pairs: number; hints: number }> = {
+  1: { labelEn: 'Easy (3 Pairs)', labelHi: 'सरल (3 जोड़े)', labelAs: 'সহজ (৩টা জোৰা)', pairs: 3, hints: 4 },
+  2: { labelEn: 'Medium (4 Pairs)', labelHi: 'मध्यम (4 जोड़े)', labelAs: 'मध्यम (४টা জোৰা)', pairs: 4, hints: 3 },
+  3: { labelEn: 'Hard (6 Pairs)', labelHi: 'बड़ा (6 जोड़े)', labelAs: 'ডাঙৰ (৬টা জোৰা)', pairs: 6, hints: 2 },
 };
 
 export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ 
@@ -176,9 +176,11 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
 
         // Show gentle, comforting affirmation instead of clinical jargon
         setWarmAffirmation(
-          isHindi
-            ? 'आप बहुत सुंदर खेल रहे हैं। आइए कुछ आसान कार्ड मिलाते हैं।'
-            : 'You are doing wonderfully. Let’s enjoy a gentler set of cards.'
+          tx(
+            'You are doing wonderfully. Let’s enjoy a gentler set of cards.',
+            'आप बहुत सुंदर खेल रहे हैं। आइए कुछ आसान कार्ड मिलाते हैं।',
+            'আপুনি বৰ সুন্দৰকৈ খেলিছে। আহক আৰু কিছুমান সহজ কাৰ্ড মিলাওঁ।'
+          )
         );
 
         // Log telemetry for Caregivers
@@ -207,7 +209,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
         initDeck(targetLvl, false);
       }
     },
-    [level, playerName, hintsLeft, onLogDDAMetric, initDeck, isHindi]
+    [level, playerName, hintsLeft, onLogDDAMetric, initDeck, tx]
   );
 
   const handleCardClick = (index: number) => {
@@ -392,7 +394,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
                     : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
                 }`}
               >
-                {lvl === 1 ? tx('Easy', 'सरल') : lvl === 2 ? tx('Medium', 'मध्यम') : tx('Full', 'बड़ा')}
+                {lvl === 1 ? tx('Easy', 'सरल', 'সহজ') : lvl === 2 ? tx('Medium', 'मध्यम', 'মধ্যম') : tx('Full', 'बड़ा', 'ডাঙৰ')}
               </button>
             ))}
           </div>
@@ -400,6 +402,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
           <SpeakButton
             textEn="Memory matching game. Tap any two cards to find matching pairs of flowers, sun, birds, and animals. Take your time, no rush."
             textHi="जोड़े मिलाने का खेल। दो कार्ड पर टैप करें और एक जैसे चित्र ढूंढें। कोई जल्दी नहीं है, आराम से खेलें।"
+            textAs="জোৰা মিলোৱা খেল। ফুল, সূৰ্য, চৰাই আৰু জীৱ-জন্তুৰ মিলা জোৰা বিচাৰিবলৈ যিকোনো দুখন কাৰ্ডত টিপক। কোনো খৰখেদা নকৰাকৈ আৰামেৰে খেলক।"
             size="md"
           />
         </div>
@@ -413,10 +416,10 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
           </div>
           <div>
             <h3 className="text-base font-black text-[#2D3A2F] leading-tight">
-              {tx('Take Your Time & Enjoy', 'आराम से खेलें • हर जोड़ी एक जीत है')}
+              {tx('Take Your Time & Enjoy', 'आराम से खेलें • हर जोड़ी एक जीत है', 'ধীৰে-সুস্থে খেলি আনন্দ লওক')}
             </h3>
             <p className="text-xs text-[#5A6E5D] font-semibold mt-0.5">
-              {warmAffirmation || tx('Every pair found brings peace and happiness.', 'हर मिलते-जुलते चित्र की खोज मन को शांति देती है।')}
+              {warmAffirmation || tx('Every pair found brings peace and happiness.', 'हर मिलते-जुलते चित्र की खोज मन को शांति देती है।', 'প্ৰতিটো মিলা জোৰাই মনলৈ শান্তি আৰু আনন্দ আনে।')}
             </p>
           </div>
         </div>
@@ -424,7 +427,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
         <div className="text-right shrink-0">
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white text-[#5B825B] text-xs font-black border border-[#5B825B]/30 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
-            {tx(`Pairs: ${matchedPairsCount} / ${totalPairsCount}`, `जोड़े मिले: ${matchedPairsCount} / ${totalPairsCount}`)}
+            {tx(`Pairs: ${matchedPairsCount} / ${totalPairsCount}`, `जोड़े मिले: ${matchedPairsCount} / ${totalPairsCount}`, `জোৰা মিলিল: ${matchedPairsCount} / ${totalPairsCount}`)}
           </span>
         </div>
       </div>
@@ -433,7 +436,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
       <div className="bg-white rounded-3xl p-3.5 px-4 border border-[#E0DCD3] shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xs font-extrabold text-[#5A6E5D]">
-            {tx('Match matching pictures together', 'एक जैसे चित्रों को मिलाएँ')}
+            {tx('Match matching pictures together', 'एक जैसे चित्रों को मिलाएँ', 'একে ধৰণৰ ছবিবোৰ একেলগে মিলাওক')}
           </span>
         </div>
 
@@ -448,7 +451,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
             }`}
           >
             <Lightbulb className="w-4 h-4 text-[#E8B25C]" />
-            <span>{tx('Hint', 'संकेत')} ({hintsLeft})</span>
+            <span>{tx('Hint', 'संकेत', 'ইংগিত')} ({hintsLeft})</span>
           </button>
 
           <button
@@ -457,7 +460,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
               initDeck(level, true);
             }}
             className="p-2.5 rounded-2xl bg-white border border-[#E0DCD3] text-[#5A6E5D] hover:bg-[#EAF1E8] shadow-xs active:scale-95 cursor-pointer"
-            title={tx('Start Over', 'पुनः प्रारंभ करें')}
+            title={tx('Start Over', 'पुनः प्रारंभ करें', 'আকৌ আৰম্ভ কৰক')}
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -510,7 +513,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
                     className="mt-1 text-[11px] sm:text-xs font-black tracking-tight"
                     style={{ color: card.matched ? '#5B825B' : sym.color }}
                   >
-                    {isHindi ? sym.nameHi : sym.nameEn}
+                    {tx(sym.nameEn, sym.nameHi, sym.nameAs)}
                   </span>
 
                   {card.matched && (
@@ -526,7 +529,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
                     <Flower2 className="w-5 h-5 text-[#B5AC9A]" />
                   </div>
                   <span className="text-[10px] font-black text-[#A39987] mt-1">
-                    {tx('Tap', 'टैप')}
+                    {tx('Tap', 'टैप', 'টিপক')}
                   </span>
                 </div>
               )}
@@ -544,12 +547,13 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
 
           <div className="space-y-1">
             <h3 className="text-2xl sm:text-3xl font-black text-[#2D3A2F]">
-              {tx('Very Well Done!', 'बहुत सुंदर! शाबाश!')}
+              {tx('Very Well Done!', 'बहुत सुंदर! शाबाश!', 'বৰ ভাল কাম কৰিলে! শাবাছ!')}
             </h3>
             <p className="text-sm font-bold text-[#5B825B] max-w-sm mx-auto">
               {tx(
                 'You matched all pairs peacefully. A gentle victory for the mind!',
-                'आपने सभी जोड़े बहुत शांति और सुंदरता से मिला लिए।'
+                'आपने सभी जोड़े बहुत शांति और सुंदरता से मिला लिए।',
+                'আপুনি শান্তভাৱে সকলো জোৰা মিলালে। মনৰ এক প্ৰশান্তিময় আনন্দ!'
               )}
             </p>
           </div>
@@ -562,7 +566,7 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
               }}
               className="px-6 py-3.5 rounded-2xl bg-[#5B825B] text-white font-black text-sm shadow-xs hover:bg-[#4d704d] active:scale-95 cursor-pointer"
             >
-              {tx('Play Once More', 'फिर से खेलें')}
+              {tx('Play Once More', 'फिर से खेलें', 'আকৌ খেলক')}
             </button>
             <button
               onClick={onBack}

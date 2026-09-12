@@ -24,20 +24,22 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
 }) => {
   const [largeText, setLargeText] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const { language, setLanguage, t, isHindi } = useLanguage();
+  const { language, setLanguage, t, isHindi, isAssamese } = useLanguage();
 
-  const playerName = patientProfile?.name || (isHindi ? 'खिलाड़ी' : 'Player');
-  const playerFullName = patientProfile?.fullName || (isHindi ? 'माइंड एक्सप्लोरर' : 'Mind Explorer');
+  const playerName = patientProfile?.name || (isAssamese ? 'খেলুৱৈ' : isHindi ? 'खिलाड़ी' : 'Player');
+  const playerFullName = patientProfile?.fullName || (isAssamese ? 'মনৰ অন্বেষক' : isHindi ? 'माइंड एक्सप्लोरर' : 'Mind Explorer');
   const primaryContact = contacts[0];
   const isOnline = useOnlineStatus();
   const offlineData = getOfflineSnapshot();
   const cachedRemindersCount = offlineData?.reminders?.length || 0;
 
-  const handleSelectLanguage = (newLang: 'en' | 'hi') => {
+  const handleSelectLanguage = (newLang: 'en' | 'hi' | 'as') => {
     if (newLang === language) return;
     soundController.playClick();
     setLanguage(newLang);
-    if (newLang === 'hi') {
+    if (newLang === 'as') {
+      soundController.speak('ভাষা অসমীয়ালৈ নিৰ্ধাৰণ কৰা হ’ল।', undefined, 'as');
+    } else if (newLang === 'hi') {
       soundController.speak('भाषा हिन्दी पर सेट कर दी गई है।', undefined, 'hi');
     } else {
       soundController.speak('Language set to English.', undefined, 'en');
@@ -45,7 +47,9 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
   };
 
   const testReadAloud = () => {
-    if (isHindi) {
+    if (language === 'as') {
+      soundController.speak(`নমস্কাৰ ${playerName}। কথা কোৱা মাত স্পষ্টভাৱে চলি আছে।`, undefined, 'as');
+    } else if (language === 'hi') {
       soundController.speak(`नमस्ते ${playerName}। बोलने वाली आवाज़ साफ़ और स्पष्ट काम कर रही है।`, undefined, 'hi');
     } else {
       soundController.speak(`Hello ${playerName}. Read aloud is working warmly and clearly.`, undefined, 'en');
@@ -75,7 +79,7 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
               {t('activePlayer')}
             </span>
             <h3 className="text-base font-black text-[#2D3A2F] mt-0.5">{playerFullName}</h3>
-            <p className="text-xs text-[#5A6E5D]">{isHindi ? 'सप्रेम देखभाल सक्रिय • अपनी गति से खेलें' : 'Loving Care Active • Play at your own pace'}</p>
+            <p className="text-xs text-[#5A6E5D]">{tx('Loving Care Active • Play at your own pace', 'सप्रेम देखभाल सक्रिय • अपनी गति से खेलें', 'মৰমীয়াল যত্ন সক্ৰিয় • নিজৰ গতিত খেলক')}</p>
           </div>
         </div>
       </div>
@@ -92,7 +96,7 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
           {/* English Switch Button */}
           <button
             onClick={() => handleSelectLanguage('en')}
@@ -110,7 +114,7 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
             <span className="text-2xl">🇬🇧</span>
             <span className="font-black text-sm block">English</span>
             <span className="text-[11px] font-bold text-[#5A6E5D]">
-              {language === 'en' ? t('activeBadge') : 'Select English'}
+              {language === 'en' ? t('activeBadge') : 'English'}
             </span>
           </button>
 
@@ -131,7 +135,28 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
             <span className="text-2xl">🇮🇳</span>
             <span className="font-black text-sm block">हिन्दी (Hindi)</span>
             <span className="text-[11px] font-bold text-[#5A6E5D]">
-              {language === 'hi' ? t('activeBadge') : 'हिन्दी चुनें'}
+              {language === 'hi' ? t('activeBadge') : 'हिन्दी'}
+            </span>
+          </button>
+
+          {/* Assamese Switch Button */}
+          <button
+            onClick={() => handleSelectLanguage('as')}
+            className={`p-3.5 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer text-center relative ${
+              language === 'as'
+                ? 'border-[#5B825B] bg-[#EAF1E8] text-[#2D3A2F] shadow-xs scale-[1.02]'
+                : 'border-[#E0DCD3] bg-[#FDFBF7] text-[#5A6E5D] hover:bg-white'
+            }`}
+          >
+            {language === 'as' && (
+              <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#5B825B] text-white flex items-center justify-center text-[10px]">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+              </span>
+            )}
+            <span className="text-2xl">🌿</span>
+            <span className="font-black text-sm block">অসমীয়া (Assamese)</span>
+            <span className="text-[11px] font-bold text-[#5A6E5D]">
+              {language === 'as' ? t('activeBadge') : 'অসমীয়া'}
             </span>
           </button>
         </div>

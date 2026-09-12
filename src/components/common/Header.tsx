@@ -24,13 +24,15 @@ export const Header: React.FC<HeaderProps> = ({
   onSwitchRole,
   onCallEmergency,
 }) => {
-  const { t, language, setLanguage, isHindi } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
 
   const handleToggleLanguage = () => {
     soundController.playClick();
-    const nextLang = language === 'en' ? 'hi' : 'en';
+    const nextLang = language === 'en' ? 'hi' : language === 'hi' ? 'as' : 'en';
     setLanguage(nextLang);
-    if (nextLang === 'hi') {
+    if (nextLang === 'as') {
+      soundController.speak('ভাষা অসমীয়ালৈ নিৰ্ধাৰণ কৰা হ’ল।', undefined, 'as');
+    } else if (nextLang === 'hi') {
       soundController.speak('भाषा हिन्दी पर सेट कर दी गई है।', undefined, 'hi');
     } else {
       soundController.speak('Language set to English.', undefined, 'en');
@@ -99,11 +101,11 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={handleToggleLanguage}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl border border-[#E0DCD3] bg-white text-[#2D3A2F] hover:bg-[#EAF1E8] transition-all shadow-xs active:scale-95 text-xs font-black"
-          title={isHindi ? 'Switch to English' : 'हिन्दी में बदलें'}
+          title={language === 'en' ? 'हिन्दी में बदलें' : language === 'hi' ? 'অসমীয়ালৈ সলনি কৰক' : 'Switch to English'}
           aria-label="Switch language"
         >
           <Languages className="w-3.5 h-3.5 text-[#5B825B]" />
-          <span>{language === 'hi' ? 'हिन्दी' : 'EN'}</span>
+          <span>{language === 'as' ? 'অসমীয়া' : language === 'hi' ? 'हिन्दी' : 'EN'}</span>
         </button>
 
         <PWAInstallButton compact />
