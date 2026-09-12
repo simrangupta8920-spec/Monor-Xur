@@ -27,6 +27,12 @@ interface DefaultPuzzleItem {
   image: string;
   description: string;
   accent: string;
+  titleAs?: string;
+  titleHi?: string;
+  categoryAs?: string;
+  categoryHi?: string;
+  descriptionAs?: string;
+  descriptionHi?: string;
 }
 
 export type GridDimension = 2 | 3 | 4;
@@ -86,42 +92,324 @@ const DEFAULT_PUZZLES: DefaultPuzzleItem[] = [
   {
     id: 'def-mango',
     title: 'Juicy Ripe Mango',
+    titleAs: 'পকা আম',
+    titleHi: 'पका हुआ रसीला आम',
     category: 'Everyday Fruit',
-    image: 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=800&q=80',
+    categoryAs: 'গ্রীষ্মকালীন ফল',
+    categoryHi: 'स्वादिष्ट फल',
+    image: '/images/puzzles/def-mango-1.jpg',
     description: 'Fresh golden Alphonso mango, sweet and ripe with green leaves under the warm sunshine.',
+    descriptionAs: 'ৰসাল সোণালী পকা আম, মিঠা সুবাস আৰু গৰম ৰ’দৰ পোহৰত সজীৱ সেউজীয়া পাত।',
+    descriptionHi: 'ताज़ा रसीला पका हुआ आम, मीठी सुगंध और सुनहरी धूप में चमकते हरे पत्ते।',
     accent: '#FDF0D5',
   },
   {
-    id: 'def-peacock',
-    title: 'Dancing Indian Peacock',
-    category: 'Bird of India',
-    image: 'https://images.unsplash.com/photo-1536514498073-50e69d39c6cf?auto=format&fit=crop&w=800&q=80',
-    description: 'Glorious iridescent blue and emerald plumage spread gracefully in celebration.',
-    accent: '#D4E4E6',
+    id: 'def-mango-2',
+    title: 'Sweet Sliced Mango',
+    titleAs: 'মিঠা আমৰ টুকুৰা',
+    titleHi: 'मीठे आम के टुकड़े',
+    category: 'Everyday Fruit',
+    categoryAs: 'গ্রীষ্মকালীন ফল',
+    categoryHi: 'स्वादिष्ट फल',
+    image: '/images/puzzles/def-mango-2.jpg',
+    description: 'Freshly cut sweet mango slices and succulent golden cubes, aromatic and honey-sweet.',
+    descriptionAs: 'সোণালী ৰঙৰ মিঠা আমৰ টুকুৰা, সুস্বাদু আৰু মৌৰ দৰে মিঠা সোৱাদ।',
+    descriptionHi: 'ताज़ा कटे हुए सुनहरे आम के मीठे टुकड़े, सुगंधित और रसीले।',
+    accent: '#FCF4E4',
   },
   {
-    id: 'def-marigold',
-    title: 'Golden Festive Marigolds',
-    category: 'Festive Flower',
-    image: 'https://images.unsplash.com/photo-1508615039623-a25605d2b022?auto=format&fit=crop&w=800&q=80',
-    description: 'Auspicious bright yellow and saffron marigolds woven into festive garlands.',
-    accent: '#FDF0D5',
+    id: 'def-mango-3',
+    title: 'Mango Orchard Harvest',
+    titleAs: 'আমৰ বাৰীৰ আম',
+    titleHi: 'आम का बगीचा',
+    category: 'Everyday Fruit',
+    categoryAs: 'গ্রীষ্মকালীন ফল',
+    categoryHi: 'स्वादिष्ट फल',
+    image: '/images/puzzles/def-mango-3.jpg',
+    description: 'Clusters of golden sun-ripened mangoes swaying peacefully on orchard branches in morning breeze.',
+    descriptionAs: 'পুৱাৰ বতাহত আম বাৰীৰ গছত ওলমি থকা থোপা-থোপে সোণালী পকা আম।',
+    descriptionHi: 'सुबह की हवा में बगीचे की डालियों पर झूलते हुए सुनहरे पके आमों के गुच्छे।',
+    accent: '#FBF2D8',
   },
   {
-    id: 'def-tea',
-    title: 'Assam Tea Garden',
-    category: 'Scenic Landscape',
-    image: 'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?auto=format&fit=crop&w=800&q=80',
-    description: 'Peaceful misty rolling green tea slopes in the morning breeze of Assam.',
+    id: 'def-dish-khar',
+    title: 'Khar',
+    titleAs: 'খাৰ (Khar)',
+    titleHi: 'खार (Khar)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-1-khar.jpg',
+    description: 'Signature Assamese alkaline dish prepared with raw papaya, pulses, and traditional banana peel filtrate.',
+    descriptionAs: 'অমিতা আৰু কলখাৰেৰে তৈয়াৰী অসমৰ পৰম্পৰাগত সুস্বাদু খাৰ, হজমৰ বাবে উপকাৰী।',
+    descriptionHi: 'कच्चे पपीते और पारंपरिक केले के खार से बना असम का प्रसिद्ध पाचक व्यंजन।',
     accent: '#EAF1E8',
   },
   {
-    id: 'def-sweets',
-    title: 'Festive Laddus & Sweets',
+    id: 'def-dish-masor-tenga',
+    title: 'Masor Tenga',
+    titleAs: 'মাছৰ টেঙা (Masor Tenga)',
+    titleHi: 'माछोर टेंगा (Masor Tenga)',
     category: 'Traditional Delicacy',
-    image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=800&q=80',
-    description: 'Delicious golden festive sweets garnished with pistachio and saffron threads.',
-    accent: '#F0D8D6',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-2-masor-tenga.jpg',
+    description: 'Classic light and sour fish curry with tomatoes, fragrant Assam lemon, and fresh coriander leaves.',
+    descriptionAs: 'সুস্বাদু সতেজ মাছ, বিলাহী আৰু নেমুৰ ৰসেৰে তৈয়াৰী মন জুৰোৱা টেঙা আঞ্জা।',
+    descriptionHi: 'टमाटर, ताज़ा नींबू और धनिया से बनी असमिया हल्की खट्टी मछली की तरी।',
+    accent: '#FDECE8',
+  },
+  {
+    id: 'def-dish-ou-tenga',
+    title: 'Ou Tenga',
+    titleAs: 'ঔ টেঙা (Ou Tenga)',
+    titleHi: 'औ टेंगा (Ou Tenga)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-3-ou-tenga.jpg',
+    description: 'Tangy aromatic curry stew cooked with elephant apple (Ou Tenga), a treasured indigenous sour delicacy.',
+    descriptionAs: 'ঔ টেঙাৰে তৈয়াৰী সুস্বাদু আৰু পুষ্টিকৰ পৰম্পৰাগত টেঙা আঞ্জা।',
+    descriptionHi: 'हाथी सेब (औ टेंगा) से बनी सुगंधित और पाचक खट्टी करी।',
+    accent: '#FBF4DB',
+  },
+  {
+    id: 'def-dish-kharoli',
+    title: 'Kharoli',
+    titleAs: 'খাৰলি (Kharoli)',
+    titleHi: 'खारोली (Kharoli)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-4-kharoli.jpg',
+    description: 'Aromatic fermented mustard paste seasoned with pungent mustard oil and fiery chili, rolled into small balls.',
+    descriptionAs: 'খাঁটি মিঠাতেল আৰু সৰিয়হ বটি তৈয়াৰ কৰা তিঁতা-জ্বলা সুবাসযুক্ত ঐতিহ্যবাহী খাৰলি।',
+    descriptionHi: 'सरसों के पेस्ट और शुद्ध सरसों तेल से बनी पारंपरिक तीखी-चटपटी खारोली।',
+    accent: '#FDF0D5',
+  },
+  {
+    id: 'def-dish-til-pitha',
+    title: 'Til Pitha',
+    titleAs: 'তিল পিঠা (Til Pitha)',
+    titleHi: 'तिल पीठा (Til Pitha)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-5-til-pitha.jpg',
+    description: 'Crispy cylindrical roasted sticky rice rolls filled with sweet roasted sesame seeds and jaggery.',
+    descriptionAs: 'বৰা চাউলৰ গুড়িৰে টাৱাত পুৰি ক’লা তিল আৰু গুড়ৰ সোৱাদ দিয়া বিহুৰ প্ৰধান পিঠা।',
+    descriptionHi: 'काले तिल और गुड़ की मीठी भरावन वाले भुने हुए कुरकुरे असमिया चावल के रोल।',
+    accent: '#F5EFE6',
+  },
+  {
+    id: 'def-dish-narikolor-pitha',
+    title: 'Narikolor Pitha',
+    titleAs: 'নাৰিকলৰ পিঠা (Narikolor Pitha)',
+    titleHi: 'नारिकोलर पीठा (Narikolor Pitha)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-6-narikolor-pitha.jpg',
+    description: 'Delicate white rice flour rolls stuffed with fragrant sweet grated coconut and cardamom.',
+    descriptionAs: 'সোৱাদযুক্ত মিঠা কোৰা নাৰিকলৰ পুৰ দি সজোৱা বৰা চাউলৰ কোমল নাৰিকলৰ পিঠা।',
+    descriptionHi: 'ताज़े कसे हुए नारियल और इलायची की मीठी भरावन वाला नरम पीठा।',
+    accent: '#FAF6F0',
+  },
+  {
+    id: 'def-dish-ghila-pitha',
+    title: 'Ghila Pitha',
+    titleAs: 'ঘিলা পিঠা (Ghila Pitha)',
+    titleHi: 'घीला पीठा (Ghila Pitha)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-7-ghila-pitha.jpg',
+    description: 'Crisp outside and chewy inside, golden deep-fried sweet sticky rice cakes sweetened with jaggery.',
+    descriptionAs: 'মিঠৈ বা গুড়েৰে তৈয়াৰী সোণালীকৈ ভজা সুস্বাদু আৰু পুষ্টিকৰ ঘিলা পিঠা।',
+    descriptionHi: 'गुड़ और चावल के आटे से बनी सुनहरी तली हुई स्वादिष्ट असमिया गोल टिकिया।',
+    accent: '#F7E7CE',
+  },
+  {
+    id: 'def-dish-tekeli-pitha',
+    title: 'Tekeli Pitha',
+    titleAs: 'টেকেলী পিঠা (Tekeli Pitha)',
+    titleHi: 'टेकेली पीठा (Tekeli Pitha)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-8-tekeli-pitha.jpg',
+    description: 'Soft steamed rice cake cooked over the steam of an earthen pitcher (tekeli) with coconut and jaggery.',
+    descriptionAs: 'মাটিৰ টেকেলীৰ মুখত ভাপত দি বনোৱা সুগন্ধি নাৰিকল আৰু গুড়যুক্ত টেকেলী পিঠা।',
+    descriptionHi: 'मिट्टी की मटकी की भाप पर पकाया गया नरम, सुगंधित नारियल व गुड़ का पीठा।',
+    accent: '#F5EBDD',
+  },
+  {
+    id: 'def-dish-pitha-guri',
+    title: 'Pitha Guri',
+    titleAs: 'পিঠা গুৰি (Pitha Guri)',
+    titleHi: 'पीठा गुड़ी (Pitha Guri)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-9-pitha-guri.jpg',
+    description: 'Silky, fragrant freshly pounded Bora rice flour, the timeless heart of Assamese home baking.',
+    descriptionAs: 'ঢেঁকী বা উখলিত খুন্দা সুবাসিত জহা আৰু বৰা চাউলৰ মিহি পিঠা গুৰি।',
+    descriptionHi: 'पारंपरिक ओखली में कुटा हुआ सुगंधित और शुद्ध असमिया चावल का आटा।',
+    accent: '#FDFBF7',
+  },
+  {
+    id: 'def-dish-paro-mangxo',
+    title: 'Paro Mangxo',
+    titleAs: 'পাৰো মাংস (Paro Mangxo)',
+    titleHi: 'पारो मांग्खो (Paro Mangxo)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-10-paro-mangxo.jpg',
+    description: 'Traditional slow-cooked tender pigeon meat curry infused with black pepper and banana blossoms (koldil).',
+    descriptionAs: 'ক’লা জালুক আৰু কলডিলেৰে ৰন্ধা অসমৰ বিখ্যাত পৰম্পৰাগত পাৰো মাংসৰ আঞ্জা।',
+    descriptionHi: 'काली मिर्च और केले के फूल (कोलडिल) के साथ पकाई गई पारंपरिक तीखी तरी।',
+    accent: '#F0DEC8',
+  },
+  {
+    id: 'def-dish-hah-mankho',
+    title: 'Hah Mankho',
+    titleAs: 'হাঁহৰ মাংস (Hah Mankho)',
+    titleHi: 'हांह मांग्खो (Hah Mankho)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-11-hah-mankho.jpg',
+    description: 'Grand festive duck meat curry braised with tender winter ash gourd (kumura) and crushed spices.',
+    descriptionAs: 'কুঁহিয়াৰ, জালুক আৰু পকা কোমোৰাৰে ৰন্ধা মাঘ বিহুৰ ঐতিহ্যবাহী সুস্বাদু হাঁহৰ মাংস।',
+    descriptionHi: 'सफेद पेठे (कुमुरा) और काली मिर्च के साथ बना माघ बिहू का मशहूर बत्तख का मांस।',
+    accent: '#EED9C4',
+  },
+  {
+    id: 'def-dish-aloo-pitika',
+    title: 'Aloo Pitika',
+    titleAs: 'আলু পিটিকা (Aloo Pitika)',
+    titleHi: 'आलू पीतिका (Aloo Pitika)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-12-aloo-pitika.jpg',
+    description: 'Beloved Assamese soul food of boiled potatoes mashed with pure pungent mustard oil, raw onions and green chilies.',
+    descriptionAs: 'খাঁটি সৰিয়হৰ তেল, পিঁয়াজ আৰু কেঁচা জলকীয়াৰে সানি তৈয়াৰ কৰা সকলোৰে প্ৰিয় আলু পিটিকা।',
+    descriptionHi: 'कच्चे सरसों के तेल, बारीक कटे प्याज और हरी मिर्च के साथ मसला हुआ सादा आलू।',
+    accent: '#FAF1D6',
+  },
+  {
+    id: 'def-dish-bengena-pitika',
+    title: 'Bengena Pitika',
+    titleAs: 'বেঙেনা পিটিকা (Bengena Pitika)',
+    titleHi: 'बैंगन पीतिका (Bengena Pitika)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-13-bengena-pitika.jpg',
+    description: 'Fire-roasted smoky eggplant mashed by hand with raw mustard oil, chopped onions, and crushed garlic.',
+    descriptionAs: 'জুইত পুৰি সুগন্ধি সৰিয়হৰ তেল আৰু পিঁয়াজেৰে সুস্বাদুকৈ পিটিকি লোৱা পোৰা বেঙেনা পিটিকা।',
+    descriptionHi: 'आग पर भुना हुआ बैंगन, शुद्ध सरसों तेल और लहसुन-प्याज के साथ मसला हुआ भर्ता।',
+    accent: '#F3E8DC',
+  },
+  {
+    id: 'def-dish-mati-mahor-dali',
+    title: 'Mati Mahor Dali',
+    titleAs: 'মাটি মাহৰ ডালি (Mati Mahor Dali)',
+    titleHi: 'माटी माहर दाल (Mati Mahor Dali)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-14-mati-mahor-dali.jpg',
+    description: 'Nourishing black gram lentil soup slow-simmered with ginger and tempered with whole red chili and mustard oil.',
+    descriptionAs: 'আদা আৰু শুকান জলকীয়াৰ ফোৰণেৰে খাঁটি মিঠাতেলত ৰন্ধা গাঢ় আৰু পুষ্টিকৰ মাটি মাহৰ ডালি।',
+    descriptionHi: 'अदरक और सूखी लाल मिर्च के तड़के वाली पौष्टिक पारंपरिक उड़द (काली) दाल।',
+    accent: '#FBF0D8',
+  },
+  {
+    id: 'def-dish-kaskol',
+    title: 'Kaskol',
+    titleAs: 'কাচকোল (Kaskol)',
+    titleHi: 'काचकोल (Kaskol)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-15-kaskol.jpg',
+    description: 'Healthy green raw plantain dry sauté or mash cooked with turmeric, green chilies, and soothing spices.',
+    descriptionAs: 'ঔষধি গুণেৰে ভৰপূৰ কেঁচা কাচকোলৰ পুষ্টিকৰ ভাজি বা পিটিকা, পেটৰ বাবে অতি উত্তম।',
+    descriptionHi: 'औषधीय गुणों से भरपूर कच्चे केले की सादी, सुपाच्य और पौष्टिक सूखी भुजिया।',
+    accent: '#EEF3E6',
+  },
+  {
+    id: 'def-dish-kosu-loti',
+    title: 'Kosu Loti',
+    titleAs: 'কচু লতি (Kosu Loti)',
+    titleHi: 'कोचू लोती (Kosu Loti)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-16-kosu-loti.jpg',
+    description: 'Tender green taro stolons sautéed with garlic, green chilies, and a squeeze of fresh lemon juice.',
+    descriptionAs: 'নহৰু আৰু টেঙা নেমুৰ ৰস দি ৰন্ধা সুস্বাদু কোমল কচু শাকৰ লতি ভাজি।',
+    descriptionHi: 'अरबी की कोमल डंठल, लहसुन और हरी मिर्च के साथ तली हुई स्वादिष्ट सब्जी।',
+    accent: '#E6EFE4',
+  },
+  {
+    id: 'def-dish-lai-xaak',
+    title: 'Lai Xaak',
+    titleAs: 'লাই শাক (Lai Xaak)',
+    titleHi: 'लाई शाक (Lai Xaak)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-17-lai-xaak.jpg',
+    description: 'Fresh peppery mustard greens quickly stir-fried with crushed garlic cloves and golden mustard oil.',
+    descriptionAs: 'বাৰীৰ সতেজ লাই শাক, নহৰু আৰু মিঠাতেলৰ ফোৰণ দি ভজা অসমৰ অতি তৃপ্তিকৰ শাক।',
+    descriptionHi: 'बारीक कटे लहसुन और सरसों तेल में छौंका हुआ ताज़ा असमिया राई का साग।',
+    accent: '#E5EDE3',
+  },
+  {
+    id: 'def-dish-mati-kothalor-tenga',
+    title: 'Mati Kothalor Tenga',
+    titleAs: 'মাটি কঁঠালৰ টেঙা (Mati Kothalor Tenga)',
+    titleHi: 'कटहल की खट्टी तरी (Mati Kothalor Tenga)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-18-mati-kothalor-tenga.jpg',
+    description: 'Tender baby green jackfruit chunks cooked into a comforting tangy yellow curry broth with herbs.',
+    descriptionAs: 'কোমল কেঁহু কঁঠালেৰে ৰন্ধা সোৱাদভৰা আৰু তৃপ্তিদায়ক টেঙা আঞ্জা।',
+    descriptionHi: 'कोमल कच्चे कटहल के टुकड़ों से बनी पाचक और सुगंधित खट्टी रसेदार सब्जी।',
+    accent: '#FAF2D7',
+  },
+  {
+    id: 'def-dish-pitha',
+    title: 'Assamese Pitha Platter',
+    titleAs: 'অসমীয়া পিঠা (Pitha Platter)',
+    titleHi: 'असमिया पीठा थाली (Pitha Platter)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-19-pitha.jpg',
+    description: 'Festive ceremonial platter of Assamese Bihu treats including til pitha, ghila pitha, and sweet coconut laru.',
+    descriptionAs: 'মাঘ বিহুৰ সোৱাদভৰা তিল পিঠা, ঘিলা পিঠা আৰু নাৰিকলৰ লাড়ুৰে সজোৱা পৰম্পৰাগত কাঁহী।',
+    descriptionHi: 'तिल पीठा, घीला पीठा और नारियल के लड्डू से सजी बिहू की पारंपरिक मीठी थाली।',
+    accent: '#F8EFE4',
+  },
+  {
+    id: 'def-dish-payox',
+    title: 'Payox',
+    titleAs: 'পায়স (Payox)',
+    titleHi: 'पायस / खीर (Payox)',
+    category: 'Traditional Delicacy',
+    categoryAs: 'ঐতিহ্যবাহী অসমীয়া ব্যঞ্জন',
+    categoryHi: 'पारंपरिक असमिया व्यंजन',
+    image: '/images/puzzles/dish-20-payox.jpg',
+    description: 'Rich and creamy Joha rice pudding slow-cooked in sweetened cow milk, garnished with almonds and raisins.',
+    descriptionAs: 'সুগন্ধি জহা চাউল, খাঁটি গাখীৰ আৰু কাজু-কিচমিচেৰে ৰন্ধা অসমৰ প্ৰিয় মিঠা পায়স।',
+    descriptionHi: 'सुगंधित जोहा चावल, गाढ़े दूध, मेवे और इलायची से बनी स्वादिष्ट पारंपरिक खीर।',
+    accent: '#FBF5ED',
   },
 ];
 
@@ -164,6 +452,17 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     photoMemories[0]?.id || ''
   );
   const [selectedDefaultId, setSelectedDefaultId] = useState<string>(DEFAULT_PUZZLES[0].id);
+  const [defaultFilter, setDefaultFilter] = useState<'all' | 'mango' | 'dish'>('all');
+
+  const filteredDefaultPuzzles = useMemo(() => {
+    if (defaultFilter === 'mango') {
+      return defaultPuzzles.filter((p) => p.id.startsWith('def-mango'));
+    }
+    if (defaultFilter === 'dish') {
+      return defaultPuzzles.filter((p) => p.id.startsWith('def-dish'));
+    }
+    return defaultPuzzles;
+  }, [defaultPuzzles, defaultFilter]);
 
   // Keep mode in sync if all memories are removed
   useEffect(() => {
@@ -204,13 +503,28 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
       }
     }
     const foundDefault = defaultPuzzles.find((p) => p.id === selectedDefaultId) || defaultPuzzles[0];
+    const displayTitle = language === 'as' && foundDefault.titleAs
+      ? foundDefault.titleAs
+      : language === 'hi' && foundDefault.titleHi
+      ? foundDefault.titleHi
+      : foundDefault.title;
+    const displayCategory = language === 'as' && foundDefault.categoryAs
+      ? foundDefault.categoryAs
+      : language === 'hi' && foundDefault.categoryHi
+      ? foundDefault.categoryHi
+      : foundDefault.category;
+    const displayDescription = language === 'as' && foundDefault.descriptionAs
+      ? foundDefault.descriptionAs
+      : language === 'hi' && foundDefault.descriptionHi
+      ? foundDefault.descriptionHi
+      : foundDefault.description;
     return {
-      title: foundDefault.title,
-      subtitle: foundDefault.category,
+      title: displayTitle,
+      subtitle: displayCategory,
       image: foundDefault.image,
-      description: foundDefault.description,
+      description: displayDescription,
     };
-  }, [mode, selectedPersonalizedId, selectedDefaultId, photoMemories, defaultPuzzles]);
+  }, [mode, selectedPersonalizedId, selectedDefaultId, photoMemories, defaultPuzzles, language]);
 
   // Grid size: 2 = 2x2 (4 pieces), 3 = 3x3 (9 pieces), 4 = 4x4 (16 pieces)
   const [gridSize, setGridSize] = useState<GridDimension>(2);
@@ -1124,7 +1438,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             }`}
           >
             <ImageIcon className="w-4 h-4" />
-            <span>{tx('Default Mode (Mango)', 'सुंदर चित्र (मैंगो)', 'ডিফল্ট ছবি (আম)')}</span>
+            <span>{tx('Default Mode', 'डिफ़ॉल्ट मोड', 'ডিফল্ট মোড')}</span>
           </button>
         </div>
 
@@ -1288,10 +1602,66 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
               </div>
             )}
 
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setDefaultFilter('all');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all shrink-0 ${
+                  defaultFilter === 'all'
+                    ? 'bg-[#5B825B] text-white shadow-2xs'
+                    : 'bg-white text-[#5A6E5D] border border-[#E0DCD3] hover:border-[#5B825B]/60'
+                }`}
+              >
+                {tx(`All (${defaultPuzzles.length})`, `सभी (${defaultPuzzles.length})`, `সকলো (${defaultPuzzles.length})`)}
+              </button>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setDefaultFilter('mango');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all shrink-0 flex items-center gap-1 ${
+                  defaultFilter === 'mango'
+                    ? 'bg-[#5B825B] text-white shadow-2xs'
+                    : 'bg-white text-[#5A6E5D] border border-[#E0DCD3] hover:border-[#5B825B]/60'
+                }`}
+              >
+                <span>🥭</span>
+                <span>{tx('Mangoes (3)', 'आम (3)', 'আম (৩)')}</span>
+              </button>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setDefaultFilter('dish');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all shrink-0 flex items-center gap-1 ${
+                  defaultFilter === 'dish'
+                    ? 'bg-[#5B825B] text-white shadow-2xs'
+                    : 'bg-white text-[#5A6E5D] border border-[#E0DCD3] hover:border-[#5B825B]/60'
+                }`}
+              >
+                <span>🍲</span>
+                <span>{tx('Assamese Dishes (20)', 'असमिया व्यंजन (20)', 'অসমীয়া খাদ্য (২০)')}</span>
+              </button>
+            </div>
+
             {/* Presets row */}
             <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none pt-1">
-              {defaultPuzzles.map((item) => {
+              {filteredDefaultPuzzles.map((item) => {
                 const isSelected = selectedDefaultId === item.id;
+                const displayTitle = language === 'as' && item.titleAs
+                  ? item.titleAs
+                  : language === 'hi' && item.titleHi
+                  ? item.titleHi
+                  : item.title;
+                const displayCategory = language === 'as' && item.categoryAs
+                  ? item.categoryAs
+                  : language === 'hi' && item.categoryHi
+                  ? item.categoryHi
+                  : item.category;
+
                 return (
                   <button
                     key={item.id}
@@ -1308,7 +1678,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
                     <div className="w-full aspect-square rounded-xl overflow-hidden mb-1.5 relative">
                       <img
                         src={item.image}
-                        alt={item.title}
+                        alt={displayTitle}
                         className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                       />
@@ -1318,8 +1688,8 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
                         </div>
                       )}
                     </div>
-                    <p className="text-xs font-bold text-[#2D3A2F] truncate">{item.title}</p>
-                    <p className="text-[10px] text-[#5A6E5D] truncate">{item.category}</p>
+                    <p className="text-xs font-bold text-[#2D3A2F] truncate">{displayTitle}</p>
+                    <p className="text-[10px] text-[#5A6E5D] truncate">{displayCategory}</p>
                   </button>
                 );
               })}
