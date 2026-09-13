@@ -112,6 +112,7 @@ export const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onBack }) 
   useEffect(() => {
     return () => {
       clearTimer();
+      soundController.stopSpeaking();
     };
   }, []);
 
@@ -130,6 +131,7 @@ export const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onBack }) 
         <button
           onClick={() => {
             clearTimer();
+            soundController.stopSpeaking();
             onBack();
           }}
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white border border-[#E0DCD3] font-bold text-sm text-[#2D3A2F] hover:bg-[#EAF1E8]"
@@ -246,7 +248,11 @@ export const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onBack }) 
                 {isHindi ? 'सत्र दोहराएं' : 'Repeat Session'}
               </button>
               <button
-                onClick={onBack}
+                onClick={() => {
+                  clearTimer();
+                  soundController.stopSpeaking();
+                  onBack();
+                }}
                 className="px-6 py-3 rounded-2xl bg-white border border-[#E0DCD3] text-[#2D3A2F] font-bold text-sm hover:bg-gray-50"
               >
                 {isHindi ? 'समाप्त' : 'Finish'}

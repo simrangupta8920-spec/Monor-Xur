@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SunMedium, Music, Wind, Volume2, X, Sparkles, Check } from 'lucide-react';
 import { soundController } from '../../utils/audio';
 import { useLanguage } from '../../context/LanguageContext';
@@ -19,6 +19,20 @@ export const SundowningCalmBanner: React.FC<SundowningCalmBannerProps> = ({
   const { tx, isHindi } = useLanguage();
   const [dismissed, setDismissed] = useState(false);
   const [isPlayingRaga, setIsPlayingRaga] = useState(false);
+
+  useEffect(() => {
+    const unsub = soundController.addAudioListener((event) => {
+      if (event === 'stop' || event === 'pause') {
+        setIsPlayingRaga(false);
+      }
+    });
+
+    return () => {
+      unsub();
+      soundController.stopAmbient();
+      soundController.stopSpeaking();
+    };
+  }, []);
 
   if (!isActive || dismissed) return null;
 
@@ -104,7 +118,11 @@ export const SundowningCalmBanner: React.FC<SundowningCalmBannerProps> = ({
           )}
 
           <button
-            onClick={() => setDismissed(true)}
+            onClick={() => {
+              soundController.stopAmbient();
+              soundController.stopSpeaking();
+              setDismissed(true);
+            }}
             className="w-8 h-8 rounded-full bg-white/70 hover:bg-white text-[#8C651E] flex items-center justify-center transition-colors ml-1"
             title={tx('Minimize', 'छोटा करें', 'সংকোচন কৰক')}
           >

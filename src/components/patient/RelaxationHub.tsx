@@ -16,7 +16,10 @@ export const RelaxationHub: React.FC<RelaxationHubProps> = ({ onSelectSubView, o
     <div className="p-4 pb-24 space-y-4 animate-fadeIn">
       <div className="flex items-center gap-2">
         <button
-          onClick={onBack}
+          onClick={() => {
+            soundController.stopAllAudio();
+            onBack();
+          }}
           className="p-2 rounded-2xl bg-white border border-[#E0DCD3] text-[#2D3A2F] hover:bg-[#EAF1E8]"
           aria-label={t('goBack')}
         >

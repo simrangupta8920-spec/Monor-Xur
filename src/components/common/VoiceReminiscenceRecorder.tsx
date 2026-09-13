@@ -43,6 +43,7 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
 
   useEffect(() => {
     return () => {
+      soundController.stopSpeaking();
       if (timerRef.current) clearInterval(timerRef.current);
       if (audioPlayerRef.current) {
         audioPlayerRef.current.pause();
@@ -140,6 +141,7 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
       if (!audioPlayerRef.current) {
         audioPlayerRef.current = new Audio(audioUrl);
         audioPlayerRef.current.onended = () => setIsPlaying(false);
+        soundController.registerAudio(audioPlayerRef.current);
       } else {
         audioPlayerRef.current.src = audioUrl;
       }

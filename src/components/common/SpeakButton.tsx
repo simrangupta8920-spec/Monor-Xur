@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { soundController } from '../../utils/audio';
 
@@ -20,32 +20,51 @@ export const SpeakButton: React.FC<SpeakButtonProps> = ({
   label,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const id = useId();
 
   useEffect(() => {
+    // Keep playback indicator strictly synced with central sound controller
+    const removeListener = soundController.addAudioListener((event, data) => {
+      if (event === 'speech-start') {
+        if (data?.speakerId === id) {
+          setIsPlaying(true);
+        } else {
+          setIsPlaying(false);
+        }
+      } else if (event === 'speech-stop' || event === 'stop') {
+        setIsPlaying(false);
+      }
+    });
+
     return () => {
-      // Clean up speaking if unmounted
-      if (isPlaying) {
+      removeListener();
+      // If this specific button was speaking when unmounting, stop speech
+      if (soundController.activeSpeakerId === id) {
         soundController.stopSpeaking();
       }
     };
-  }, [isPlaying]);
+  }, [id]);
 
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (isPlaying) {
+    // If currently speaking, stop immediately
+    if (isPlaying || (soundController.isSpeaking() && soundController.activeSpeakerId === id)) {
       soundController.stopSpeaking();
       setIsPlaying(false);
       return;
     }
 
-    setIsPlaying(true);
     soundController.playClick();
+    setIsPlaying(true);
     soundController.speakBilingual(
       textEn,
       textHi || textEn,
       () => setIsPlaying(false),
-      textAs
+      textAs,
+      id,
+      buttonRef.current
     );
   };
 
@@ -63,6 +82,7 @@ export const SpeakButton: React.FC<SpeakButtonProps> = ({
 
   return (
     <button
+      ref={buttonRef}
       type="button"
       onClick={handleToggle}
       aria-label="Read aloud"

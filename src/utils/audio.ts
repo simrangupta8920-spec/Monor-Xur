@@ -21,6 +21,63 @@ class SoundController {
   public isAmbientPlaying = false;
   public isSundowningActive = false;
   private audioListeners: Array<(event: string, data?: any) => void> = [];
+  public activeSpeakerId: string | null = null;
+  public activeSpeakerElement: HTMLElement | null = null;
+  private isSpeechActive = false;
+  private registeredAudios: Set<HTMLAudioElement> = new Set();
+  private globalListenerInstalled = false;
+
+  constructor() {
+    this.initGlobalInteractionListener();
+  }
+
+  // Global listener to ensure that clicking any other button or element automatically halts voice
+  private initGlobalInteractionListener() {
+    if (typeof window === 'undefined' || this.globalListenerInstalled) return;
+    this.globalListenerInstalled = true;
+
+    const handleInteraction = (event: Event) => {
+      if (!this.isSpeaking()) return;
+
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      // If clicked inside the currently active speaker button, let that button handle its own toggle
+      if (this.activeSpeakerElement && (this.activeSpeakerElement === target || this.activeSpeakerElement.contains(target))) {
+        return;
+      }
+
+      // If user clicked any other button, tab, card, or element on screen: stop voice speech immediately!
+      this.stopSpeaking();
+    };
+
+    window.addEventListener('pointerdown', handleInteraction, true);
+    window.addEventListener('touchstart', handleInteraction, { capture: true, passive: true });
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (this.isSpeaking() && (e.key === 'Escape' || e.key === 'Tab')) {
+        this.stopSpeaking();
+      }
+    }, true);
+  }
+
+  registerAudio(audio: HTMLAudioElement): () => void {
+    this.registeredAudios.add(audio);
+    return () => {
+      this.registeredAudios.delete(audio);
+    };
+  }
+
+  stopAllAudio() {
+    this.stopSpeaking();
+    this.stopCalmingTrack();
+    this.registeredAudios.forEach((audio) => {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {}
+    });
+    this.registeredAudios.clear();
+  }
 
   setSundowningMode(active: boolean) {
     this.isSundowningActive = active;
@@ -359,9 +416,17 @@ class SoundController {
   }
 
   // Native Speech Synthesis for Read-Aloud with English, Hindi & Assamese Support
-  speak(text: string, onEnd?: () => void, langOverride?: 'en' | 'hi' | 'as') {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
+  speak(
+    text: string, 
+    onEnd?: () => void, 
+    langOverride?: 'en' | 'hi' | 'as',
+    speakerId?: string,
+    speakerElement?: HTMLElement | null
+  ) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    
+    // Cancel any current speech cleanly
+    this.stopSpeaking();
 
     const targetLang = langOverride || this.getLanguage();
     const processedText = targetLang === 'en' ? text : this.translateSpokenPrompt(text);
@@ -407,33 +472,74 @@ class SoundController {
       }
     }
 
-    if (onEnd) {
-      utterance.onend = onEnd;
-      utterance.onerror = onEnd;
-    }
+    this.activeSpeakerId = speakerId || null;
+    this.activeSpeakerElement = speakerElement || null;
+    this.isSpeechActive = true;
 
-    window.speechSynthesis.speak(utterance);
+    const cleanupAndNotify = () => {
+      this.isSpeechActive = false;
+      this.activeSpeakerId = null;
+      this.activeSpeakerElement = null;
+      this.notifyAudio('speech-stop');
+    };
+
+    utterance.onstart = () => {
+      this.isSpeechActive = true;
+      this.notifyAudio('speech-start', { speakerId });
+    };
+
+    utterance.onend = () => {
+      cleanupAndNotify();
+      if (onEnd) onEnd();
+    };
+
+    utterance.onerror = () => {
+      cleanupAndNotify();
+      if (onEnd) onEnd();
+    };
+
+    try {
+      window.speechSynthesis.speak(utterance);
+      this.notifyAudio('speech-start', { speakerId });
+    } catch {
+      cleanupAndNotify();
+    }
   }
 
-  speakBilingual(textEn: string, textHi: string, onEnd?: () => void, textAs?: string) {
+  speakBilingual(
+    textEn: string, 
+    textHi: string, 
+    onEnd?: () => void, 
+    textAs?: string,
+    speakerId?: string,
+    speakerElement?: HTMLElement | null
+  ) {
     const lang = this.getLanguage();
     if (lang === 'as') {
-      this.speak(textAs || getAssameseTranslation(textEn, textHi), onEnd, 'as');
+      this.speak(textAs || getAssameseTranslation(textEn, textHi), onEnd, 'as', speakerId, speakerElement);
     } else if (lang === 'hi') {
-      this.speak(textHi, onEnd, 'hi');
+      this.speak(textHi, onEnd, 'hi', speakerId, speakerElement);
     } else {
-      this.speak(textEn, onEnd, 'en');
+      this.speak(textEn, onEnd, 'en', speakerId, speakerElement);
     }
   }
 
   stopSpeaking() {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+    this.isSpeechActive = false;
+    this.activeSpeakerId = null;
+    this.activeSpeakerElement = null;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
     }
+    this.notifyAudio('speech-stop');
   }
 
   isSpeaking(): boolean {
-    return 'speechSynthesis' in window && window.speechSynthesis.speaking;
+    if (typeof window === 'undefined') return false;
+    const synthSpeaking = 'speechSynthesis' in window && (window.speechSynthesis.speaking || window.speechSynthesis.pending);
+    return this.isSpeechActive || synthSpeaking;
   }
 }
 

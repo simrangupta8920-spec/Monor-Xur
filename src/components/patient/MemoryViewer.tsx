@@ -29,6 +29,13 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
   const [isPlayingVoiceSnippet, setIsPlayingVoiceSnippet] = useState(false);
   const voiceSnippetAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  useEffect(() => {
+    return () => {
+      stopAllMedia();
+      soundController.stopAllAudio();
+    };
+  }, []);
+
   const stopAllMedia = () => {
     soundController.stopSpeaking();
     setIsReading(false);
@@ -43,6 +50,7 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
       voiceSnippetAudioRef.current.pause();
       setIsPlayingVoiceSnippet(false);
     }
+    soundController.stopAllAudio();
   };
 
   const handleNext = () => {
@@ -62,6 +70,7 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
     if (!voiceSnippetAudioRef.current || voiceSnippetAudioRef.current.src !== current.voiceSnippet) {
       const audio = new Audio(current.voiceSnippet);
       audio.onended = () => setIsPlayingVoiceSnippet(false);
+      soundController.registerAudio(audio);
       voiceSnippetAudioRef.current = audio;
     }
 
@@ -93,6 +102,7 @@ export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, currentMem
     if (!audioRef.current) {
       const audio = new Audio(current.audioUrl);
       audio.onended = () => setIsPlayingAudio(false);
+      soundController.registerAudio(audio);
       audioRef.current = audio;
     }
 

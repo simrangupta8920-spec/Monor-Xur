@@ -80,6 +80,26 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
 
   // Detect SpeechRecognition support on mount
   useEffect(() => {
+    return () => {
+      soundController.stopSpeaking();
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+      }
+      if (mediaRecorderRef.current) {
+        if (mediaRecorderRef.current.state === 'recording') {
+          try { mediaRecorderRef.current.stop(); } catch {}
+        }
+        if (mediaRecorderRef.current.stream) {
+          mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop());
+        }
+      }
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
@@ -280,6 +300,7 @@ export const AudioDiaryRecorder: React.FC<AudioDiaryRecorderProps> = ({
     if (!audioPlayerRef.current && audioUrl) {
       const audio = new Audio(audioUrl);
       audio.onended = () => setIsPlayingAudio(false);
+      soundController.registerAudio(audio);
       audioPlayerRef.current = audio;
     }
 

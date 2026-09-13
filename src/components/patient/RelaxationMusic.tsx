@@ -177,6 +177,8 @@ export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
     return () => {
       isMounted = false;
       removeListener();
+      soundController.stopCalmingTrack();
+      soundController.stopSpeaking();
       // Revoke any created object URLs
       Object.values(activeCustomUrls).forEach((url) => {
         try {
@@ -344,7 +346,7 @@ export const RelaxationMusic: React.FC<RelaxationMusicProps> = ({ onBack }) => {
       <div className="flex items-center gap-3">
         <button
           onClick={() => {
-            soundController.stopCalmingTrack();
+            soundController.stopAllAudio();
             onBack();
           }}
           className="p-2.5 rounded-2xl bg-white border border-[#E0DCD3] text-[#2D3A2F] hover:bg-[#EAF1E8] shadow-xs active:scale-95 transition-transform"

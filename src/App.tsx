@@ -341,7 +341,18 @@ export function App() {
   }, [currentUser]);
 
   // Handlers
+  const handleSetPatientSubView = (subView: PatientSubView) => {
+    soundController.stopAllAudio();
+    setPatientSubView(subView);
+  };
+
+  // Stop all audio & voice whenever navigation changes or user goes back/switches tabs
+  useEffect(() => {
+    soundController.stopAllAudio();
+  }, [role, patientTab, patientSubView, familyTab, ashaTab, selectedMemory]);
+
   const handleSwitchRole = (newRole: AppRole) => {
+    soundController.stopAllAudio();
     soundController.playClick();
     setRole(newRole);
     if (newRole === 'patient') {
@@ -368,6 +379,7 @@ export function App() {
   };
 
   const handlePatientSelectTab = (tab: PatientTab) => {
+    soundController.stopAllAudio();
     soundController.playClick();
     setPatientTab(tab);
     setPatientSubView('none');
@@ -677,7 +689,7 @@ export function App() {
               <MedicineReminders
                 reminders={reminders}
                 onToggleReminder={handleToggleReminder}
-                onBack={() => setPatientSubView('none')}
+                onBack={() => handleSetPatientSubView('none')}
                 onCallFamily={triggerCallFamily}
                 caregiverName={patientProfile.caregiver?.name}
                 onTriggerTestAlert={() => setSimulationAlertTrigger((c) => c + 1)}
@@ -688,7 +700,7 @@ export function App() {
             {patientSubView === 'puzzle' && (
               <PuzzleGame
                 memories={memories}
-                onBack={() => setPatientSubView('none')}
+                onBack={() => handleSetPatientSubView('none')}
                 onLogDDAMetric={handleLogDDAMetric}
                 playerName={patientProfile.name}
                 initialMode={playMode}
@@ -699,7 +711,7 @@ export function App() {
             {/* Sub-view: Memory Match Game */}
             {patientSubView === 'memory_match' && (
               <MemoryMatchGame
-                onBack={() => setPatientSubView('none')}
+                onBack={() => handleSetPatientSubView('none')}
                 onLogDDAMetric={handleLogDDAMetric}
                 playerName={patientProfile.name}
                 mode={playMode}
@@ -710,19 +722,19 @@ export function App() {
             {/* Sub-view: Relaxation Hub */}
             {patientSubView === 'relaxation' && (
               <RelaxationHub
-                onSelectSubView={setPatientSubView}
-                onBack={() => setPatientSubView('none')}
+                onSelectSubView={handleSetPatientSubView}
+                onBack={() => handleSetPatientSubView('none')}
               />
             )}
 
             {/* Sub-view: Breathing Exercise */}
             {patientSubView === 'breathing' && (
-              <BreathingExercise onBack={() => setPatientSubView('relaxation')} />
+              <BreathingExercise onBack={() => handleSetPatientSubView('relaxation')} />
             )}
 
             {/* Sub-view: Music */}
             {patientSubView === 'music' && (
-              <RelaxationMusic onBack={() => setPatientSubView('relaxation')} />
+              <RelaxationMusic onBack={() => handleSetPatientSubView('relaxation')} />
             )}
 
             {/* Sub-view: Daily Life / Reminders */}
@@ -730,7 +742,7 @@ export function App() {
               <DailyLife
                 reminders={reminders}
                 onToggleReminder={handleToggleReminder}
-                onBack={() => setPatientSubView('none')}
+                onBack={() => handleSetPatientSubView('none')}
               />
             )}
 
@@ -739,7 +751,10 @@ export function App() {
               <MemoryViewer
                 memories={memories}
                 currentMemoryId={selectedMemory.id}
-                onClose={() => setSelectedMemory(null)}
+                onClose={() => {
+                  soundController.stopAllAudio();
+                  setSelectedMemory(null);
+                }}
               />
             )}
 
@@ -750,7 +765,7 @@ export function App() {
                   <PatientHome
                     patientName={patientProfile.name || 'Friend'}
                     onSelectTab={handlePatientSelectTab}
-                    onSelectSubView={setPatientSubView}
+                    onSelectSubView={handleSetPatientSubView}
                     reminders={reminders}
                     onCallFamily={triggerCallFamily}
                     caregiver={patientProfile.caregiver}
@@ -761,7 +776,7 @@ export function App() {
                   <MedicineReminders
                     reminders={reminders}
                     onToggleReminder={handleToggleReminder}
-                    onBack={() => setPatientTab('home')}
+                    onBack={() => handlePatientSelectTab('home')}
                     onCallFamily={triggerCallFamily}
                     caregiverName={patientProfile.caregiver?.name}
                     onTriggerTestAlert={() => setSimulationAlertTrigger((c) => c + 1)}
@@ -772,14 +787,17 @@ export function App() {
                   <MemoriesGallery
                     memories={memories}
                     patientName={patientProfile.name || 'Friend'}
-                    onOpenMemory={(mem) => setSelectedMemory(mem)}
+                    onOpenMemory={(mem) => {
+                      soundController.stopAllAudio();
+                      setSelectedMemory(mem);
+                    }}
                     onAddMemory={handleAddMemory}
                   />
                 )}
 
                 {patientTab === 'play' && (
                   <GamesHub
-                    onSelectGame={(g) => setPatientSubView(g)}
+                    onSelectGame={(g) => handleSetPatientSubView(g)}
                     currentLevel={2}
                     ddaLogs={ddaLogs}
                     memories={memories}
