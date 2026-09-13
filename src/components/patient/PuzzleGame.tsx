@@ -4,7 +4,7 @@ import {
   ArrowLeft, Shuffle, CheckCircle2, Sparkles, RotateCcw, 
   Eye, EyeOff, Trophy, Volume2, Image as ImageIcon, 
   Upload, Plus, Check, Heart, HelpCircle, Lightbulb, Play,
-  Clock, Brain, Sliders, Timer, TrendingUp, TrendingDown
+  Clock, Brain, Sliders, Timer, TrendingUp, TrendingDown, Hand
 } from 'lucide-react';
 import { Memory, DDAMetric } from '../../types';
 import { soundController } from '../../utils/audio';
@@ -12,12 +12,15 @@ import { analyzePuzzleDifficulty, PuzzleAIAnalysisResult, PUZZLE_DESIGNATED_TIME
 import { DifficultyToast, DifficultyToastProps } from '../common/DifficultyToast';
 import { useLanguage } from '../../context/LanguageContext';
 import { SpeakButton } from '../common/SpeakButton';
+import { EasyModeGuide } from './EasyModeGuide';
 
 interface PuzzleGameProps {
   memories: Memory[];
   onBack: () => void;
   onLogDDAMetric?: (metric: DDAMetric) => void;
   playerName?: string;
+  initialMode?: 'personalized' | 'default';
+  onModeChange?: (mode: 'personalized' | 'default') => void;
 }
 
 interface DefaultPuzzleItem {
@@ -422,7 +425,14 @@ const PIECE_COORDINATES: Record<number, { bgPos: string; label: string; row: num
   3: { bgPos: '100% 100%', label: 'Bottom Right', row: 1, col: 1 },
 };
 
-export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogDDAMetric, playerName = 'Player' }) => {
+export const PuzzleGame: React.FC<PuzzleGameProps> = ({ 
+  memories, 
+  onBack, 
+  onLogDDAMetric, 
+  playerName = 'Player',
+  initialMode,
+  onModeChange
+}) => {
   const { t, tx, language, isHindi } = useLanguage();
 
   // Available personalized memories (filter for photo memories with valid image)
@@ -435,14 +445,32 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
   // Check if caregiver has uploaded pictures/memories
   const hasCaregiverUploadedMemories = photoMemories.length > 0;
 
-  // RULE:
-  // If caregiver has already uploaded some of the pictures,
-  // then the first page which opens after clicking the puzzle should be personalized one only.
-  // And if the caregiver has not uploaded any of their personal pictures or any of the memory,
-  // then on clicking puzzles, default mode should open first.
-  const [mode, setMode] = useState<'personalized' | 'default'>(() => {
+  // Initialize mode from Play tab selection (initialMode) or fallback based on caregiver upload state
+  const [mode, setModeState] = useState<'personalized' | 'default'>(() => {
+    if (initialMode) {
+      if (initialMode === 'personalized' && !hasCaregiverUploadedMemories) {
+        return 'default';
+      }
+      return initialMode;
+    }
     return hasCaregiverUploadedMemories ? 'personalized' : 'default';
   });
+
+  const setMode = (newMode: 'personalized' | 'default') => {
+    setModeState(newMode);
+    onModeChange?.(newMode);
+  };
+
+  // Sync if initialMode changes externally from Play tab
+  useEffect(() => {
+    if (initialMode) {
+      if (initialMode === 'personalized' && !hasCaregiverUploadedMemories) {
+        setModeState('default');
+      } else {
+        setModeState(initialMode);
+      }
+    }
+  }, [initialMode, hasCaregiverUploadedMemories]);
 
   // Default puzzles list with support for dynamically added custom images
   const [defaultPuzzles, setDefaultPuzzles] = useState<DefaultPuzzleItem[]>(DEFAULT_PUZZLES);
@@ -577,6 +605,20 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
   // Subtle difficulty adjustment notification toast state
   const [difficultyToast, setDifficultyToast] = useState<DifficultyToastProps | null>(null);
 
+interface PendingLevelUpgradeData {
+  fromGrid: GridDimension;
+  toGrid: GridDimension;
+  encouragement: string;
+  reason?: string;
+}
+
+  // Pending Level Upgrade (queued from AI analysis to apply when clicking Next Picture)
+  const [pendingLevelUpgrade, setPendingLevelUpgrade] = useState<PendingLevelUpgradeData | null>(null);
+  const pendingLevelUpgradeRef = useRef<PendingLevelUpgradeData | null>(null);
+
+  // 10-second peaceful pause timer upon completing puzzle
+  const [pauseSecondsLeft, setPauseSecondsLeft] = useState<number>(10);
+
   // AI Cognitive Model & Telemetry State
   const [isAnalyzingAI, setIsAnalyzingAI] = useState<boolean>(false);
   const [latestAIResult, setLatestAIResult] = useState<PuzzleAIAnalysisResult | null>(null);
@@ -617,6 +659,37 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
   // Victory narration state
   const [narrationText, setNarrationText] = useState<string>('');
   const [isSpeakingNarration, setIsSpeakingNarration] = useState<boolean>(false);
+
+  // Automatically tell the player how to play whenever the game comes to Easy Mode (2x2)
+  const prevGridSizeRef = useRef<GridDimension | null>(null);
+
+  useEffect(() => {
+    if (gridSize === 2 && !isComplete) {
+      const isFirstLoad = prevGridSizeRef.current === null;
+      const isTransitionToEasy = prevGridSizeRef.current !== null && prevGridSizeRef.current !== 2;
+
+      if (isFirstLoad || isTransitionToEasy) {
+        const speechTimer = setTimeout(() => {
+          soundController.speakBilingual(
+            isTransitionToEasy
+              ? 'We have adjusted to Easy Mode with 4 pieces. Tap a piece in the tray below to pick it up, then tap where you want to place it on the board. Take your time, no rush.'
+              : 'Welcome to Easy Mode with 4 pieces. Tap a piece in the tray below to pick it up, then tap where you want to place it on the board. Enjoy!',
+            isTransitionToEasy
+              ? 'हमने 4 टुकड़ों के सरल मोड में बदल दिया है। नीचे ट्रे से किसी टुकड़े पर टैप करें, फिर बोर्ड पर रखें। आराम से खेलें।'
+              : '4 टुकड़ों वाला सरल मोड तैयार है। नीचे ट्रे से किसी टुकड़े पर टैप करें, फिर बोर्ड पर रखें। आराम से खेलें।',
+            undefined,
+            isTransitionToEasy
+              ? 'আমি ৪টা টুকুৰাৰ সৈতে সহজ মোডলৈ সলনি কৰিছোঁ। তলৰ ট্ৰে’ৰ পৰা এটা টুকুৰা তুলি ব’ৰ্ডত বহুৱাওক। কোনো খৰখেদা নকৰিব।'
+              : '৪টা টুকুৰাৰ সৈতে সহজ মোড সাজু। তলৰ ট্ৰে’ৰ পৰা এটা টুকুৰা তুলি ব’ৰ্ডত বহুৱাওক। কোনো খৰখেদা নকৰিব।'
+          );
+        }, 600);
+
+        prevGridSizeRef.current = gridSize;
+        return () => clearTimeout(speechTimer);
+      }
+    }
+    prevGridSizeRef.current = gridSize;
+  }, [gridSize, isComplete]);
 
   // Speech helper with visual speaking indicator
   const speakVictoryStory = useCallback((textToSpeak: string) => {
@@ -699,33 +772,6 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             // Ignore
           }
 
-          setAutoAdjustBanner({
-            show: true,
-            reason: aiResult.reasoning,
-            encouragement: aiResult.encouragement,
-            fromGrid: fromG,
-            toGrid: targetG,
-            timeTaken: timeTakenSeconds,
-            averageTime: designatedAvg,
-            action: aiResult.action,
-            modelSource: aiResult.modelSource,
-          });
-
-          // Trigger subtle notification toast with encouraging language
-          setDifficultyToast({
-            show: true,
-            gameTitle: 'Photo Puzzle',
-            action: aiResult.action,
-            previousLevelName: GRID_LABELS[fromG]?.name || `${fromG}×${fromG}`,
-            newLevelName: GRID_LABELS[targetG]?.name || `${targetG}×${targetG}`,
-            encouragement: aiResult.encouragement,
-            reason: aiResult.reasoning,
-            timeTaken: timeTakenSeconds,
-            averageTime: designatedAvg,
-            onUndo: () => handleSelectGridSize(fromG),
-            onDismiss: () => setDifficultyToast(null),
-          });
-
           // Log AI intervention metric for Caregiver & ASHA telemetry
           if (onLogDDAMetric) {
             onLogDDAMetric({
@@ -758,10 +804,42 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             setStartTime(Date.now());
             setElapsedSeconds(0);
             setHasLoggedMetric(false);
-            soundController.speak(aiResult.encouragement);
+            if (targetG === 2) {
+              setAutoAdjustBanner({
+                show: true,
+                action: 'EASE_DIFFICULTY',
+                fromGrid: fromG,
+                toGrid: targetG,
+                encouragement: tx(
+                  'We adjusted to Easy Mode (4 pieces). Here is how to play: Tap a piece below to pick it up, then tap a space on the board.',
+                  'हमने 4 टुकड़ों के सरल मोड में बदल दिया है। नीचे ट्रे से टुकड़ा चुनें और बोर्ड पर खाली जगह पर रखें।',
+                  'আমি ৪টা টুকুৰাৰ সৈতে সহজ মোডলৈ সলনি কৰিছোঁ। তলৰ ট্ৰে’ৰ পৰা টুকুৰা তুলি ব’ৰ্ডত বহুৱাওক।'
+                ),
+                reason: aiResult.reasoning || '',
+                timeTaken: timeTakenSeconds,
+                averageTime: baselineAvg,
+                modelSource: aiResult.modelSource,
+              });
+            } else {
+              soundController.speak(aiResult.encouragement);
+            }
           } else {
-            // Round complete: set new grid size for next round!
-            setGridSize(targetG);
+            // Round complete: Queue level upgrade for when user clicks "Next Picture"!
+            // No notification banner or toast pops up so the player can admire the completed solution peacefully.
+            const upgradeData: PendingLevelUpgradeData = {
+              fromGrid: fromG,
+              toGrid: targetG,
+              encouragement: aiResult.encouragement || tx(
+                "You are doing very great! Wonderful job solving with ease and joy. Let's try this exciting new challenge together!",
+                "आप बहुत बढ़िया काम कर रहे हैं! शाबाश! आइए मिलकर यह नई चुनौती आजमाते हैं!",
+                "আপুনি বৰ ভাল কাম কৰিছে! শাবাছ! আহক আমি একেলগে এই নতুন প্ৰত্যাহ্বানটো চেষ্টা কৰোঁ!"
+              ),
+              reason: aiResult.reasoning,
+            };
+            pendingLevelUpgradeRef.current = upgradeData;
+            setPendingLevelUpgrade(upgradeData);
+            setAutoAdjustBanner(null);
+            setDifficultyToast(null);
           }
         } else {
           // Difficulty maintained
@@ -808,6 +886,8 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
   const handleSelectGridSize = (newSize: GridDimension) => {
     soundController.playClick();
     setGridSize(newSize);
+    pendingLevelUpgradeRef.current = null;
+    setPendingLevelUpgrade(null);
     setConsecutiveSolves(0);
     try {
       localStorage.setItem('monor_puzzle_consecutive_solves', '0');
@@ -826,6 +906,18 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     setElapsedSeconds(0);
     setHasLoggedMetric(false);
     setAutoAdjustBanner(null);
+    setDifficultyToast(null);
+    setPauseSecondsLeft(10);
+
+    // Audio guidance announcement for Easy Mode
+    if (newSize === 2) {
+      soundController.speakBilingual(
+        'Easy Mode selected with 4 pieces. Tap a piece in the tray below to pick it up, then tap a spot on the board to place it.',
+        'सरल मोड चुना गया। नीचे ट्रे में से किसी टुकड़े पर टैप करें, फिर बोर्ड पर खाली जगह पर रखें।',
+        undefined,
+        'সহজ মোড বাছনি কৰা হ’ল। তলৰ ট্ৰে’ৰ পৰা এটা টুকুৰা বাছি লৈ ব’ৰ্ডৰ খালী স্থানত বহুৱাওক।'
+      );
+    }
   };
 
   // Simulation test helper for Caregivers / Testers
@@ -856,7 +948,6 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
       setLatestAIResult(aiResult);
 
       if (aiResult.triggerAutoShift && aiResult.recommendedGrid !== gridSize) {
-        const fromG = gridSize;
         const targetG = aiResult.recommendedGrid;
         if (aiResult.action === 'EASE_DIFFICULTY') {
           soundController.playChime(396, 0.7);
@@ -864,35 +955,37 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
           soundController.playChime(660, 0.6);
         }
 
-        setAutoAdjustBanner({
-          show: true,
-          reason: aiResult.reasoning,
-          encouragement: aiResult.encouragement,
-          fromGrid: fromG,
+        // 1. Give whole solution (all pieces assembled in board)
+        setBoardSlots(Array.from({ length: totalPieces }, (_, i) => i));
+        setTrayPieces([]);
+        setSelectedSource(null);
+        setIsComplete(true);
+        setPauseSecondsLeft(10);
+        triggerCelebratoryParticles();
+
+        // 2. Speak whole picture description + victory affirmation
+        const rawDescription = (currentPuzzle.description || currentPuzzle.title).trim();
+        const formattedDesc = rawDescription.endsWith('.') || rawDescription.endsWith('।') ? rawDescription : `${rawDescription}.`;
+        const victoryAffirmation = tx('Great work! Good job!', 'बहुत बढ़िया काम! शाबाश!', 'বৰ ভাল কাম! শাবাছ!');
+        const victorySpeech = `${formattedDesc} ${victoryAffirmation}`;
+        setNarrationText(victorySpeech);
+        speakVictoryStory(victorySpeech);
+
+        // 3. Queue level upgrade for when Next Picture is clicked (no notification)
+        const upgradeData: PendingLevelUpgradeData = {
+          fromGrid: gridSize,
           toGrid: targetG,
-          timeTaken: testTime,
-          averageTime: testBaseline,
-          action: aiResult.action,
-          modelSource: aiResult.modelSource,
-        });
-
-        // Trigger subtle notification toast
-        setDifficultyToast({
-          show: true,
-          gameTitle: 'Photo Puzzle',
-          action: aiResult.action,
-          previousLevelName: GRID_LABELS[fromG]?.name || `${fromG}×${fromG}`,
-          newLevelName: GRID_LABELS[targetG]?.name || `${targetG}×${targetG}`,
-          encouragement: aiResult.encouragement,
+          encouragement: aiResult.encouragement || tx(
+            "You are doing very great! Wonderful job solving with ease and joy. Let's try this exciting new challenge together!",
+            "आप बहुत बढ़िया काम कर रहे हैं! शाबाश! आइए मिलकर यह नई चुनौती आजमाते हैं!",
+            "আপুনি বৰ ভাল কাম কৰিছে! শাবাছ! আহক আমি একেলগে এই নতুন প্ৰত্যাহ্বানটো চেষ্টা কৰোঁ!"
+          ),
           reason: aiResult.reasoning,
-          timeTaken: testTime,
-          averageTime: testBaseline,
-          onUndo: () => handleSelectGridSize(fromG),
-          onDismiss: () => setDifficultyToast(null),
-        });
-
-        soundController.speak(aiResult.encouragement);
-        handleSelectGridSize(targetG);
+        };
+        pendingLevelUpgradeRef.current = upgradeData;
+        setPendingLevelUpgrade(upgradeData);
+        setAutoAdjustBanner(null);
+        setDifficultyToast(null);
       }
     } catch (e) {
       console.error('Simulation test error:', e);
@@ -900,6 +993,96 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
       setIsAnalyzingAI(false);
     }
   };
+
+  // 10-second peaceful pause countdown when puzzle is completed
+  useEffect(() => {
+    if (!isComplete || pauseSecondsLeft <= 0) return;
+    const interval = setInterval(() => {
+      setPauseSecondsLeft((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isComplete, pauseSecondsLeft]);
+
+  // Handle moving to next picture with upgraded level (no notification popup)
+  const handleNextPicture = useCallback(() => {
+    soundController.playClick();
+    soundController.stopSpeaking();
+    setIsSpeakingNarration(false);
+    setAutoAdjustBanner(null);
+    setDifficultyToast(null);
+
+    // Apply pending level upgrade if AI recommended one
+    let nextGridSize = gridSize;
+    const pending = pendingLevelUpgradeRef.current;
+    if (pending) {
+      nextGridSize = pending.toGrid;
+      pendingLevelUpgradeRef.current = null;
+      setPendingLevelUpgrade(null);
+      setGridSize(nextGridSize);
+      setConsecutiveSolves(0);
+      try {
+        localStorage.setItem('monor_puzzle_consecutive_solves', '0');
+      } catch {
+        // Ignore storage error
+      }
+
+      // Show the level shift block with encouragement message right before the piece tray!
+      const isEasing = pending.toGrid < pending.fromGrid;
+      setAutoAdjustBanner({
+        show: true,
+        action: isEasing ? 'EASE_DIFFICULTY' : 'INCREASE_DIFFICULTY',
+        fromGrid: pending.fromGrid,
+        toGrid: pending.toGrid,
+        encouragement: pending.encouragement,
+        reason: pending.reason || '',
+        timeTaken: 0,
+        averageTime: 0,
+        modelSource: 'gemini-3.8-flash',
+      });
+      if (isEasing) {
+        soundController.playChime(396, 0.7);
+      } else {
+        soundController.playChime(660, 0.6);
+      }
+      soundController.speak(pending.encouragement);
+    } else {
+      setAutoAdjustBanner(null);
+    }
+    setDifficultyToast(null);
+
+    // Advance to next image
+    if (mode === 'personalized' && photoMemories.length > 0) {
+      const currIdx = photoMemories.findIndex((m) => m.id === selectedPersonalizedId);
+      const nextIdx = (currIdx + 1) % photoMemories.length;
+      setSelectedPersonalizedId(photoMemories[nextIdx].id);
+    } else if (defaultPuzzles.length > 0) {
+      const currIdx = defaultPuzzles.findIndex((p) => p.id === selectedDefaultId);
+      const nextIdx = (currIdx + 1) % defaultPuzzles.length;
+      setSelectedDefaultId(defaultPuzzles[nextIdx].id);
+    }
+
+    // Reset board and timer
+    const newTotal = nextGridSize * nextGridSize;
+    const shuffled = shufflePieces(nextGridSize);
+    setBoardSlots(Array.from({ length: newTotal }, () => null));
+    setTrayPieces(shuffled);
+    setSelectedSource(null);
+    setIsComplete(false);
+    setNarrationText('');
+    setMoves(0);
+    setStartTime(Date.now());
+    setElapsedSeconds(0);
+    setHasLoggedMetric(false);
+    setPauseSecondsLeft(10);
+  }, [
+    gridSize,
+    mode,
+    photoMemories,
+    selectedPersonalizedId,
+    defaultPuzzles,
+    selectedDefaultId,
+    shufflePieces,
+  ]);
 
   // Reset / Scramble game for the active image
   const handleScramble = () => {
@@ -916,6 +1099,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     setStartTime(Date.now());
     setElapsedSeconds(0);
     setHasLoggedMetric(false);
+    setPauseSecondsLeft(10);
   };
 
   // Auto-Assemble / Solve / Put It Back
@@ -942,6 +1126,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     setStartTime(Date.now());
     setElapsedSeconds(0);
     setHasLoggedMetric(false);
+    setPauseSecondsLeft(10);
   }, [currentPuzzle.image, gridSize, shufflePieces, totalPieces]);
 
   // Live timer & in-round auto-adjustment check
@@ -1077,6 +1262,13 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
   }, []);
 
   const triggerVictory = (currentMoves: number) => {
+    // Ensure the whole solution is assembled completely
+    setBoardSlots(Array.from({ length: totalPieces }, (_, i) => i));
+    setTrayPieces([]);
+    setSelectedSource(null);
+    setIsComplete(true);
+    setPauseSecondsLeft(10);
+
     // Launch celebratory confetti & particle sequence
     triggerCelebratoryParticles();
 
@@ -1366,7 +1558,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
         </div>
       </div>
 
-      {/* Main Header & 2 Game Modes */}
+      {/* Main Header & Controls: Header, Modes & Puzzle Size */}
       <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
@@ -1397,41 +1589,14 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
           </div>
         </div>
 
-        {/* 2 Modes Tabs: Personalized vs Default Mode */}
+        {/* 2 Modes Tabs: Default Mode vs Personalized Photo */}
         <div className="grid grid-cols-2 gap-2 bg-[#F8F6F0] p-1.5 rounded-2xl border border-[#EAE6DF]">
-          <button
-            onClick={() => {
-              soundController.playClick();
-              if (hasCaregiverUploadedMemories) {
-                setMode('personalized');
-              } else {
-                soundController.speakBilingual(
-                  'No personal photos uploaded yet. You can play Default Mode with Mango and other treasures!',
-                  'अभी कोई व्यक्तिगत फोटो अपलोड नहीं हुई है। आप मैंगो और अन्य सुंदर तस्वीरों के साथ डिफ़ॉल्ट मोड खेल सकते हैं!',
-                  undefined,
-                  'এতিয়ালৈ কোনো ব্যক্তিগত ফটো আপলোড কৰা হোৱা নাই। আপুনি আম আৰু আন ধুনীয়া ছবিৰ সৈতে খেলিব পাৰে!'
-                );
-                setMode('default');
-              }
-            }}
-            className={`py-2.5 px-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
-              mode === 'personalized'
-                ? 'bg-[#5B825B] text-white shadow-xs'
-                : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
-            }`}
-          >
-            <Heart className={`w-4 h-4 ${mode === 'personalized' ? 'fill-current' : ''}`} />
-            <span>
-              {tx('Personalized', 'पारिवारिक यादें', 'পৰিয়ালৰ স্মৃতি')} {hasCaregiverUploadedMemories ? `(${photoMemories.length})` : `(0 ${tx('Photos', 'तस्वीरें', 'ছবি')})`}
-            </span>
-          </button>
-
           <button
             onClick={() => {
               soundController.playClick();
               setMode('default');
             }}
-            className={`py-2.5 px-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+            className={`py-2.5 px-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
               mode === 'default'
                 ? 'bg-[#5B825B] text-white shadow-xs'
                 : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
@@ -1439,6 +1604,33 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
           >
             <ImageIcon className="w-4 h-4" />
             <span>{tx('Default Mode', 'डिफ़ॉल्ट मोड', 'ডিফল্ট মোড')}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              soundController.playClick();
+              if (hasCaregiverUploadedMemories) {
+                setMode('personalized');
+              } else {
+                soundController.speakBilingual(
+                  'No personal photos uploaded yet. You can upload memories in Family Caregiver Mode or play Default Mode with Mango and other treasures!',
+                  'अभी कोई व्यक्तिगत फोटो अपलोड नहीं हुई है। आप मैंगो और अन्य सुंदर तस्वीरों के साथ डिफ़ॉल्ट मोड खेल सकते हैं!',
+                  undefined,
+                  'এতিয়ালৈ কোনো ব্যক্তিগত ফটো আপলোড কৰা হোৱা নাই। আপুনি আম আৰু আন ধুনীয়া ছবিৰ সৈতে খেলিব পাৰে!'
+                );
+                setMode('default');
+              }
+            }}
+            className={`py-2.5 px-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              mode === 'personalized'
+                ? 'bg-[#5B825B] text-white shadow-xs'
+                : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${mode === 'personalized' ? 'fill-current' : ''}`} />
+            <span>
+              {tx('Personalized Photo', 'पारिवारिक फ़ोटो', 'পৰিয়ালৰ ফটো')} {hasCaregiverUploadedMemories ? `(${photoMemories.length})` : `(0 ${tx('Photos', 'तस्वीरें', 'ছবি')})`}
+            </span>
           </button>
         </div>
 
@@ -1471,232 +1663,157 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             <span>{tx('Piece together with joy', 'शांति से टुकड़े जोड़ें', 'শান্তভাৱে টুকুৰা জোৰা দিয়ক')}</span>
           </span>
         </div>
+      </div>
 
-        {/* Mode Selector Carousels */}
-        {mode === 'personalized' ? (
-          <div className="space-y-2 pt-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wide">
-                Caregiver Uploaded Memories ({photoMemories.length})
-              </span>
-              <span className="text-[11px] text-[#5A6E5D]">Tap to choose photo</span>
+      {/* Auto-Adjustment Notification Banner */}
+      {autoAdjustBanner?.show && (
+        <div
+          id="level-advanced-banner"
+          className={`rounded-2xl p-3.5 sm:p-4 border shadow-xs animate-scaleUp flex items-start justify-between gap-3 ${
+            autoAdjustBanner.action === 'EASE_DIFFICULTY'
+              ? 'bg-[#FDF6E9] border-[#E8B25C]/50'
+              : 'bg-[#EAF1E8] border-[#5B825B]/40'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <div
+              className={`w-9 h-9 rounded-xl text-white flex items-center justify-center shrink-0 shadow-2xs mt-0.5 ${
+                autoAdjustBanner.action === 'EASE_DIFFICULTY' ? 'bg-[#E8B25C]' : 'bg-[#5B825B]'
+              }`}
+            >
+              {autoAdjustBanner.action === 'EASE_DIFFICULTY' ? (
+                <TrendingDown className="w-5 h-5" />
+              ) : (
+                <Sparkles className="w-5 h-5 text-amber-200 fill-current" />
+              )}
             </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-black text-[#2D3A2F] leading-tight flex items-center flex-wrap gap-1.5">
+                <span>
+                  {autoAdjustBanner.action === 'EASE_DIFFICULTY'
+                    ? `${tx('Level Eased', 'आसान स्तर', 'সহজ স্তৰ')}:`
+                    : `${tx('You have advanced one level!', 'आप एक स्तर आगे बढ़ गए हैं!', 'আপুনি এটা স্তৰ আগবাঢ়িছে!')}`}
+                </span>
+                <span className="text-xs font-bold text-[#5B825B] bg-[#5B825B]/15 px-2 py-0.5 rounded-full">
+                  {GRID_LABELS[autoAdjustBanner.fromGrid]?.name} ➔ {GRID_LABELS[autoAdjustBanner.toGrid]?.name}
+                </span>
+              </h4>
+              <p className="text-xs sm:text-sm text-[#445846] leading-relaxed font-medium">
+                {autoAdjustBanner.encouragement}
+              </p>
+            </div>
+          </div>
 
-            {photoMemories.length === 0 ? (
-              <div className="p-4 rounded-2xl bg-[#F8F6F0] border border-dashed border-[#D5D0C5] text-center text-xs text-[#5A6E5D]">
-                No memories uploaded yet. You can upload memories in Family Caregiver Mode or play Default Mode below!
-              </div>
+          <button
+            id="dismiss-level-banner-btn"
+            onClick={() => setAutoAdjustBanner(null)}
+            className="text-xs font-bold text-[#5A6E5D] hover:text-[#2D3A2F] px-2.5 py-1 rounded-lg hover:bg-black/5 shrink-0 cursor-pointer"
+          >
+            {tx('Dismiss', 'हटाएं', 'বাতিল কৰক')}
+          </button>
+        </div>
+      )}
+
+      {/* Easy Mode Step-by-Step Guidance Banner */}
+      {gridSize === 2 && !isComplete && (
+        <EasyModeGuide game="puzzle" isEasyMode={true} defaultExpanded={true} />
+      )}
+
+      {/* Piece Tray (Waiting Unplaced Pieces) - Positioned ABOVE Assembly Board */}
+      {!isComplete && (
+        <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="text-xs font-black uppercase tracking-wider text-[#2D3A2F]">
+              {tx('Piece Tray', 'टुकड़े', 'টুকুৰা বাছনি')} ({trayPieces.length} of {totalPieces} {tx('available', 'उपलब्ध', 'উপলব্ধ')})
+            </span>
+            {gridSize === 2 ? (
+              <span
+                className={`text-xs font-black px-3 py-1 rounded-full flex items-center gap-1.5 transition-all shadow-2xs ${
+                  selectedSource?.type === 'tray'
+                    ? 'bg-[#EAF1E8] text-[#5B825B] border border-[#5B825B]/40 animate-pulse'
+                    : 'bg-[#FDF0D5] text-[#8C4E0B] border border-[#E8B25C]/50'
+                }`}
+              >
+                {selectedSource?.type === 'tray' ? (
+                  <>
+                    <Hand className="w-3.5 h-3.5 text-[#5B825B]" />
+                    <span>{tx('Step 2: Now tap an empty slot on board below!', 'चरण 2: अब नीचे बोर्ड में किसी खाली जगह पर टैप करें!', 'পদক্ষেপ ২: এতিয়া তলৰ ব’ৰ্ডৰ খালী স্থানত টিপক!')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Hand className="w-3.5 h-3.5 text-[#8C4E0B]" />
+                    <span>{tx('Step 1: Tap a piece below to pick it up', 'चरण 1: उठाने के लिए किसी टुकड़े पर टैप करें', 'পদক্ষেপ ১: তুলিবলৈ যিকোনো টুকুৰাত টিপক')}</span>
+                  </>
+                )}
+              </span>
             ) : (
-              <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none pt-1">
-                {photoMemories.map((mem) => {
-                  const isSelected = selectedPersonalizedId === mem.id;
-                  return (
-                    <button
-                      key={mem.id}
-                      onClick={() => {
-                        soundController.playClick();
-                        setSelectedPersonalizedId(mem.id);
-                      }}
-                      className={`shrink-0 w-28 rounded-2xl p-2 text-left border transition-all ${
-                        isSelected
-                          ? 'border-[#5B825B] bg-[#EAF1E8] ring-2 ring-[#5B825B]/40 shadow-xs scale-102'
-                          : 'border-[#E0DCD3] bg-white hover:border-[#5B825B]/50'
-                      }`}
-                    >
-                      <div className="w-full aspect-square rounded-xl overflow-hidden mb-1.5 relative">
-                        <img
-                          src={mem.image}
-                          alt={mem.title}
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                        {isSelected && (
-                          <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#5B825B] text-white flex items-center justify-center shadow-xs">
-                            <Check className="w-3 h-3 stroke-[3]" />
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-xs font-bold text-[#2D3A2F] truncate">{mem.title}</p>
-                      <p className="text-[10px] text-[#5A6E5D] truncate">{mem.person || mem.category}</p>
-                    </button>
-                  );
-                })}
-              </div>
+              <span className="text-[11px] text-[#5A6E5D]">
+                {tx('Tap piece, then tap slot on board below', 'टुकड़े पर टैप करें, फिर नीचे बोर्ड में रखें', 'টুকুৰা বাছনি কৰি তলৰ ব’ৰ্ডত ৰাখক')}
+              </span>
             )}
           </div>
-        ) : (
-          <div className="space-y-2 pt-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wide">
-                Default Everyday Items & Treasures
-              </span>
-              <button
-                onClick={() => {
-                  soundController.playClick();
-                  setIsAddingCustomImage(!isAddingCustomImage);
-                }}
-                className="text-[11px] font-extrabold text-[#5B825B] flex items-center gap-1 hover:underline"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Any Image</span>
-              </button>
+
+          {trayPieces.length === 0 ? (
+            <div className="p-4 rounded-2xl bg-[#EAF1E8] text-[#5B825B] text-center text-xs font-black">
+              {tx(
+                `All ${totalPieces} pieces are placed on the board! Check if they are in the right position.`,
+                `सभी ${totalPieces} टुकड़े बोर्ड पर रख दिए गए हैं! देखें कि क्या वे सही जगह पर हैं।`,
+                `সকলো ${totalPieces} টুকুৰা ব’ৰ্ডত ৰখা হৈছে! সঠিক স্থানত আছেনে চাওক।`
+              )}
             </div>
-
-            {/* Custom Image Creator Accordion */}
-            {isAddingCustomImage && (
-              <div className="p-3.5 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] space-y-3 animate-fadeIn">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider">
-                    Add Your Own Image to Default Mode
-                  </h4>
-                  <button
-                    onClick={() => setIsAddingCustomImage(false)}
-                    className="text-xs text-[#5A6E5D] hover:text-[#2D3A2F]"
-                  >
-                    Cancel
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    placeholder="Image Title (e.g. Sweet Mango, Garden)"
-                    value={customImageTitle}
-                    onChange={(e) => setCustomImageTitle(e.target.value)}
-                    className="px-3 py-2 rounded-xl border border-[#D5D0C5] text-xs focus:outline-hidden focus:border-[#5B825B]"
-                  />
-                  <input
-                    type="url"
-                    placeholder="Paste image web URL..."
-                    value={customImageUrl}
-                    onChange={(e) => setCustomImageUrl(e.target.value)}
-                    className="px-3 py-2 rounded-xl border border-[#D5D0C5] text-xs focus:outline-hidden focus:border-[#5B825B]"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-3 py-2 rounded-xl bg-white border border-[#D5D0C5] text-xs font-bold text-[#2D3A2F] flex items-center gap-1.5 hover:bg-[#F8F6F0]"
-                  >
-                    <Upload className="w-3.5 h-3.5 text-[#5B825B]" />
-                    <span>Upload from Device</span>
-                  </button>
-
-                  {customImageUrl && (
-                    <button
-                      onClick={handleAddUrlImage}
-                      className="px-4 py-2 rounded-xl bg-[#5B825B] text-white text-xs font-extrabold hover:bg-[#4a6d4a]"
-                    >
-                      Use URL
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
-              <button
-                onClick={() => {
-                  soundController.playClick();
-                  setDefaultFilter('all');
-                }}
-                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all shrink-0 ${
-                  defaultFilter === 'all'
-                    ? 'bg-[#5B825B] text-white shadow-2xs'
-                    : 'bg-white text-[#5A6E5D] border border-[#E0DCD3] hover:border-[#5B825B]/60'
-                }`}
-              >
-                {tx(`All (${defaultPuzzles.length})`, `सभी (${defaultPuzzles.length})`, `সকলো (${defaultPuzzles.length})`)}
-              </button>
-              <button
-                onClick={() => {
-                  soundController.playClick();
-                  setDefaultFilter('mango');
-                }}
-                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all shrink-0 flex items-center gap-1 ${
-                  defaultFilter === 'mango'
-                    ? 'bg-[#5B825B] text-white shadow-2xs'
-                    : 'bg-white text-[#5A6E5D] border border-[#E0DCD3] hover:border-[#5B825B]/60'
-                }`}
-              >
-                <span>🥭</span>
-                <span>{tx('Mangoes (3)', 'आम (3)', 'আম (৩)')}</span>
-              </button>
-              <button
-                onClick={() => {
-                  soundController.playClick();
-                  setDefaultFilter('dish');
-                }}
-                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all shrink-0 flex items-center gap-1 ${
-                  defaultFilter === 'dish'
-                    ? 'bg-[#5B825B] text-white shadow-2xs'
-                    : 'bg-white text-[#5A6E5D] border border-[#E0DCD3] hover:border-[#5B825B]/60'
-                }`}
-              >
-                <span>🍲</span>
-                <span>{tx('Assamese Dishes (20)', 'असमिया व्यंजन (20)', 'অসমীয়া খাদ্য (২০)')}</span>
-              </button>
-            </div>
-
-            {/* Presets row */}
-            <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none pt-1">
-              {filteredDefaultPuzzles.map((item) => {
-                const isSelected = selectedDefaultId === item.id;
-                const displayTitle = language === 'as' && item.titleAs
-                  ? item.titleAs
-                  : language === 'hi' && item.titleHi
-                  ? item.titleHi
-                  : item.title;
-                const displayCategory = language === 'as' && item.categoryAs
-                  ? item.categoryAs
-                  : language === 'hi' && item.categoryHi
-                  ? item.categoryHi
-                  : item.category;
+          ) : (
+            <div
+              className={`grid gap-2.5 ${
+                gridSize === 2
+                  ? 'grid-cols-4'
+                  : gridSize === 3
+                  ? 'grid-cols-3 sm:grid-cols-5'
+                  : 'grid-cols-4 sm:grid-cols-8'
+              }`}
+            >
+              {trayPieces.map((pieceIdx) => {
+                const isSelected = selectedSource?.type === 'tray' && selectedSource.pieceIndex === pieceIdx;
+                const geom = getPieceGeometry(pieceIdx, gridSize);
 
                 return (
                   <button
-                    key={item.id}
-                    onClick={() => {
-                      soundController.playClick();
-                      setSelectedDefaultId(item.id);
-                    }}
-                    className={`shrink-0 w-28 rounded-2xl p-2 text-left border transition-all ${
+                    key={pieceIdx}
+                    onClick={() => handleTrayPieceClick(pieceIdx)}
+                    draggable={true}
+                    onDragStart={(e) => handleDragStart(e, pieceIdx, 'tray')}
+                    className={`aspect-square rounded-2xl overflow-hidden relative border-2 transition-all cursor-pointer shadow-xs active:scale-95 ${
                       isSelected
-                        ? 'border-[#5B825B] bg-[#EAF1E8] ring-2 ring-[#5B825B]/40 shadow-xs scale-102'
-                        : 'border-[#E0DCD3] bg-white hover:border-[#5B825B]/50'
+                        ? 'border-[#5B825B] ring-4 ring-[#5B825B]/40 scale-105 shadow-md'
+                        : 'border-[#E0DCD3] hover:border-[#5B825B]/60'
                     }`}
                   >
-                    <div className="w-full aspect-square rounded-xl overflow-hidden mb-1.5 relative">
-                      <img
-                        src={item.image}
-                        alt={displayTitle}
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                      {isSelected && (
-                        <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#5B825B] text-white flex items-center justify-center shadow-xs">
-                          <Check className="w-3 h-3 stroke-[3]" />
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs font-bold text-[#2D3A2F] truncate">{displayTitle}</p>
-                    <p className="text-[10px] text-[#5A6E5D] truncate">{displayCategory}</p>
+                    <div
+                      className="w-full h-full"
+                      style={{
+                        backgroundImage: `url(${currentPuzzle.image})`,
+                        backgroundSize: geom.bgSize,
+                        backgroundPosition: geom.bgPos,
+                      }}
+                    />
+                    {showNumberHints && (
+                      <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] font-black flex items-center justify-center backdrop-blur-xs">
+                        {pieceIdx + 1}
+                      </div>
+                    )}
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-[#5B825B]/15 border-2 border-[#5B825B] rounded-2xl flex items-center justify-center">
+                        <span className="px-1.5 py-0.5 rounded-md bg-[#5B825B] text-white text-[9px] font-black">
+                          {tx('Selected', 'चुना गया', 'বাছনি কৰা হৈছে')}
+                        </span>
+                      </div>
+                    )}
                   </button>
                 );
               })}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Current Active Picture Header */}
       <div className="bg-white rounded-3xl p-4 border border-[#E0DCD3] shadow-xs flex items-center justify-between">
@@ -1727,7 +1844,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             soundController.playClick();
             setShowGhostGuide(!showGhostGuide);
           }}
-          className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all ${
+          className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
             showGhostGuide
               ? 'bg-[#EAF1E8] border-[#5B825B]/30 text-[#5B825B]'
               : 'bg-white border-[#E0DCD3] text-[#5A6E5D]'
@@ -1739,91 +1856,14 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
         </button>
       </div>
 
-      {/* Auto-Adjustment Notification Banner (Degrade 1 step or Advance 1 step based on AI analysis) */}
-      {autoAdjustBanner?.show && (
-        <div
-          className={`rounded-3xl p-4.5 border-2 shadow-md animate-scaleUp space-y-2.5 ${
-            autoAdjustBanner.action === 'EASE_DIFFICULTY'
-              ? 'bg-gradient-to-br from-[#FDF0D5] via-[#FCF4E4] to-[#F7E5BD] border-[#E8B25C]'
-              : 'bg-gradient-to-br from-[#EAF1E8] via-[#E4EFE1] to-[#D5E6D1] border-[#5B825B]'
-          }`}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div
-                className={`w-9 h-9 rounded-2xl text-white flex items-center justify-center shrink-0 shadow-xs ${
-                  autoAdjustBanner.action === 'EASE_DIFFICULTY' ? 'bg-[#E8B25C]' : 'bg-[#5B825B]'
-                }`}
-              >
-                {autoAdjustBanner.action === 'EASE_DIFFICULTY' ? (
-                  <TrendingDown className="w-5 h-5" />
-                ) : (
-                  <TrendingUp className="w-5 h-5" />
-                )}
-              </div>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-white/80 px-2 py-0.5 rounded-full border border-black/10">
-                  {autoAdjustBanner.action === 'EASE_DIFFICULTY'
-                    ? 'AI Comfort Shift (Degraded 1 Step)'
-                    : 'AI Cognitive Leap (Advanced 1 Step)'}
-                </span>
-                <h4 className="text-base font-black text-[#2D3A2F] mt-0.5">
-                  {autoAdjustBanner.action === 'EASE_DIFFICULTY'
-                    ? `Level Eased: ${GRID_LABELS[autoAdjustBanner.fromGrid]?.name} ➔ ${GRID_LABELS[autoAdjustBanner.toGrid]?.name}`
-                    : `Level Advanced: ${GRID_LABELS[autoAdjustBanner.fromGrid]?.name} ➔ ${GRID_LABELS[autoAdjustBanner.toGrid]?.name}`}
-                </h4>
-              </div>
-            </div>
-            <button
-              onClick={() => setAutoAdjustBanner(null)}
-              className="text-xs font-bold text-[#5A6E5D] hover:text-[#2D3A2F] px-2.5 py-1 rounded-lg hover:bg-white/60"
-            >
-              Dismiss
-            </button>
-          </div>
-
-          <p className="text-xs text-[#2D3A2F] leading-relaxed font-medium bg-white/70 p-3 rounded-2xl border border-black/5 italic">
-            "{autoAdjustBanner.encouragement}"
-          </p>
-
-          <p className="text-[11px] text-[#5A6E5D] leading-relaxed font-medium">
-            {autoAdjustBanner.reason}
-          </p>
-
-          <div className="flex items-center justify-between gap-2 flex-wrap pt-1 text-[11px]">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-1 rounded-xl bg-white/90 border border-black/10 font-black text-[#2D3A2F]">
-                ⏱️ Time: {autoAdjustBanner.timeTaken}s
-              </span>
-              <span className="px-2.5 py-1 rounded-xl bg-white/90 border border-black/10 font-black text-[#5A6E5D]">
-                📊 Baseline Avg: {autoAdjustBanner.averageTime}s
-              </span>
-              <span className="px-2 py-1 rounded-xl bg-white/90 border border-black/10 font-bold text-[#5B825B]">
-                Model: {autoAdjustBanner.modelSource === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : 'Adaptive ML'}
-              </span>
-            </div>
-
-            <button
-              onClick={() => {
-                soundController.playClick();
-                handleSelectGridSize(autoAdjustBanner.fromGrid);
-              }}
-              className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] hover:bg-[#F8F6F0] text-[11px] font-black text-[#2D3A2F] transition-all"
-            >
-              Undo & Keep {GRID_LABELS[autoAdjustBanner.fromGrid]?.name}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* The Dynamic Puzzle Board */}
+      {/* The Dynamic Puzzle Assembly Board */}
       <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-xs font-black uppercase tracking-wider text-[#5A6E5D]">
             Assembly Board ({totalPieces} Slots · {gridSize}×{gridSize})
           </span>
           <span className="text-xs text-[#5A6E5D]">
-            {isComplete ? '🎉 Complete!' : 'Tap piece in tray, then tap slot'}
+            {isComplete ? '🎉 Complete!' : tx('Tap piece in tray above, then tap slot', 'ऊपर से टुकड़ा चुनकर यहाँ रखें', 'ওপৰৰ ট্ৰে’ৰ পৰা টুকুৰা আনি ইয়াত ৰাখক')}
           </span>
         </div>
 
@@ -1883,6 +1923,8 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
                 const slotGeom = getPieceGeometry(slotIdx, gridSize);
                 const pieceGeom = pieceIdx !== null ? getPieceGeometry(pieceIdx, gridSize) : null;
 
+                const isEasyModeTarget = gridSize === 2 && !isOccupied && selectedSource?.type === 'tray';
+
                 return (
                   <div
                     key={slotIdx}
@@ -1892,6 +1934,8 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
                     className={`relative rounded-2xl overflow-hidden flex items-center justify-center transition-all cursor-pointer select-none ${
                       isOccupied
                         ? 'border-2 border-white shadow-xs'
+                        : isEasyModeTarget
+                        ? 'border-2 border-dashed border-[#5B825B] bg-[#EAF1E8]/90 ring-4 ring-[#5B825B]/40 animate-pulse shadow-md'
                         : 'border-2 border-dashed border-[#C5BFB2] bg-white/40 hover:bg-white/70'
                     } ${
                       isSelected
@@ -1927,11 +1971,21 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
                         {/* Return to tray button */}
                         <button
                           onClick={(e) => handleReturnToTray(slotIdx, e)}
-                          className="absolute bottom-1 right-1 px-1 py-0.5 rounded-md bg-black/65 hover:bg-black text-[9px] text-white font-bold backdrop-blur-xs opacity-80 hover:opacity-100 transition-all"
+                          className="absolute bottom-1 right-1 px-1 py-0.5 rounded-md bg-black/65 hover:bg-black text-[9px] text-white font-bold backdrop-blur-xs opacity-80 hover:opacity-100 transition-all cursor-pointer"
                           title="Remove from slot"
                         >
                           Remove
                         </button>
+                      </div>
+                    ) : isEasyModeTarget ? (
+                      <div className="text-center p-1 text-[#5B825B] flex flex-col items-center justify-center animate-fadeIn">
+                        <Hand className="w-5 h-5 text-[#5B825B] animate-bounce mb-0.5" />
+                        <span className="text-[11px] font-black bg-white px-2 py-0.5 rounded-md shadow-2xs text-[#2D3A2F]">
+                          {tx('Tap here', 'यहाँ रखें', 'ইয়াত ৰাখক')}
+                        </span>
+                        <span className="text-[9px] font-bold text-[#5B825B] mt-0.5">
+                          {slotGeom.label}
+                        </span>
                       </div>
                     ) : (
                       <div className="text-center p-1 text-[#8A8070]">
@@ -1954,7 +2008,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
         <div className="grid grid-cols-2 gap-2.5 pt-2">
           <button
             onClick={handleScramble}
-            className="py-3 px-4 rounded-2xl bg-[#F8F6F0] hover:bg-[#EFECE3] border border-[#E0DCD3] text-[#2D3A2F] font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xs"
+            className="py-3 px-4 rounded-2xl bg-[#F8F6F0] hover:bg-[#EFECE3] border border-[#E0DCD3] text-[#2D3A2F] font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xs cursor-pointer"
           >
             <Shuffle className="w-4 h-4 text-[#E8B25C]" />
             <span>Scramble Puzzle</span>
@@ -1962,81 +2016,13 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
 
           <button
             onClick={handlePutItBack}
-            className="py-3 px-4 rounded-2xl bg-[#5B825B] hover:bg-[#4a6d4a] text-white font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xs"
+            className="py-3 px-4 rounded-2xl bg-[#5B825B] hover:bg-[#4a6d4a] text-white font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xs cursor-pointer"
           >
             <Sparkles className="w-4 h-4 fill-current text-[#E8B25C]" />
             <span>Put It Back (Solve)</span>
           </button>
         </div>
       </div>
-
-      {/* Piece Tray (Waiting Unplaced Pieces) */}
-      {!isComplete && (
-        <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-[#2D3A2F]">
-              Piece Tray ({trayPieces.length} of {totalPieces} available)
-            </span>
-            <span className="text-[11px] text-[#5A6E5D]">Tap to select, then tap slot above</span>
-          </div>
-
-          {trayPieces.length === 0 ? (
-            <div className="p-4 rounded-2xl bg-[#EAF1E8] text-[#5B825B] text-center text-xs font-black">
-              All {totalPieces} pieces are placed on the board! Check if they are in the right position.
-            </div>
-          ) : (
-            <div
-              className={`grid gap-2.5 ${
-                gridSize === 2
-                  ? 'grid-cols-4'
-                  : gridSize === 3
-                  ? 'grid-cols-3 sm:grid-cols-5'
-                  : 'grid-cols-4 sm:grid-cols-8'
-              }`}
-            >
-              {trayPieces.map((pieceIdx) => {
-                const isSelected = selectedSource?.type === 'tray' && selectedSource.pieceIndex === pieceIdx;
-                const geom = getPieceGeometry(pieceIdx, gridSize);
-
-                return (
-                  <button
-                    key={pieceIdx}
-                    onClick={() => handleTrayPieceClick(pieceIdx)}
-                    draggable={true}
-                    onDragStart={(e) => handleDragStart(e, pieceIdx, 'tray')}
-                    className={`aspect-square rounded-2xl overflow-hidden relative border-2 transition-all cursor-pointer shadow-xs active:scale-95 ${
-                      isSelected
-                        ? 'border-[#5B825B] ring-4 ring-[#5B825B]/40 scale-105 shadow-md'
-                        : 'border-[#E0DCD3] hover:border-[#5B825B]/60'
-                    }`}
-                  >
-                    <div
-                      className="w-full h-full"
-                      style={{
-                        backgroundImage: `url(${currentPuzzle.image})`,
-                        backgroundSize: geom.bgSize,
-                        backgroundPosition: geom.bgPos,
-                      }}
-                    />
-                    {showNumberHints && (
-                      <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] font-black flex items-center justify-center backdrop-blur-xs">
-                        {pieceIdx + 1}
-                      </div>
-                    )}
-                    {isSelected && (
-                      <div className="absolute inset-0 bg-[#5B825B]/15 border-2 border-[#5B825B] rounded-2xl flex items-center justify-center">
-                        <span className="px-1.5 py-0.5 rounded-md bg-[#5B825B] text-white text-[9px] font-black">
-                          Selected
-                        </span>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Completion Banner */}
       {isComplete && (
@@ -2082,37 +2068,21 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             </div>
           )}
 
-          {/* AI Cognitive Telemetry & Dynamic Difficulty Card */}
-          {latestAIResult && (
-            <div className="bg-white/95 rounded-2xl p-4 border border-[#5B825B]/25 shadow-xs text-left space-y-2.5 max-w-lg mx-auto">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-black uppercase tracking-wider text-[#5B825B] flex items-center gap-1.5">
-                  <Brain className="w-4 h-4 text-[#5B825B]" />
-                  <span>AI Cognitive Difficulty Analysis</span>
-                </span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#F8F6F0] border border-[#E0DCD3] text-[#5A6E5D]">
-                  {latestAIResult.modelSource === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : 'Adaptive ML Heuristic'}
-                </span>
-              </div>
-
-              <p className="text-xs text-[#2D3A2F] font-medium leading-relaxed bg-[#F8F6F0] p-3 rounded-xl border border-[#EAE6DF]">
-                {latestAIResult.reasoning}
-              </p>
-
-              <div className="flex items-center justify-between text-[11px] font-bold text-[#5B825B] pt-0.5 flex-wrap gap-1">
-                <span>
-                  {latestAIResult.action === 'EASE_DIFFICULTY'
-                    ? `Level eased 1 step to ${GRID_LABELS[latestAIResult.recommendedGrid]?.name}`
-                    : latestAIResult.action === 'INCREASE_DIFFICULTY'
-                    ? `Level stepped up 1 step to ${GRID_LABELS[latestAIResult.recommendedGrid]?.name}`
-                    : `Level maintained at ${GRID_LABELS[gridSize]?.name}`}
-                </span>
-                <span className="text-[#8A8070]">
-                  ⏱️ {latestAIResult.timeTaken}s vs {latestAIResult.averageTime}s baseline avg
-                </span>
-              </div>
+          {/* 10-Second Pause Badge */}
+          <div className="flex items-center justify-center pt-1 pb-0.5">
+            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black border transition-all ${
+              pauseSecondsLeft > 0 
+                ? 'bg-[#EAF1E8] text-[#3B5A3E] border-[#5B825B]/30' 
+                : 'bg-[#F8F6F0] text-[#5A6E5D] border-[#E0DCD3]'
+            }`}>
+              <Clock className="w-3.5 h-3.5 text-[#5B825B]" />
+              <span>
+                {pauseSecondsLeft > 0
+                  ? tx(`Pause & admire: ${pauseSecondsLeft}s`, `विश्राम व सुंदर याद: ${pauseSecondsLeft} से.`, `উপভোগ কৰক: ${pauseSecondsLeft} ছে.`)
+                  : tx('Pause complete · Ready for Next Picture', 'विश्राम पूर्ण · अगली तस्वीर के लिए तैयार', 'উপভোগ সম্পূৰ্ণ · পৰৱৰ্তী ছবিৰ বাবে প্ৰস্তুত')}
+              </span>
             </div>
-          )}
+          </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
             <button
@@ -2120,7 +2090,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
                 soundController.playClick();
                 triggerCelebratoryParticles();
               }}
-              className="py-3 px-4 rounded-2xl bg-[#FDF0D5] border border-[#E8B25C]/50 text-[#332610] font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#fae6b8] active:scale-95 shadow-xs transition-all"
+              className="py-3 px-4 rounded-2xl bg-[#FDF0D5] border border-[#E8B25C]/50 text-[#332610] font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#fae6b8] active:scale-95 shadow-xs transition-all cursor-pointer"
               title="Launch celebratory confetti shower"
             >
               <Sparkles className="w-4 h-4 text-[#E8B25C] fill-current" />
@@ -2129,34 +2099,259 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
 
             <button
               onClick={handleScramble}
-              className="py-3 px-4 rounded-2xl bg-white border border-[#5B825B]/30 text-[#2D3A2F] font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#F8F6F0] active:scale-95 shadow-xs transition-all"
+              className="py-3 px-4 rounded-2xl bg-white border border-[#5B825B]/30 text-[#2D3A2F] font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#F8F6F0] active:scale-95 shadow-xs transition-all cursor-pointer"
             >
               <RotateCcw className="w-4 h-4 text-[#5B825B]" />
               <span>Scramble Again</span>
             </button>
 
             <button
-              onClick={() => {
-                soundController.playClick();
-                // Pick next image
-                if (mode === 'personalized') {
-                  const currIdx = photoMemories.findIndex((m) => m.id === selectedPersonalizedId);
-                  const nextIdx = (currIdx + 1) % photoMemories.length;
-                  setSelectedPersonalizedId(photoMemories[nextIdx].id);
-                } else {
-                  const currIdx = defaultPuzzles.findIndex((p) => p.id === selectedDefaultId);
-                  const nextIdx = (currIdx + 1) % defaultPuzzles.length;
-                  setSelectedDefaultId(defaultPuzzles[nextIdx].id);
-                }
-              }}
-              className="py-3 px-5 rounded-2xl bg-[#5B825B] text-white font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#4a6d4a] active:scale-95 shadow-xs transition-all"
+              onClick={handleNextPicture}
+              className="py-3 px-5 rounded-2xl bg-[#5B825B] text-white font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#4a6d4a] active:scale-95 shadow-xs transition-all cursor-pointer"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>Next Picture</span>
+              <Sparkles className="w-4 h-4 text-amber-200" />
+              <span>
+                {pauseSecondsLeft > 0
+                  ? `${tx('Next Picture', 'अगली तस्वीर', 'পৰৱৰ্তী ছবি')} (${pauseSecondsLeft}s)`
+                  : tx('Next Picture', 'अगली तस्वीर', 'পৰৱৰ্তী ছবি')}
+              </span>
             </button>
           </div>
         </div>
       )}
+
+      {/* Bottom Images & Treasures Gallery ("All the things on the last") */}
+      <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-4">
+        {mode === 'personalized' ? (
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wide">
+                {tx('Caregiver Uploaded Memories', 'पारिवारिक यादें', 'পৰিয়ালৰ স্মৃতি')} ({photoMemories.length})
+              </span>
+              <span className="text-[11px] text-[#5A6E5D]">
+                {tx('Tap to choose photo', 'फ़ोटो चुनने के लिए टैप करें', 'ফটো বাছনি কৰিবলৈ টিপক')}
+              </span>
+            </div>
+
+            {photoMemories.length === 0 ? (
+              <div className="p-4 rounded-2xl bg-[#F8F6F0] border border-dashed border-[#D5D0C5] text-center text-xs text-[#5A6E5D]">
+                {tx(
+                  'No memories uploaded yet. You can upload memories in Family Caregiver Mode or play Default Mode with Mango and other treasures!',
+                  'अभी कोई व्यक्तिगत फोटो अपलोड नहीं हुई है। आप मैंगो और अन्य सुंदर तस्वीरों के साथ डिफ़ॉल्ट मोड खेल सकते हैं!',
+                  'এতিয়ালৈ কোনো ব্যক্তিগত ফটো আপলোড কৰা হোৱা নাই। আপুনি আম আৰু আন ধুনীয়া ছবিৰ সৈতে খেলিব পাৰে!'
+                )}
+              </div>
+            ) : (
+              <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none pt-1">
+                {photoMemories.map((mem) => {
+                  const isSelected = selectedPersonalizedId === mem.id;
+                  return (
+                    <button
+                      key={mem.id}
+                      onClick={() => {
+                        soundController.playClick();
+                        setSelectedPersonalizedId(mem.id);
+                      }}
+                      className={`shrink-0 w-28 rounded-2xl p-2 text-left border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-[#5B825B] bg-[#EAF1E8] ring-2 ring-[#5B825B]/40 shadow-xs scale-102'
+                          : 'border-[#E0DCD3] bg-white hover:border-[#5B825B]/50'
+                      }`}
+                    >
+                      <div className="w-full aspect-square rounded-xl overflow-hidden mb-1.5 relative">
+                        <img
+                          src={mem.image}
+                          alt={mem.title}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#5B825B] text-white flex items-center justify-center shadow-xs">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs font-bold text-[#2D3A2F] truncate">{mem.title}</p>
+                      <p className="text-[10px] text-[#5A6E5D] truncate">{mem.person || mem.category}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wide">
+                {tx('Default Everyday Items & Treasures', 'दैनिक वस्तुएं व सुंदर यादें', 'দৈনন্দিন বস্তু আৰু আপুৰুগীয়া সম্পদ')}
+              </span>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setIsAddingCustomImage(!isAddingCustomImage);
+                }}
+                className="text-[11px] font-extrabold text-[#5B825B] flex items-center gap-1 hover:underline cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{tx('Add Any Image', 'अपनी फोटो जोड़ें', 'নিজৰ ফটো যোগ কৰক')}</span>
+              </button>
+            </div>
+
+            {/* Custom Image Creator Accordion */}
+            {isAddingCustomImage && (
+              <div className="p-3.5 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] space-y-3 animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider">
+                    {tx('Add Your Own Image to Default Mode', 'डिफ़ॉल्ट मोड में अपनी फोटो जोड़ें', 'ডিফল্ট মোডত নিজৰ ফটো যোগ কৰক')}
+                  </h4>
+                  <button
+                    onClick={() => setIsAddingCustomImage(false)}
+                    className="text-xs text-[#5A6E5D] hover:text-[#2D3A2F] cursor-pointer"
+                  >
+                    {tx('Cancel', 'रद्द करें', 'বাতিল কৰক')}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Image Title (e.g. Sweet Mango, Garden)"
+                    value={customImageTitle}
+                    onChange={(e) => setCustomImageTitle(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-[#D5D0C5] text-xs focus:outline-hidden focus:border-[#5B825B]"
+                  />
+                  <input
+                    type="url"
+                    placeholder="Paste image web URL..."
+                    value={customImageUrl}
+                    onChange={(e) => setCustomImageUrl(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-[#D5D0C5] text-xs focus:outline-hidden focus:border-[#5B825B]"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-3 py-2 rounded-xl bg-white border border-[#D5D0C5] text-xs font-bold text-[#2D3A2F] flex items-center gap-1.5 hover:bg-[#F8F6F0] cursor-pointer"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#5B825B]" />
+                    <span>{tx('Upload from Device', 'डिवाइस से अपलोड करें', 'ডিভাইচৰ পৰা আপলোড কৰক')}</span>
+                  </button>
+
+                  {customImageUrl && (
+                    <button
+                      onClick={handleAddUrlImage}
+                      className="px-4 py-2 rounded-xl bg-[#5B825B] text-white text-xs font-extrabold hover:bg-[#4a6d4a] cursor-pointer"
+                    >
+                      {tx('Use URL', 'URL उपयोग करें', 'URL ব্যৱহাৰ কৰক')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setDefaultFilter('all');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
+                  defaultFilter === 'all'
+                    ? 'bg-[#5B825B] text-white shadow-2xs'
+                    : 'bg-white text-[#5A6E5D] border border-[#E0DCD3] hover:border-[#5B825B]/60'
+                }`}
+              >
+                {tx(`All (${defaultPuzzles.length})`, `सभी (${defaultPuzzles.length})`, `সকলো (${defaultPuzzles.length})`)}
+              </button>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setDefaultFilter('mango');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all shrink-0 flex items-center gap-1 cursor-pointer ${
+                  defaultFilter === 'mango'
+                    ? 'bg-[#5B825B] text-white shadow-2xs'
+                    : 'bg-white text-[#5A6E5D] border border-[#E0DCD3] hover:border-[#5B825B]/60'
+                }`}
+              >
+                <span>🥭</span>
+                <span>{tx('Mangoes (3)', 'आम (3)', 'আম (৩)')}</span>
+              </button>
+              <button
+                onClick={() => {
+                  soundController.playClick();
+                  setDefaultFilter('dish');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all shrink-0 flex items-center gap-1 cursor-pointer ${
+                  defaultFilter === 'dish'
+                    ? 'bg-[#5B825B] text-white shadow-2xs'
+                    : 'bg-white text-[#5A6E5D] border border-[#E0DCD3] hover:border-[#5B825B]/60'
+                }`}
+              >
+                <span>🍲</span>
+                <span>{tx('Assamese Dishes (20)', 'असमिया व्यंजन (20)', 'অসমীয়া খাদ্য (২০)')}</span>
+              </button>
+            </div>
+
+            {/* Presets row */}
+            <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none pt-1">
+              {filteredDefaultPuzzles.map((item) => {
+                const isSelected = selectedDefaultId === item.id;
+                const displayTitle = language === 'as' && item.titleAs
+                  ? item.titleAs
+                  : language === 'hi' && item.titleHi
+                  ? item.titleHi
+                  : item.title;
+                const displayCategory = language === 'as' && item.categoryAs
+                  ? item.categoryAs
+                  : language === 'hi' && item.categoryHi
+                  ? item.categoryHi
+                  : item.category;
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      soundController.playClick();
+                      setSelectedDefaultId(item.id);
+                    }}
+                    className={`shrink-0 w-28 rounded-2xl p-2 text-left border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-[#5B825B] bg-[#EAF1E8] ring-2 ring-[#5B825B]/40 shadow-xs scale-102'
+                        : 'border-[#E0DCD3] bg-white hover:border-[#5B825B]/50'
+                    }`}
+                  >
+                    <div className="w-full aspect-square rounded-xl overflow-hidden mb-1.5 relative">
+                      <img
+                        src={item.image}
+                        alt={displayTitle}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      {isSelected && (
+                        <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#5B825B] text-white flex items-center justify-center shadow-xs">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs font-bold text-[#2D3A2F] truncate">{displayTitle}</p>
+                    <p className="text-[10px] text-[#5A6E5D] truncate">{displayCategory}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Reference Modal: Peek at full picture */}
       {showReferenceModal && (

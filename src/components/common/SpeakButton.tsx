@@ -1,87 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { soundController } from '../../utils/audio';
-import { useLanguage } from '../../context/LanguageContext';
 
 interface SpeakButtonProps {
   textEn: string;
   textHi?: string;
   textAs?: string;
-  label?: string;
-  className?: string;
   size?: 'sm' | 'md' | 'lg';
+  className?: string;
+  label?: string;
 }
 
 export const SpeakButton: React.FC<SpeakButtonProps> = ({
   textEn,
   textHi,
   textAs,
-  label,
-  className = '',
   size = 'md',
+  className = '',
+  label,
 }) => {
-  const { tx } = useLanguage();
-  const [isSpeakingThis, setIsSpeakingThis] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    const checkSpeaking = () => {
-      if (!soundController.isSpeaking() && isSpeakingThis) {
-        setIsSpeakingThis(false);
+    return () => {
+      // Clean up speaking if unmounted
+      if (isPlaying) {
+        soundController.stopSpeaking();
       }
     };
-    const interval = setInterval(checkSpeaking, 300);
-    return () => clearInterval(interval);
-  }, [isSpeakingThis]);
+  }, [isPlaying]);
 
-  const handleToggleSpeak = (e: React.MouseEvent) => {
+  const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isSpeakingThis) {
+
+    if (isPlaying) {
       soundController.stopSpeaking();
-      setIsSpeakingThis(false);
+      setIsPlaying(false);
       return;
     }
 
-    soundController.stopSpeaking();
-    setIsSpeakingThis(true);
-
+    setIsPlaying(true);
+    soundController.playClick();
     soundController.speakBilingual(
       textEn,
       textHi || textEn,
-      () => setIsSpeakingThis(false),
+      () => setIsPlaying(false),
       textAs
     );
   };
 
   const sizeClasses = {
-    sm: 'w-7 h-7 text-xs',
-    md: 'w-9 h-9 text-xs',
-    lg: 'w-11 h-11 text-sm',
+    sm: 'p-1.5 text-xs gap-1',
+    md: 'p-2 text-sm gap-1.5',
+    lg: 'p-3 text-base gap-2',
   };
 
   const iconSizes = {
-    sm: 'w-3.5 h-3.5',
-    md: 'w-4 h-4',
-    lg: 'w-5 h-5',
+    sm: 'w-4 h-4',
+    md: 'w-5 h-5',
+    lg: 'w-6 h-6',
   };
 
   return (
     <button
       type="button"
-      onClick={handleToggleSpeak}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-full transition-all shrink-0 cursor-pointer active:scale-95 ${
-        isSpeakingThis
-          ? 'bg-[#5B825B] text-white ring-3 ring-[#5B825B]/30 animate-pulse'
-          : 'bg-[#F4F1EA] text-[#5B825B] hover:bg-[#EAF1E8] hover:text-[#2D3A2F] border border-[#DCD6CA]'
+      onClick={handleToggle}
+      aria-label="Read aloud"
+      title={isPlaying ? 'Stop voice readout' : 'Listen aloud'}
+      className={`inline-flex items-center justify-center rounded-2xl transition-all cursor-pointer select-none ${
+        isPlaying
+          ? 'bg-[#5B825B] text-white shadow-md animate-pulse'
+          : 'bg-[#FDFBF7] text-[#5B825B] hover:bg-[#EAF1E8] border border-[#E0DCD3] shadow-2xs hover:border-[#5B825B]/40'
       } ${sizeClasses[size]} ${className}`}
-      title={tx('Listen aloud', 'बोलकर सुनें', 'শুনি চাওক')}
-      aria-label={label || tx('Listen to instructions', 'निर्देश बोलकर सुनें', 'নিৰ্দেশনা শুনি চাওক')}
     >
-      {isSpeakingThis ? (
+      {isPlaying ? (
         <VolumeX className={iconSizes[size]} />
       ) : (
         <Volume2 className={iconSizes[size]} />
       )}
-      {label && <span className="font-bold text-xs pr-1">{label}</span>}
+      {label && <span className="font-extrabold text-xs">{label}</span>}
     </button>
   );
 };

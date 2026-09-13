@@ -101,6 +101,49 @@ Monor Xur employs a dual-tiered architecture combining a client-side Progressive
 └───────────────────────────────────┘               └───────────────────────────────────┘
 ```
 
+#### GitHub Native Interactive Architecture Diagram
+```mermaid
+graph TB
+    subgraph Client_Tier [CLIENT TIER - Progressive Web App]
+        P["👵 Patient Experience"]
+        F["👨‍👩‍👧 Family Portal"]
+        A["🩺 ASHA Clinical Hub"]
+        SW["Service Worker & Workbox Cache"]
+        MQ["Offline Mutation Queue"]
+        WA["Web Audio & Speech Engine"]
+        PDF["jsPDF Vector Engine"]
+    end
+
+    subgraph Server_Tier [APPLICATION SERVER]
+        EX["Node.js + Express 5"]
+        REST["REST API Routes"]
+        DDA_E["Adaptive DDA Engine"]
+    end
+
+    subgraph Infra [CLOUD & AI PERSISTENCE]
+        GEMINI["Google Gemini 3.8 Flash"]
+        FS["Cloud Firestore"]
+        LOCAL["LocalStorage Snapshot Cache"]
+    end
+
+    P --> REST
+    F --> REST
+    A --> REST
+
+    P <--> LOCAL
+    F <--> LOCAL
+    A <--> LOCAL
+
+    REST --> DDA_E
+    DDA_E --> GEMINI
+    DDA_E --> FS
+
+    P <--> FS
+    F <--> FS
+    A <--> FS
+    MQ -- "Auto-flush on reconnection" --> FS
+```
+
 ### Detailed Layer Breakdown
 
 | Architectural Layer | Core Technologies | Functional Responsibilities |
@@ -202,6 +245,19 @@ To eliminate frustration (which induces anxiety and catastrophic reactions in de
 (Gentle board resize)   (Logged for Caregivers)
 ```
 
+#### GitHub Native Interactive DDA Flowchart
+```mermaid
+flowchart TD
+    GE["Active Game Event<br/>(Card flip / Mismatch / Puzzle Move / Timer)"] --> API["POST /api/ai/analyze-*"]
+    API --> EVAL{"Evaluate Gemini API Status"}
+    EVAL -- "API Key Present" --> GEM["Google Gemini 3.8 Flash SDK"]
+    EVAL -- "Offline / Fallback" --> HEUR["Deterministic Local ML Heuristic"]
+    GEM --> RES["Structured DDA JSON Result<br/>• recommendedLevel<br/>• triggerAutoShift<br/>• non-stigmatizing encouragement<br/>• fatigueRisk"]
+    HEUR --> RES
+    RES --> UI["In-Game UI Shift<br/>(Gentle board / piece resize)"]
+    RES --> LOG["Cloud Firestore ddaMetrics<br/>(Logged for Caregivers & ASHA Telemetry)"]
+```
+
 ### Game-Specific Clinical Rules
 
 #### 🎴 Memory Match Game:
@@ -295,6 +351,32 @@ Monor Xur is engineered for high-availability in rural and semi-urban settings w
            │ Offline Snapshot LocalStorage  │
            │ (monor_xur_offline_cache_v1)   │
            └────────────────────────────────┘
+```
+
+#### GitHub Native Interactive Persistence Sequence
+```mermaid
+sequenceDiagram
+    autonumber
+    participant UI as Patient / Caregiver UI
+    participant Queue as Offline Mutation Queue
+    participant Cache as Local Storage Cache
+    participant FS as Cloud Firestore
+    participant AI as Gemini DDA Engine
+
+    alt Device Online
+        UI->>FS: Real-Time Bi-Directional Sync
+        UI->>AI: Real-Time DDA Evaluation (/api/ai/*)
+        FS-->>Cache: Save Snapshot (monor_xur_offline_cache_v1)
+    else Device Offline
+        UI->>Queue: Append Pending Mutation (monor_xur_offline_queue_v1)
+        UI->>Cache: Update Local Snapshot Immediately
+        Note over UI,Cache: App remains 100% functional offline
+    end
+
+    opt Network Reconnected
+        Queue->>FS: Auto-Flush Pending Mutations ('online' Event)
+        FS-->>UI: Sync Complete & Verified
+    end
 ```
 
 ### Cross-Device Game Difficulty Persistence Model

@@ -55,6 +55,12 @@ export interface Translations {
   preferencesSub: string;
   activePlayer: string;
   mindExplorerLevel: string;
+  themeSettingTitle: string;
+  themeSettingSub: string;
+  themeDefaultLabel: string;
+  themeDefaultDesc: string;
+  themeNorthEastLabel: string;
+  themeNorthEastDesc: string;
   languageSettingTitle: string;
   languageSettingSub: string;
   englishLabel: string;
@@ -242,6 +248,12 @@ export const translations: Record<Language, Translations> = {
     preferencesSub: 'Display comfort, sound cues, and gaming settings.',
     activePlayer: 'Active Player',
     mindExplorerLevel: 'Mind Explorer • Level {level}',
+    themeSettingTitle: 'Color Palette & Cultural Theme',
+    themeSettingSub: 'Toggle between the North Eastern States palette and the classic soothing tea garden palette.',
+    themeDefaultLabel: 'Classic Tea Garden',
+    themeDefaultDesc: 'Soothing tea green, warm cream, and calming earthen tones.',
+    themeNorthEastLabel: 'North Eastern Heritage',
+    themeNorthEastDesc: 'Gamusa vermilion red, golden Muga silk, and warm loom ivory.',
     languageSettingTitle: 'Language / भाषा',
     languageSettingSub: 'Switch entire app interface and all spoken voices between English and Hindi.',
     englishLabel: 'English',
@@ -428,6 +440,12 @@ export const translations: Record<Language, Translations> = {
     preferencesSub: 'प्रदर्शन, आवाज़, भाषा और गेमिंग सेटिंग्स।',
     activePlayer: 'सक्रिय खिलाड़ी',
     mindExplorerLevel: 'माइंड एक्सप्लोरर • स्तर {level}',
+    themeSettingTitle: 'रंग थीम और सांस्कृतिक पैलेट',
+    themeSettingSub: 'उत्तर-पूर्वी राज्यों की पारंपरिक पैलेट या क्लासिक शांत चाय बगान पैलेट के बीच बदलें।',
+    themeDefaultLabel: 'क्लासिक चाय बगान',
+    themeDefaultDesc: 'शांत सेहुजिया हरा, सौम्य क्रीम और मिट्टी के गर्म रंग।',
+    themeNorthEastLabel: 'उत्तर-पूर्व हेरिटेज (Seven Sisters)',
+    themeNorthEastDesc: 'गमोसा लाल, मूँगा सिल्क सुनहरा और हथकरघा आइवरी।',
     languageSettingTitle: 'भाषा चुनें (Language)',
     languageSettingSub: 'पूरे ऐप की भाषा और बोलने वाली सभी आवाज़ों को हिन्दी और अंग्रेज़ी में बदलें।',
     englishLabel: 'English (अंग्रेज़ी)',
@@ -614,6 +632,12 @@ export const translations: Record<Language, Translations> = {
     preferencesSub: 'প্ৰদৰ্শন, শব্দ, ভাষা আৰু খেলৰ পছন্দসমূহ।',
     activePlayer: 'সক্ৰিয় খেলুৱৈ',
     mindExplorerLevel: 'মনৰ অন্বেষক • স্তৰ {level}',
+    themeSettingTitle: 'ৰং আৰু সাংস্কৃতিক থিম বাছক',
+    themeSettingSub: 'উত্তৰ-পূব ভাৰতৰ ঐতিহ্যময় ৰং অথবা চিৰাচৰিত শান্ত চাহ বাগিচাৰ সেউজীয়া ৰং বাছক।',
+    themeDefaultLabel: 'চাহ বাগিচা (চিৰাচৰিত)',
+    themeDefaultDesc: 'স্নিগ্ধ চাহ সেউজীয়া, কোমল ক্ৰিম আৰু শান্ত পাহাৰীয়া ৰং।',
+    themeNorthEastLabel: 'উত্তৰ-পূব ঐতিহ্য (গামোচা আৰু মুগা)',
+    themeNorthEastDesc: 'ফুলাম গামোচাৰ ৰঙা, সোণালী মুগা আৰু হস্ততাঁতৰ সূতাৰ ৰং।',
     languageSettingTitle: 'ভাষা বাছক (Language)',
     languageSettingSub: 'সম্পূৰ্ণ এপৰ ভাষা আৰু কথা কোৱা মাতসমূহ অসমীয়া, ইংৰাজী বা হিন্দীলৈ সলনি কৰক।',
     englishLabel: 'English (ইংৰাজী)',

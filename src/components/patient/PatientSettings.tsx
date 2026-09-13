@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Type, Volume2, Bell, PhoneCall, Stethoscope, Check, HeartHandshake, Wifi, WifiOff, HardDrive, ShieldCheck, Languages } from 'lucide-react';
+import { Type, Volume2, Bell, PhoneCall, Stethoscope, Check, HeartHandshake, Wifi, WifiOff, HardDrive, ShieldCheck, Languages, Palette, Sparkles } from 'lucide-react';
 import { PatientProfile, EmergencyContact } from '../../types';
 import { soundController } from '../../utils/audio';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { getOfflineSnapshot } from '../../services/offlineStorage';
 import { PWAInstallButton } from '../common/PWAInstallButton';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme, AppTheme } from '../../context/ThemeContext';
 
 interface PatientSettingsProps {
   onOpenCaregiverSelect: () => void;
@@ -25,6 +26,7 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
   const [largeText, setLargeText] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const { language, setLanguage, t, tx, isHindi, isAssamese } = useLanguage();
+  const { theme, setTheme, toggleTheme, isNorthEast } = useTheme();
 
   const playerName = patientProfile?.name || (isAssamese ? 'খেলুৱৈ' : isHindi ? 'खिलाड़ी' : 'Player');
   const playerFullName = patientProfile?.fullName || (isAssamese ? 'মনৰ অন্বেষক' : isHindi ? 'माइंड एक्सप्लोरर' : 'Mind Explorer');
@@ -32,6 +34,29 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
   const isOnline = useOnlineStatus();
   const offlineData = getOfflineSnapshot();
   const cachedRemindersCount = offlineData?.reminders?.length || 0;
+
+  const handleSelectTheme = (newTheme: AppTheme) => {
+    if (newTheme === theme) return;
+    soundController.playClick();
+    setTheme(newTheme);
+    if (newTheme === 'northeast') {
+      if (language === 'as') {
+        soundController.speak('উত্তৰ-পূব ঐতিহ্যৰ ৰং নিৰ্ধাৰণ কৰা হ’ল।', undefined, 'as');
+      } else if (language === 'hi') {
+        soundController.speak('उत्तर-पूर्व हेरिटेज पैलेट सेट किया गया।', undefined, 'hi');
+      } else {
+        soundController.speak('North Eastern Heritage palette activated.', undefined, 'en');
+      }
+    } else {
+      if (language === 'as') {
+        soundController.speak('চিৰাচৰিত চাহ বাগিচাৰ সেউজীয়া ৰং নিৰ্ধাৰণ কৰা হ’ল।', undefined, 'as');
+      } else if (language === 'hi') {
+        soundController.speak('क्लासिक चाय बगान पैलेट सेट किया गया।', undefined, 'hi');
+      } else {
+        soundController.speak('Classic Tea Garden palette activated.', undefined, 'en');
+      }
+    }
+  };
 
   const handleSelectLanguage = (newLang: 'en' | 'hi' | 'as') => {
     if (newLang === language) return;
@@ -81,6 +106,120 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
             <h3 className="text-base font-black text-[#2D3A2F] mt-0.5">{playerFullName}</h3>
             <p className="text-xs text-[#5A6E5D]">{tx('Loving Care Active • Play at your own pace', 'सप्रेम देखभाल सक्रिय • अपनी गति से खेलें', 'মৰমীয়াল যত্ন সক্ৰিয় • নিজৰ গতিত খেলক')}</p>
           </div>
+        </div>
+      </div>
+
+      {/* North Eastern States & Classic Palette Theme Bar */}
+      <div id="theme-settings-section" className="bg-white rounded-3xl p-5 border-2 border-[#5B825B]/30 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-[#EAF1E8] text-[#5B825B] flex items-center justify-center shrink-0">
+              <Palette className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-extrabold text-base text-[#2D3A2F]">{t('themeSettingTitle')}</h4>
+                <span className="text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
+                  {isNorthEast ? 'North East' : 'Default'}
+                </span>
+              </div>
+              <p className="text-xs text-[#5A6E5D]">{t('themeSettingSub')}</p>
+            </div>
+          </div>
+
+          {/* Quick Toggle Bar Switch */}
+          <button
+            onClick={toggleTheme}
+            className={`w-14 h-8 rounded-full transition-colors p-1 flex items-center shrink-0 cursor-pointer ${
+              isNorthEast ? 'bg-[#B23B2A] justify-end' : 'bg-[#5B825B] justify-start'
+            }`}
+            title="Toggle theme palette"
+            aria-label="Toggle between Default and North Eastern theme"
+          >
+            <div className="w-6 h-6 rounded-full bg-white shadow-xs flex items-center justify-center text-[11px]">
+              {isNorthEast ? '🌺' : '🌿'}
+            </div>
+          </button>
+        </div>
+
+        {/* Segmented Palette Selector Bar */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          {/* Default Theme Card (Classic Tea Garden) */}
+          <button
+            onClick={() => handleSelectTheme('default')}
+            className={`p-3.5 rounded-2xl border-2 transition-all flex flex-col text-left cursor-pointer relative ${
+              theme === 'default'
+                ? 'border-[#5B825B] bg-[#EAF1E8] text-[#2D3A2F] shadow-xs scale-[1.01]'
+                : 'border-[#E0DCD3] bg-[#FDFBF7] text-[#5A6E5D] hover:bg-white'
+            }`}
+          >
+            {theme === 'default' && (
+              <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#5B825B] text-white flex items-center justify-center text-[10px]">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+              </span>
+            )}
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-xl">🌿</span>
+              <span className="font-black text-sm block text-[#2D3A2F]">{t('themeDefaultLabel')}</span>
+              <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-white border border-[#E0DCD3] text-[#5A6E5D]">
+                Default
+              </span>
+            </div>
+            <p className="text-xs text-[#5A6E5D] mb-2.5">{t('themeDefaultDesc')}</p>
+            
+            {/* Color Swatches */}
+            <div className="flex items-center gap-1.5 mt-auto pt-1">
+              <div className="w-5 h-5 rounded-full bg-[#5B825B] border border-white shadow-xs" title="Assam Tea Green (#5B825B)" />
+              <div className="w-5 h-5 rounded-full bg-[#EAF1E8] border border-[#E0DCD3] shadow-xs" title="Tea Mist Ivory (#EAF1E8)" />
+              <div className="w-5 h-5 rounded-full bg-[#FDFBF7] border border-[#E0DCD3] shadow-xs" title="Warm Cream (#FDFBF7)" />
+              <div className="w-5 h-5 rounded-full bg-[#2D3A2F] border border-white shadow-xs" title="Dark Moss Slate (#2D3A2F)" />
+              <span className="text-[11px] font-bold text-[#5A6E5D] ml-1">Assam Tea Garden</span>
+            </div>
+          </button>
+
+          {/* North Eastern States Heritage Theme Card */}
+          <button
+            onClick={() => handleSelectTheme('northeast')}
+            className={`p-3.5 rounded-2xl border-2 transition-all flex flex-col text-left cursor-pointer relative ${
+              theme === 'northeast'
+                ? 'border-[#B23B2A] bg-[#FCEEEB] text-[#2B1E1C] shadow-xs scale-[1.01]'
+                : 'border-[#E0DCD3] bg-[#FDFBF7] text-[#5A6E5D] hover:bg-white'
+            }`}
+          >
+            {theme === 'northeast' && (
+              <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#B23B2A] text-white flex items-center justify-center text-[10px]">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+              </span>
+            )}
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-xl">🌺</span>
+              <span className="font-black text-sm block text-[#2D3A2F]">{t('themeNorthEastLabel')}</span>
+              <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-[#FAF6F0] border border-[#E5D9D3] text-[#B23B2A]">
+                NE States
+              </span>
+            </div>
+            <p className="text-xs text-[#5A6E5D] mb-2.5">{t('themeNorthEastDesc')}</p>
+
+            {/* Color Swatches */}
+            <div className="flex items-center gap-1.5 mt-auto pt-1">
+              <div className="w-5 h-5 rounded-full bg-[#B23B2A] border border-white shadow-xs" title="Gamusa Crimson (#B23B2A)" />
+              <div className="w-5 h-5 rounded-full bg-[#D97706] border border-white shadow-xs" title="Muga Golden Silk (#D97706)" />
+              <div className="w-5 h-5 rounded-full bg-[#FAF6F0] border border-[#E5D9D3] shadow-xs" title="Eri Silk Ivory (#FAF6F0)" />
+              <div className="w-5 h-5 rounded-full bg-[#3D6B75] border border-white shadow-xs" title="Patkai Blue Hills (#3D6B75)" />
+              <span className="text-[11px] font-bold text-[#5A6E5D] ml-1">Seven Sisters</span>
+            </div>
+          </button>
+        </div>
+
+        {/* North Eastern Cultural States Footnote */}
+        <div className="bg-[#FDFBF7] p-2.5 rounded-2xl border border-[#EAE4D6] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[11px] text-[#5A6E5D]">
+          <span className="font-bold flex items-center gap-1 text-[#2D3A2F]">
+            <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
+            {tx('Seven Sisters & Sikkim Cultural Heritage Palette', 'सेवन सिस्टर्स एवं सिक्किम सांस्कृतिक हेरिटेज', 'সাতভনী আৰু ছিক্কিমৰ ঐতিহ্যমণ্ডিত ৰং')}
+          </span>
+          <span className="text-[10px] font-semibold text-[#8A8070]">
+            Assam • Meghalaya • Nagaland • Manipur • Mizoram • Arunachal • Tripura • Sikkim
+          </span>
         </div>
       </div>
 

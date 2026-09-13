@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   AppRole, PatientTab, PatientSubView, FamilyCaregiverTab, AshaTab, Memory, 
   DDAMetric, CalendarEvent, Reminder, AlertItem, EmergencyContact, 
-  PatientProfile, MedicalProfile, CaregiverAccount, AshaAccount, CareTask, AuditLog 
+  PatientProfile, MedicalProfile, CaregiverAccount, AshaAccount, CareTask, AuditLog,
+  PlayMode
 } from './types';
 import { 
   INITIAL_PATIENT_PROFILE, INITIAL_MEDICAL_PROFILE, INITIAL_MEMORIES, INITIAL_REMINDERS, 
@@ -42,8 +43,12 @@ import { soundController } from './utils/audio';
 import { useSundowningState } from './hooks/useSundowningState';
 import { SundowningCalmBanner } from './components/patient/SundowningCalmBanner';
 import { Phone } from 'lucide-react';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   DEFAULT_PATIENT_ID,
+  auth,
+  signInWithGoogle,
+  signOutUser,
   subscribeToPatientProfile,
   savePatientProfile,
   subscribeToMedicalProfile,
@@ -68,6 +73,32 @@ import {
 } from './services/firebase';
 
 export function App() {
+  // Authentication & Cloud Sync
+  const [currentUser, setCurrentUser] = useState<User | null>(() => auth.currentUser);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      console.warn('Google sign-in attempt notice:', err);
+    }
+  };
+
+  const handleGoogleSignOut = async () => {
+    try {
+      await signOutUser();
+    } catch (err) {
+      console.warn('Google sign-out attempt notice:', err);
+    }
+  };
+
   // Check if initial setup was previously completed or stored in offline snapshot
   const cachedOfflineSnapshot = typeof window !== 'undefined' ? getOfflineSnapshot() : null;
   const isSetupCompletedLocally = (typeof window !== 'undefined' && 
@@ -82,6 +113,26 @@ export function App() {
   const [patientTab, setPatientTab] = useState<PatientTab>('home');
   const [patientSubView, setPatientSubView] = useState<PatientSubView>('none');
   const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null);
+  const [playMode, setPlayMode] = useState<PlayMode>(() => {
+    try {
+      const saved = localStorage.getItem('monor_xur_play_mode');
+      if (saved === 'default' || saved === 'personalized') {
+        return saved;
+      }
+    } catch {
+      // ignore
+    }
+    return 'default';
+  });
+
+  const handleSelectPlayMode = (mode: PlayMode) => {
+    setPlayMode(mode);
+    try {
+      localStorage.setItem('monor_xur_play_mode', mode);
+    } catch {
+      // ignore
+    }
+  };
 
   const [familyTab, setFamilyTab] = useState<FamilyCaregiverTab>('home');
   const [ashaTab, setAshaTab] = useState<AshaTab>('home');
@@ -200,6 +251,16 @@ export function App() {
 
   // --- Real-time Firebase Synchronization & Offline Cache Update ---
   useEffect(() => {
+    // Only subscribe to live Firestore if an authenticated user session is active
+    if (!currentUser) {
+      return;
+    }
+
+    // Ensure the patient document is established for the authenticated caregiver
+    savePatientProfile(DEFAULT_PATIENT_ID, patientProfile).catch((err) => {
+      console.warn('Patient profile cloud sync notice:', err);
+    });
+
     // 1. Patient Profile
     const unsubPatient = subscribeToPatientProfile(DEFAULT_PATIENT_ID, (data) => {
       if (data && data.name) {
@@ -270,7 +331,7 @@ export function App() {
       unsubContacts();
       unsubAudit();
     };
-  }, []);
+  }, [currentUser]);
 
   // Handlers
   const handleSwitchRole = (newRole: AppRole) => {
@@ -554,6 +615,11 @@ export function App() {
         role={role}
         onSwitchRole={handleSwitchRole}
         onCallEmergency={triggerCallFamily}
+        onOpenSettings={() => {
+          setRole('patient');
+          setPatientTab('settings');
+          setPatientSubView('none');
+        }}
       />
 
       {/* Main Content Area */}
@@ -590,6 +656,9 @@ export function App() {
                 memories={memories}
                 onBack={() => setPatientSubView('none')}
                 onLogDDAMetric={handleLogDDAMetric}
+                playerName={patientProfile.name}
+                initialMode={playMode}
+                onModeChange={handleSelectPlayMode}
               />
             )}
 
@@ -598,6 +667,9 @@ export function App() {
               <MemoryMatchGame
                 onBack={() => setPatientSubView('none')}
                 onLogDDAMetric={handleLogDDAMetric}
+                playerName={patientProfile.name}
+                mode={playMode}
+                memories={memories}
               />
             )}
 
@@ -665,6 +737,9 @@ export function App() {
                     onSelectGame={(g) => setPatientSubView(g)}
                     currentLevel={2}
                     ddaLogs={ddaLogs}
+                    memories={memories}
+                    playMode={playMode}
+                    onSelectPlayMode={handleSelectPlayMode}
                   />
                 )}
 
@@ -689,6 +764,9 @@ export function App() {
             onBack={() => handleSwitchRole('patient')}
             patientName={patientProfile.name || 'Player'}
             onOpenSetup={() => handleSwitchRole('setup')}
+            currentUser={currentUser}
+            onSignInGoogle={handleGoogleSignIn}
+            onSignOutGoogle={handleGoogleSignOut}
           />
         )}
 

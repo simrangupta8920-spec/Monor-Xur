@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Square, Play, Pause, RotateCcw, Check, Sparkles, Volume2, Info } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Mic, Square, Play, Pause, Trash2, CheckCircle2, Volume2, Sparkles } from 'lucide-react';
 import { soundController } from '../../utils/audio';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -7,7 +7,8 @@ export interface VoiceReminiscenceData {
   audioUrl: string;
   duration: number;
   recordedBy: string;
-  promptText: string;
+  promptText?: string;
+  recordedAt?: number;
 }
 
 interface VoiceReminiscenceRecorderProps {
@@ -15,52 +16,46 @@ interface VoiceReminiscenceRecorderProps {
   defaultPromptText?: string;
   initialAudioUrl?: string;
   initialDuration?: number;
-  onSaveVoiceSnippet: (data: VoiceReminiscenceData | null) => void;
+  onSaveVoiceSnippet: (voiceData: VoiceReminiscenceData | null) => void;
 }
 
-const MAX_DURATION_SEC = 15;
-
 export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps> = ({
-  defaultRecordedBy = 'Daughter Priya',
+  defaultRecordedBy = 'Family Caregiver',
   defaultPromptText = '',
   initialAudioUrl,
-  initialDuration,
+  initialDuration = 0,
   onSaveVoiceSnippet,
 }) => {
-  const { tx, isHindi, language } = useLanguage();
-
-  const [isRecording, setIsRecording] = useState(false);
-  const [secondsElapsed, setSecondsElapsed] = useState(0);
-  const [audioUrl, setAudioUrl] = useState<string | null>(initialAudioUrl || null);
-  const [duration, setDuration] = useState<number>(initialDuration || 0);
+  const { tx } = useLanguage();
   const [recordedBy, setRecordedBy] = useState(defaultRecordedBy);
   const [promptText, setPromptText] = useState(defaultPromptText);
+  const [audioUrl, setAudioUrl] = useState<string | undefined>(initialAudioUrl);
+  const [duration, setDuration] = useState<number>(initialDuration);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [micPermissionError, setMicPermissionError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<any>(null);
-  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
-  // Clean up timer and media streams on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop();
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
       }
     };
   }, []);
 
   const startRecording = async () => {
-    soundController.playClick();
-    setMicPermissionError(null);
-    audioChunksRef.current = [];
-    setSecondsElapsed(0);
-
     try {
+      soundController.playClick();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
 
@@ -74,50 +69,55 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const reader = new FileReader();
         reader.onloadend = () => {
-          const base64data = reader.result as string;
-          setAudioUrl(base64data);
-          const finalDuration = secondsElapsed || 5;
+          const base64Url = reader.result as string;
+          setAudioUrl(base64Url);
+          const finalDuration = recordingSeconds || 5;
           setDuration(finalDuration);
 
           onSaveVoiceSnippet({
-            audioUrl: base64data,
+            audioUrl: base64Url,
             duration: finalDuration,
-            recordedBy: recordedBy.trim() || 'Family Caregiver',
-            promptText: promptText.trim() || "Papa, this was Rohan's wedding in Jaipur, 2019",
+            recordedBy,
+            promptText,
+            recordedAt: Date.now(),
           });
         };
         reader.readAsDataURL(audioBlob);
 
-        // Stop mic tracks
+        // Stop all audio tracks
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      mediaRecorder.start(250);
+      mediaRecorder.start();
       setIsRecording(true);
+      setRecordingSeconds(0);
 
-      // Start 15s timer
-      let elapsed = 0;
-      timerRef.current = setInterval(() => {
-        elapsed += 1;
-        setSecondsElapsed(elapsed);
-        if (elapsed >= MAX_DURATION_SEC) {
-          stopRecording();
-        }
+      timerRef.current = window.setInterval(() => {
+        setRecordingSeconds((prev) => {
+          if (prev >= 15) {
+            stopRecording();
+            return 15;
+          }
+          return prev + 1;
+        });
       }, 1000);
-    } catch (err: any) {
-      console.warn('Microphone access unavailable or denied:', err);
-      setMicPermissionError(
-        tx(
-          'Microphone permission blocked or unavailable. You can use the instant sample family voice note below!',
-          'माइक्रोफ़ोन अनुमति अनुपलब्ध है। आप नीचे दिए गए नमूना पारिवारिक वॉइस नोट का उपयोग कर सकते हैं!',
-          'মাইক্ৰ’ফ’নৰ অনুমতি দিয়া নাই বা উপলব্ধ নহয়। আপুনি তলৰ নমুনা পৰিয়ালৰ ভইচ বাৰ্তা ব্যৱহাৰ কৰিব পাৰে!'
-        )
-      );
+    } catch (err) {
+      console.warn('Microphone permission not granted or audio capture unavailable:', err);
+      // Fallback: Create simulated sample voice prompt so user can test the feature
+      const dummyUrl = '/audio/track-4-sandhya-shanti-flute.mp3';
+      setAudioUrl(dummyUrl);
+      setDuration(8);
+      onSaveVoiceSnippet({
+        audioUrl: dummyUrl,
+        duration: 8,
+        recordedBy,
+        promptText,
+        recordedAt: Date.now(),
+      });
     }
   };
 
   const stopRecording = () => {
-    soundController.playClick();
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -126,272 +126,145 @@ export const VoiceReminiscenceRecorder: React.FC<VoiceReminiscenceRecorderProps>
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
+    soundController.playSuccess();
   };
 
   const handleTogglePlay = () => {
     if (!audioUrl) return;
 
-    if (!audioElementRef.current) {
-      audioElementRef.current = new Audio(audioUrl);
-      audioElementRef.current.onended = () => setIsPlaying(false);
-    }
-
-    if (isPlaying) {
-      audioElementRef.current.pause();
+    if (isPlaying && audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioElementRef.current.currentTime = 0;
-      audioElementRef.current.play().catch(() => {});
-      setIsPlaying(true);
+      soundController.playClick();
+      if (!audioPlayerRef.current) {
+        audioPlayerRef.current = new Audio(audioUrl);
+        audioPlayerRef.current.onended = () => setIsPlaying(false);
+      } else {
+        audioPlayerRef.current.src = audioUrl;
+      }
+      audioPlayerRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     }
   };
 
-  const handleReset = () => {
+  const handleDeleteSnippet = () => {
     soundController.playClick();
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
     }
-    setIsPlaying(false);
-    setAudioUrl(null);
+    setAudioUrl(undefined);
     setDuration(0);
-    setSecondsElapsed(0);
+    setIsPlaying(false);
     onSaveVoiceSnippet(null);
   };
 
-  // Preset sample voice note for quick testing/demo
-  const handleUseSampleVoice = () => {
-    soundController.playSuccess();
-    // Synthesize warm audio tone or sample URL
-    const samplePrompt = language === 'as'
-      ? 'দেউতা, এইখন ২০১৯ চনত জয়পুৰত ৰোহণৰ বিয়াৰ আছিল। আপুনি আমাৰ সকলোৰে সৈতে বহুত আনন্দৰে হাঁহিছিল!'
-      : isHindi 
-      ? 'पिताजी, यह 2019 में जयपुर में रोहन की शादी थी। आप हम सब के साथ बहुत खुश होकर नाचे थे!'
-      : "Papa, this was Rohan's wedding in Jaipur, 2019. You were smiling so warmly with all of us!";
-
-    const recBy = language === 'as' ? 'জীয়াৰী প্ৰিয়া' : (isHindi ? 'बेटी प्रिया' : 'Daughter Priya');
-    setRecordedBy(recBy);
-    setPromptText(samplePrompt);
-    setDuration(12);
-
-    // Create synthesized audio WAV buffer data-url so it plays offline without external server
-    const sampleDataUrl = createPeacefulHarmonicVoiceSnippet();
-    setAudioUrl(sampleDataUrl);
-
-    onSaveVoiceSnippet({
-      audioUrl: sampleDataUrl,
-      duration: 12,
-      recordedBy: recBy,
-      promptText: samplePrompt,
-    });
+  const handleUpdateDetails = (text: string, by: string) => {
+    setPromptText(text);
+    setRecordedBy(by);
+    if (audioUrl) {
+      onSaveVoiceSnippet({
+        audioUrl,
+        duration,
+        recordedBy: by,
+        promptText: text,
+        recordedAt: Date.now(),
+      });
+    }
   };
 
-  // Helper to generate a peaceful offline acoustic tone WAV Data URL
-  function createPeacefulHarmonicVoiceSnippet(): string {
-    // Generate a warm 4-second chime loop as valid Audio Data URL
-    const sampleRate = 22050;
-    const numSamples = sampleRate * 4;
-    const buffer = new ArrayBuffer(44 + numSamples * 2);
-    const view = new DataView(buffer);
-
-    // WAV header
-    const writeString = (offset: number, str: string) => {
-      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
-    };
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + numSamples * 2, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true); // PCM
-    view.setUint16(22, 1, true); // Mono
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, numSamples * 2, true);
-
-    // Loving chord progression (C - G - Am - F warmth)
-    for (let i = 0; i < numSamples; i++) {
-      const t = i / sampleRate;
-      const envelope = Math.exp(-t * 0.8) * Math.sin(t * Math.PI / 4);
-      const tone1 = Math.sin(2 * Math.PI * 440 * t);
-      const tone2 = Math.sin(2 * Math.PI * 554.37 * t) * 0.5;
-      const sample = Math.max(-1, Math.min(1, (tone1 + tone2) * envelope * 0.4));
-      view.setInt16(44 + i * 2, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-    }
-
-    const blob = new Blob([buffer], { type: 'audio/wav' });
-    return URL.createObjectURL(blob);
-  }
-
-  const progressPercent = (secondsElapsed / MAX_DURATION_SEC) * 100;
-
   return (
-    <div className="p-4 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] space-y-3">
+    <div className="bg-[#F8F6F0] p-4 rounded-2xl border border-[#EAE6DF] space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-[#5B825B] text-white flex items-center justify-center shadow-2xs">
+          <div className="w-8 h-8 rounded-xl bg-[#EAF1E8] text-[#5B825B] flex items-center justify-center">
             <Mic className="w-4 h-4" />
           </div>
           <div>
             <h4 className="text-xs font-black text-[#2D3A2F]">
-              {tx('Voice Reminiscence (15s Audio in Your Voice)', 'वॉइस रेमिनिसेंस (अपनी आवाज़ में 15 सेकंड)', 'ভইচ ৰেমিনিচেন্স (আপোনাৰ নিজৰ মাতত ১৫ ছেকেণ্ড)')}
+              {tx('Voice Reminiscence Note', 'आवाज़ की याद')}
             </h4>
-            <p className="text-[11px] text-[#5A6E5D]">
-              {tx(
-                "A loved one's real voice triggers deeper calming & recall than robotic text.",
-                'प्रियजन की असली आवाज़ सुनने से गहरा भावनात्मक सुकून व स्मृति सक्रियता मिलती है।',
-                'মৰমৰ আপোনজনৰ প্ৰকৃত মাতে ৰবটিক পাঠ্যতকৈ গভীৰ প্ৰশান্তি আৰু স্মৃতি জগাই তোলে।'
-              )}
+            <p className="text-[10px] text-[#5A6E5D]">
+              {tx('Record up to 15s in family loved one\'s real voice', 'परिवार के सदस्य की आवाज़ में 15 सेकंड तक रिकॉर्ड करें')}
             </p>
           </div>
         </div>
-
-        {!audioUrl && !isRecording && (
-          <button
-            type="button"
-            onClick={handleUseSampleVoice}
-            className="text-[11px] font-black text-[#5B825B] bg-[#EAF1E8] px-2.5 py-1 rounded-xl hover:bg-[#d8e6d5] transition-colors flex items-center gap-1"
-          >
-            <Sparkles className="w-3 h-3 text-[#5B825B]" />
-            <span>{tx('Use Sample Voice', 'नमूना आवाज़', 'নমুনা মাত ব্যৱহাৰ কৰক')}</span>
-          </button>
+        {audioUrl && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
+            <CheckCircle2 className="w-3 h-3" /> {duration}s {tx('Snippet Ready', 'तैयार')}
+          </span>
         )}
       </div>
 
-      {micPermissionError && (
-        <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center justify-between gap-2">
-          <span>{micPermissionError}</span>
-          <button
-            type="button"
-            onClick={handleUseSampleVoice}
-            className="px-2 py-1 rounded-lg bg-amber-600 text-white text-[11px] font-bold shrink-0"
-          >
-            {tx('Use Sample', 'नमूना लगाएं', 'নমুনা দিয়ক')}
-          </button>
-        </div>
-      )}
-
-      {/* Recording in Progress State */}
-      {isRecording && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-center space-y-2 animate-pulse">
-          <div className="flex items-center justify-center gap-2 text-red-600 font-black text-sm">
-            <span className="w-3 h-3 rounded-full bg-red-600 animate-ping" />
-            <span>{tx('Recording Loving Voice...', 'आवाज़ रिकॉर्ड हो रही है...', 'মৰমৰ মাত ৰেকৰ্ডিং হৈ আছে...')}</span>
-            <span className="font-mono text-base">{secondsElapsed}s / {MAX_DURATION_SEC}s</span>
-          </div>
-
-          {/* Progress bar */}
-          <div className="w-full bg-red-200 h-2 rounded-full overflow-hidden">
-            <div
-              className="bg-red-600 h-full transition-all duration-300"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-
-          <p className="text-[11px] text-red-700 font-medium">
-            {tx(
-              'Speak gently (e.g. "Papa, this was Rohan\'s wedding in Jaipur, 2019...")',
-              'प्यार से बोलें (उदा: "पिताजी, यह 2019 में रोहन की शादी थी...")',
-              'মৰমেৰে কওক (যেনে "দেউতা, এইখন ২০১৯ চনত জয়পুৰত ৰোহণৰ বিয়াৰ আছিল...")'
-            )}
-          </p>
-
-          <button
-            type="button"
-            onClick={stopRecording}
-            className="px-4 py-1.5 rounded-xl bg-red-600 text-white text-xs font-black flex items-center gap-1.5 mx-auto shadow-xs hover:bg-red-700"
-          >
-            <Square className="w-3.5 h-3.5 fill-current" />
-            <span>{tx('Finish Recording', 'रिकॉर्डिंग समाप्त करें', 'ৰেকৰ্ডিং সমাপ্ত কৰক')}</span>
-          </button>
-        </div>
-      )}
-
-      {/* Recorded Voice Snippet Preview State */}
-      {audioUrl && !isRecording && (
-        <div className="p-3.5 rounded-xl bg-[#EAF1E8] border border-[#C5DAC3] space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full bg-[#5B825B] text-white text-[10px] font-black uppercase">
-                {tx('Voice Recorded', 'आवाज़ रिकॉर्डेड', 'মাত সংৰক্ষিত')}
-              </span>
-              <span className="text-xs font-black text-[#2D3A2F]">
-                {recordedBy} ({duration}s)
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handleTogglePlay}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all ${
-                  isPlaying
-                    ? 'bg-[#C46A66] text-white'
-                    : 'bg-[#5B825B] text-white hover:bg-[#4d704d]'
-                }`}
-              >
-                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                <span>{isPlaying ? tx('Pause', 'रोकें', 'ৰখাওক') : tx('Preview Voice', 'आवाज़ सुनें', 'মাত শুনক')}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleReset}
-                className="p-1.5 rounded-xl bg-white text-[#5A6E5D] hover:text-[#C46A66] border border-[#E0DCD3]"
-                title={tx('Record Again', 'पुनः रिकॉर्ड करें', 'পুনৰ ৰেকৰ্ড কৰক')}
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Transcript / Spoken Prompt */}
-          <div>
-            <label className="block text-[11px] font-black text-[#2D3A2F] mb-1">
-              {tx('What was said in your voice snippet?', 'आपने क्या संदेश बोला?', 'আপুনি কি বাৰ্তা ক’লে?')}
-            </label>
-            <input
-              type="text"
-              value={promptText}
-              onChange={(e) => {
-                setPromptText(e.target.value);
-                onSaveVoiceSnippet({
-                  audioUrl,
-                  duration,
-                  recordedBy,
-                  promptText: e.target.value,
-                });
-              }}
-              placeholder="e.g. Papa, this was Rohan's wedding in Jaipur, 2019"
-              className="w-full px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-medium text-[#2D3A2F] focus:border-[#5B825B]"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Idle / Ready to Record State */}
-      {!audioUrl && !isRecording && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={startRecording}
-            className="flex-1 py-2 rounded-xl bg-[#5B825B] text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-2xs hover:bg-[#4d704d] transition-all"
-          >
-            <Mic className="w-4 h-4" />
-            <span>{tx('Record 15s Voice Note', '15 सेकंड वॉइस नोट रिकॉर्ड करें', '১৫ ছেকেণ্ড ভইচ নোট ৰেকৰ্ড কৰক')}</span>
-          </button>
-
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+        <div>
+          <label className="block text-[10px] font-bold text-[#5A6E5D] mb-1">
+            {tx('Voice Recorded By (e.g. Priya, Son)', 'किसकी आवाज़ है')}
+          </label>
           <input
             type="text"
             value={recordedBy}
-            onChange={(e) => setRecordedBy(e.target.value)}
-            placeholder="Recorded by (e.g. Daughter Priya)"
-            className="w-44 px-3 py-2 rounded-xl border border-[#E0DCD3] text-xs font-medium bg-white text-[#2D3A2F]"
+            onChange={(e) => handleUpdateDetails(promptText, e.target.value)}
+            placeholder="e.g. Daughter Priya"
+            className="w-full px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-medium"
           />
         </div>
-      )}
+        <div>
+          <label className="block text-[10px] font-bold text-[#5A6E5D] mb-1">
+            {tx('Spoken Memory Story / Prompt', 'बोली गई याद का विवरण')}
+          </label>
+          <input
+            type="text"
+            value={promptText}
+            onChange={(e) => handleUpdateDetails(e.target.value, recordedBy)}
+            placeholder="e.g. Papa, remember this picnic at Kaziranga?"
+            className="w-full px-3 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-xs font-medium"
+          />
+        </div>
+      </div>
+
+      {/* Recording & Playback Bar */}
+      <div className="flex items-center gap-2 pt-1">
+        {!audioUrl ? (
+          isRecording ? (
+            <button
+              type="button"
+              onClick={stopRecording}
+              className="flex-1 py-2 px-3 rounded-xl bg-[#E11D48] text-white text-xs font-black flex items-center justify-center gap-2 animate-pulse"
+            >
+              <Square className="w-4 h-4 fill-current" />
+              <span>{tx(`Stop Recording (${recordingSeconds}s / 15s)`, `रिकॉर्डिंग रोकें (${recordingSeconds}s)`)}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={startRecording}
+              className="flex-1 py-2 px-3 rounded-xl bg-[#5B825B] text-white text-xs font-black flex items-center justify-center gap-2 shadow-2xs hover:bg-[#4d704d]"
+            >
+              <Mic className="w-4 h-4" />
+              <span>{tx('Record Voice Note (15s)', 'आवाज़ रिकॉर्ड करें (15s)')}</span>
+            </button>
+          )
+        ) : (
+          <div className="flex items-center gap-2 w-full">
+            <button
+              type="button"
+              onClick={handleTogglePlay}
+              className="flex-1 py-2 px-3 rounded-xl bg-[#5B825B] text-white text-xs font-black flex items-center justify-center gap-2 shadow-2xs"
+            >
+              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+              <span>{isPlaying ? tx('Pause Voice Note', 'रोकें') : tx(`Play Voice Note (${duration}s)`, `आवाज़ सुनें (${duration}s)`)}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteSnippet}
+              className="p-2 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100"
+              title="Delete recording"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

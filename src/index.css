@@ -52,3 +52,188 @@
 .animate-toast-in {
   animation: toast-slide-down 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ==========================================================================
+   NORTH EASTERN STATES OF INDIA THEME (উত্তৰ-পূব ঐতিহ্য ৰং / North East Palette)
+   Inspired by Assam Gamusa crimson red, Muga silk golden honey,
+   unbleached Eri silk cream, Patkai blue hills, and sacred Brahmaputra dawn.
+   ========================================================================== */
+
+[data-theme="northeast"],
+[data-theme="northeast"] body,
+body.theme-northeast {
+  background-color: #FAF6F0 !important;
+  color: #2B1E1C !important;
+}
+
+[data-theme="northeast"] ::selection {
+  background-color: rgba(178, 59, 42, 0.25) !important;
+}
+
+[data-theme="northeast"] ::-webkit-scrollbar-thumb {
+  background: #E5D9D3 !important;
+}
+[data-theme="northeast"] ::-webkit-scrollbar-thumb:hover {
+  background: #CBBDB6 !important;
+}
+
+/* Base surface backgrounds */
+[data-theme="northeast"] .bg-\[\#FDFBF7\] {
+  background-color: #FAF6F0 !important;
+}
+[data-theme="northeast"] .bg-\[\#FDFBF7\]\/95 {
+  background-color: rgba(250, 246, 240, 0.95) !important;
+}
+[data-theme="northeast"] .bg-\[\#FAF8F5\] {
+  background-color: #F7F2EA !important;
+}
+[data-theme="northeast"] .bg-\[\#F8F6F0\] {
+  background-color: #F5EFE5 !important;
+}
+[data-theme="northeast"] .bg-\[\#F4F1EA\] {
+  background-color: #EFE8DE !important;
+}
+[data-theme="northeast"] .bg-\[\#EAE5DC\] {
+  background-color: #E7DFD4 !important;
+}
+
+/* Primary Green -> North East Gamusa Crimson (#B23B2A) */
+[data-theme="northeast"] .bg-\[\#5B825B\] {
+  background-color: #B23B2A !important;
+}
+[data-theme="northeast"] .bg-\[\#4d704d\],
+[data-theme="northeast"] .bg-\[\#3D663D\],
+[data-theme="northeast"] .bg-\[\#4a6b4a\],
+[data-theme="northeast"] .bg-\[\#3D563D\] {
+  background-color: #962D1E !important;
+}
+[data-theme="northeast"] .hover\:bg-\[\#4d704d\]:hover,
+[data-theme="northeast"] .hover\:bg-\[\#3D663D\]:hover,
+[data-theme="northeast"] .hover\:bg-\[\#4a6b4a\]:hover {
+  background-color: #962D1E !important;
+}
+
+/* Light tint -> Gamusa Ivory-Rose (#FCEEEB) */
+[data-theme="northeast"] .bg-\[\#EAF1E8\] {
+  background-color: #FCEEEB !important;
+}
+[data-theme="northeast"] .hover\:bg-\[\#EAF1E8\]:hover,
+[data-theme="northeast"] .hover\:bg-\[\#d8ebd5\]:hover,
+[data-theme="northeast"] .hover\:bg-\[\#d6e5d3\]:hover,
+[data-theme="northeast"] .hover\:bg-\[\#d9e8d6\]:hover {
+  background-color: #F9DDD6 !important;
+}
+
+/* Opacity variants of primary */
+[data-theme="northeast"] .bg-\[\#5B825B\]\/10 {
+  background-color: rgba(178, 59, 42, 0.1) !important;
+}
+[data-theme="northeast"] .bg-\[\#5B825B\]\/15 {
+  background-color: rgba(178, 59, 42, 0.15) !important;
+}
+[data-theme="northeast"] .bg-\[\#5B825B\]\/20 {
+  background-color: rgba(178, 59, 42, 0.2) !important;
+}
+[data-theme="northeast"] .bg-\[\#5B825B\]\/25 {
+  background-color: rgba(178, 59, 42, 0.25) !important;
+}
+[data-theme="northeast"] .bg-\[\#5B825B\]\/30 {
+  background-color: rgba(178, 59, 42, 0.3) !important;
+}
+[data-theme="northeast"] .bg-\[\#5B825B\]\/40 {
+  background-color: rgba(178, 59, 42, 0.4) !important;
+}
+[data-theme="northeast"] .bg-\[\#5B825B\]\/50 {
+  background-color: rgba(178, 59, 42, 0.5) !important;
+}
+[data-theme="northeast"] .bg-\[\#5B825B\]\/60 {
+  background-color: rgba(178, 59, 42, 0.6) !important;
+}
+[data-theme="northeast"] .bg-\[\#5B825B\]\/80 {
+  background-color: rgba(178, 59, 42, 0.8) !important;
+}
+[data-theme="northeast"] .bg-\[\#EAF1E8\]\/30,
+[data-theme="northeast"] .bg-\[\#EAF1E8\]\/50,
+[data-theme="northeast"] .bg-\[\#EAF1E8\]\/70 {
+  background-color: rgba(252, 238, 235, 0.6) !important;
+}
+
+/* Text colors */
+[data-theme="northeast"] .text-\[\#5B825B\] {
+  color: #B23B2A !important;
+}
+[data-theme="northeast"] .text-\[\#2D3A2F\] {
+  color: #2B1E1C !important;
+}
+[data-theme="northeast"] .hover\:text-\[\#2D3A2F\]:hover {
+  color: #2B1E1C !important;
+}
+[data-theme="northeast"] .text-\[\#5A6E5D\] {
+  color: #6E534F !important;
+}
+[data-theme="northeast"] .text-\[\#8A8070\] {
+  color: #8C7570 !important;
+}
+[data-theme="northeast"] .text-\[\#332610\] {
+  color: #382015 !important;
+}
+[data-theme="northeast"] .text-\[\#8C651E\] {
+  color: #A16207 !important;
+}
+
+/* Border colors */
+[data-theme="northeast"] .border-\[\#5B825B\] {
+  border-color: #B23B2A !important;
+}
+[data-theme="northeast"] .border-\[\#5B825B\]\/20 {
+  border-color: rgba(178, 59, 42, 0.2) !important;
+}
+[data-theme="northeast"] .border-\[\#5B825B\]\/30 {
+  border-color: rgba(178, 59, 42, 0.3) !important;
+}
+[data-theme="northeast"] .border-\[\#5B825B\]\/40 {
+  border-color: rgba(178, 59, 42, 0.4) !important;
+}
+[data-theme="northeast"] .border-\[\#5B825B\]\/50 {
+  border-color: rgba(178, 59, 42, 0.5) !important;
+}
+[data-theme="northeast"] .border-\[\#5B825B\]\/60 {
+  border-color: rgba(178, 59, 42, 0.6) !important;
+}
+[data-theme="northeast"] .border-\[\#5B825B\]\/80 {
+  border-color: rgba(178, 59, 42, 0.8) !important;
+}
+[data-theme="northeast"] .border-\[\#E0DCD3\] {
+  border-color: #E5D9D3 !important;
+}
+[data-theme="northeast"] .border-\[\#EAE6DF\],
+[data-theme="northeast"] .border-\[\#EAE4D6\],
+[data-theme="northeast"] .border-\[\#E2DDD2\] {
+  border-color: #E8DDD6 !important;
+}
+
+/* Golden Muga Silk accents (Golden Amber) */
+[data-theme="northeast"] .text-\[\#E8B25C\] {
+  color: #D97706 !important;
+}
+[data-theme="northeast"] .bg-\[\#FDF0D5\] {
+  background-color: #FEF3C7 !important;
+}
+[data-theme="northeast"] .border-\[\#E8B25C\]\/40 {
+  border-color: rgba(217, 119, 6, 0.4) !important;
+}
+
+/* Brahmaputra river & Patkai hills misty blue accents */
+[data-theme="northeast"] .bg-\[\#D4E4E6\] {
+  background-color: #E0ECEF !important;
+}
+[data-theme="northeast"] .text-\[\#7A9CA4\] {
+  color: #3D6B75 !important;
+}
+[data-theme="northeast"] .text-\[\#1C2A2D\] {
+  color: #1E282C !important;
+}
+[data-theme="northeast"] .hover\:bg-\[\#c2d7da\]:hover {
+  background-color: #D0DFE3 !important;
+}
+

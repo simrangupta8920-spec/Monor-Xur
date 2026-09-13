@@ -9,6 +9,8 @@ export type AppRole =
 
 export type PatientTab = 'home' | 'play' | 'memories' | 'settings';
 
+export type PlayMode = 'default' | 'personalized';
+
 export type PatientSubView = 
   | 'none' 
   | 'relaxation' 
