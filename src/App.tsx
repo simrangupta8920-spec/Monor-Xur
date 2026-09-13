@@ -42,8 +42,12 @@ import { soundController } from './utils/audio';
 import { useSundowningState } from './hooks/useSundowningState';
 import { SundowningCalmBanner } from './components/patient/SundowningCalmBanner';
 import { Phone } from 'lucide-react';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   DEFAULT_PATIENT_ID,
+  auth,
+  signInWithGoogle,
+  signOutUser,
   subscribeToPatientProfile,
   savePatientProfile,
   subscribeToMedicalProfile,
@@ -68,6 +72,32 @@ import {
 } from './services/firebase';
 
 export function App() {
+  // Authentication & Cloud Sync
+  const [currentUser, setCurrentUser] = useState<User | null>(() => auth.currentUser);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      console.warn('Google sign-in attempt notice:', err);
+    }
+  };
+
+  const handleGoogleSignOut = async () => {
+    try {
+      await signOutUser();
+    } catch (err) {
+      console.warn('Google sign-out attempt notice:', err);
+    }
+  };
+
   // Check if initial setup was previously completed or stored in offline snapshot
   const cachedOfflineSnapshot = typeof window !== 'undefined' ? getOfflineSnapshot() : null;
   const isSetupCompletedLocally = (typeof window !== 'undefined' && 
@@ -200,6 +230,16 @@ export function App() {
 
   // --- Real-time Firebase Synchronization & Offline Cache Update ---
   useEffect(() => {
+    // Only subscribe to live Firestore if an authenticated user session is active
+    if (!currentUser) {
+      return;
+    }
+
+    // Ensure the patient document is established for the authenticated caregiver
+    savePatientProfile(DEFAULT_PATIENT_ID, patientProfile).catch((err) => {
+      console.warn('Patient profile cloud sync notice:', err);
+    });
+
     // 1. Patient Profile
     const unsubPatient = subscribeToPatientProfile(DEFAULT_PATIENT_ID, (data) => {
       if (data && data.name) {
@@ -270,7 +310,7 @@ export function App() {
       unsubContacts();
       unsubAudit();
     };
-  }, []);
+  }, [currentUser]);
 
   // Handlers
   const handleSwitchRole = (newRole: AppRole) => {
@@ -689,6 +729,9 @@ export function App() {
             onBack={() => handleSwitchRole('patient')}
             patientName={patientProfile.name || 'Player'}
             onOpenSetup={() => handleSwitchRole('setup')}
+            currentUser={currentUser}
+            onSignInGoogle={handleGoogleSignIn}
+            onSignOutGoogle={handleGoogleSignOut}
           />
         )}
 

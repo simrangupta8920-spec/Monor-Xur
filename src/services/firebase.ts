@@ -1,5 +1,13 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, User } from 'firebase/auth';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  onAuthStateChanged, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut, 
+  User 
+} from 'firebase/auth';
 import { 
   getFirestore, 
   doc, 
@@ -35,6 +43,27 @@ const app = initializeApp(resolvedConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth();
 
+const googleProvider = new GoogleAuthProvider();
+
+export async function signInWithGoogle(): Promise<User | null> {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
+  } catch (err) {
+    console.error('Google sign-in error:', err);
+    throw err;
+  }
+}
+
+export async function signOutUser(): Promise<void> {
+  try {
+    await signOut(auth);
+  } catch (err) {
+    console.error('Google sign-out error:', err);
+    throw err;
+  }
+}
+
 // Ensure an authenticated session is active
 export async function ensureFirebaseAuth(): Promise<User | null> {
   if (auth.currentUser) return auth.currentUser;
@@ -46,7 +75,6 @@ export async function ensureFirebaseAuth(): Promise<User | null> {
     return auth.currentUser;
   }
 }
-ensureFirebaseAuth();
 
 export enum OperationType {
   CREATE = 'create',
@@ -107,7 +135,6 @@ export async function testFirestoreConnection(): Promise<boolean> {
     return false;
   }
 }
-testFirestoreConnection();
 
 // Primary Patient ID for active session
 export const DEFAULT_PATIENT_ID = 'primary-patient';
@@ -117,6 +144,9 @@ export function subscribeToPatientProfile(
   patientId: string, 
   onData: (data: PatientProfile | null) => void
 ) {
+  if (!auth.currentUser) {
+    return () => {};
+  }
   const path = `patients/${patientId}`;
   return onSnapshot(doc(db, 'patients', patientId), (docSnap) => {
     if (docSnap.exists()) {
@@ -132,8 +162,11 @@ export function subscribeToPatientProfile(
 export async function savePatientProfile(patientId: string, profile: PatientProfile): Promise<void> {
   const path = `patients/${patientId}`;
   try {
-    const user = auth.currentUser || await ensureFirebaseAuth();
-    const uid = user?.uid;
+    if (!auth.currentUser) {
+      console.info('Patient profile stored locally (awaiting caregiver cloud sign-in).');
+      return;
+    }
+    const uid = auth.currentUser.uid;
     const existingUids = Array.isArray(profile.authorizedUids) ? [...profile.authorizedUids] : [];
     if (uid && !existingUids.includes(uid)) {
       existingUids.push(uid);
@@ -157,6 +190,9 @@ export function subscribeToMedicalProfile(
   patientId: string, 
   onData: (data: MedicalProfile | null) => void
 ) {
+  if (!auth.currentUser) {
+    return () => {};
+  }
   const path = `patients/${patientId}/medical/default`;
   return onSnapshot(doc(db, 'patients', patientId, 'medical', 'default'), (docSnap) => {
     if (docSnap.exists()) {
@@ -172,6 +208,7 @@ export function subscribeToMedicalProfile(
 export async function saveMedicalProfile(patientId: string, profile: MedicalProfile): Promise<void> {
   const path = `patients/${patientId}/medical/default`;
   try {
+    if (!auth.currentUser) return;
     await setDoc(doc(db, 'patients', patientId, 'medical', 'default'), {
       ...profile,
       updatedAt: new Date().toISOString()
@@ -194,13 +231,31 @@ export async function updateGameDifficultyProgress(
 ): Promise<void> {
   const patientPath = `patients/${patientId}`;
   try {
-    await ensureFirebaseAuth();
     const nowIso = new Date().toISOString();
 
     // Map difficulty: for memory match 1-3, for puzzle 2-4 -> normalized 1-3
     const normalizedLevel = gameKey === 'puzzle'
       ? (level === 2 ? 1 : level === 3 ? 2 : 3)
       : level;
+
+    // Cache to localStorage for instant offline access
+    try {
+      localStorage.setItem(`monor_game_level_${gameKey}`, String(level));
+      if (gameKey === 'memory_match') {
+        localStorage.setItem('monor_memory_level', String(level));
+        if (streaks) {
+          localStorage.setItem('monor_memory_streaks_v2', JSON.stringify(streaks));
+        }
+      } else if (gameKey === 'puzzle') {
+        localStorage.setItem('monor_puzzle_grid_size', String(level));
+      }
+    } catch {
+      // ignore
+    }
+
+    if (!auth.currentUser) {
+      return;
+    }
 
     // 1. Update Patient Profile
     const patientDocRef = doc(db, 'patients', patientId);
@@ -233,21 +288,6 @@ export async function updateGameDifficultyProgress(
       lastCognitiveAssessment: nowIso,
       updatedAt: nowIso,
     }, { merge: true });
-
-    // 3. Cache to localStorage for instant offline access
-    try {
-      localStorage.setItem(`monor_game_level_${gameKey}`, String(level));
-      if (gameKey === 'memory_match') {
-        localStorage.setItem('monor_memory_level', String(level));
-        if (streaks) {
-          localStorage.setItem('monor_memory_streaks_v2', JSON.stringify(streaks));
-        }
-      } else if (gameKey === 'puzzle') {
-        localStorage.setItem('monor_puzzle_grid_size', String(level));
-      }
-    } catch {
-      // ignore
-    }
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, patientPath);
   }
@@ -258,6 +298,9 @@ export function subscribeToMemories(
   patientId: string, 
   onData: (memories: Memory[]) => void
 ) {
+  if (!auth.currentUser) {
+    return () => {};
+  }
   const path = `patients/${patientId}/memories/default`;
   return onSnapshot(doc(db, 'patients', patientId, 'memories', 'default'), (docSnap) => {
     if (docSnap.exists()) {
@@ -274,6 +317,7 @@ export function subscribeToMemories(
 export async function addMemoryToDb(patientId: string, memory: Memory): Promise<void> {
   const path = `patients/${patientId}/memories/default`;
   try {
+    if (!auth.currentUser) return;
     const docRef = doc(db, 'patients', patientId, 'memories', 'default');
     const snap = await getDoc(docRef);
     let items: Memory[] = [];
@@ -295,6 +339,7 @@ export async function addMemoryToDb(patientId: string, memory: Memory): Promise<
 export async function deleteMemoryFromDb(patientId: string, memoryId: string): Promise<void> {
   const path = `patients/${patientId}/memories/default`;
   try {
+    if (!auth.currentUser) return;
     const docRef = doc(db, 'patients', patientId, 'memories', 'default');
     const snap = await getDoc(docRef);
     if (snap.exists()) {
@@ -316,6 +361,9 @@ export function subscribeToReminders(
   patientId: string, 
   onData: (reminders: Reminder[]) => void
 ) {
+  if (!auth.currentUser) {
+    return () => {};
+  }
   const path = `patients/${patientId}/reminders/default`;
   return onSnapshot(doc(db, 'patients', patientId, 'reminders', 'default'), (docSnap) => {
     if (docSnap.exists()) {
@@ -334,6 +382,7 @@ export function subscribeToReminders(
 export async function saveReminderToDb(patientId: string, reminder: Reminder): Promise<void> {
   const path = `patients/${patientId}/reminders/default`;
   try {
+    if (!auth.currentUser) return;
     const docRef = doc(db, 'patients', patientId, 'reminders', 'default');
     const snap = await getDoc(docRef);
     let items: Reminder[] = [];
@@ -362,6 +411,7 @@ export async function saveReminderToDb(patientId: string, reminder: Reminder): P
 export async function saveRemindersListToDb(patientId: string, reminders: Reminder[]): Promise<void> {
   const path = `patients/${patientId}/reminders/default`;
   try {
+    if (!auth.currentUser) return;
     const docRef = doc(db, 'patients', patientId, 'reminders', 'default');
     await setDoc(docRef, {
       title: 'Daily Reminders',
@@ -376,6 +426,7 @@ export async function saveRemindersListToDb(patientId: string, reminders: Remind
 export async function deleteReminderFromDb(patientId: string, reminderId: string): Promise<void> {
   const path = `patients/${patientId}/reminders/default`;
   try {
+    if (!auth.currentUser) return;
     const docRef = doc(db, 'patients', patientId, 'reminders', 'default');
     const snap = await getDoc(docRef);
     if (snap.exists()) {
@@ -397,6 +448,9 @@ export function subscribeToCalendarEvents(
   patientId: string, 
   onData: (events: CalendarEvent[]) => void
 ) {
+  if (!auth.currentUser) {
+    return () => {};
+  }
   const path = `patients/${patientId}/events/default`;
   return onSnapshot(doc(db, 'patients', patientId, 'events', 'default'), (docSnap) => {
     if (docSnap.exists()) {
@@ -413,6 +467,7 @@ export function subscribeToCalendarEvents(
 export async function saveCalendarEventToDb(patientId: string, event: CalendarEvent): Promise<void> {
   const path = `patients/${patientId}/events/default`;
   try {
+    if (!auth.currentUser) return;
     const docRef = doc(db, 'patients', patientId, 'events', 'default');
     const snap = await getDoc(docRef);
     let items: CalendarEvent[] = [];
@@ -438,6 +493,9 @@ export function subscribeToCareTasks(
   patientId: string, 
   onData: (tasks: CareTask[]) => void
 ) {
+  if (!auth.currentUser) {
+    return () => {};
+  }
   const path = `patients/${patientId}/care_tasks/default`;
   return onSnapshot(doc(db, 'patients', patientId, 'care_tasks', 'default'), (docSnap) => {
     if (docSnap.exists()) {
@@ -454,6 +512,7 @@ export function subscribeToCareTasks(
 export async function saveCareTaskToDb(patientId: string, task: CareTask): Promise<void> {
   const path = `patients/${patientId}/care_tasks/default`;
   try {
+    if (!auth.currentUser) return;
     const docRef = doc(db, 'patients', patientId, 'care_tasks', 'default');
     const snap = await getDoc(docRef);
     let items: CareTask[] = [];
@@ -479,6 +538,9 @@ export function subscribeToContacts(
   patientId: string, 
   onData: (contacts: EmergencyContact[]) => void
 ) {
+  if (!auth.currentUser) {
+    return () => {};
+  }
   const path = `patients/${patientId}/contacts/default`;
   return onSnapshot(doc(db, 'patients', patientId, 'contacts', 'default'), (docSnap) => {
     if (docSnap.exists()) {
@@ -495,6 +557,7 @@ export function subscribeToContacts(
 export async function saveContactToDb(patientId: string, contact: EmergencyContact): Promise<void> {
   const path = `patients/${patientId}/contacts/default`;
   try {
+    if (!auth.currentUser) return;
     const docRef = doc(db, 'patients', patientId, 'contacts', 'default');
     const snap = await getDoc(docRef);
     let items: EmergencyContact[] = [];
@@ -520,6 +583,9 @@ export function subscribeToDDALogs(
   patientId: string, 
   onData: (logs: DDAMetric[]) => void
 ) {
+  if (!auth.currentUser) {
+    return () => {};
+  }
   const path = `patients/${patientId}/dda_logs/default`;
   return onSnapshot(doc(db, 'patients', patientId, 'dda_logs', 'default'), (docSnap) => {
     if (docSnap.exists()) {
@@ -538,6 +604,7 @@ export function subscribeToDDALogs(
 export async function logDDAMetricToDb(patientId: string, metric: DDAMetric): Promise<void> {
   const path = `patients/${patientId}/dda_logs/default`;
   try {
+    if (!auth.currentUser) return;
     const docRef = doc(db, 'patients', patientId, 'dda_logs', 'default');
     const snap = await getDoc(docRef);
     let items: DDAMetric[] = [];
@@ -562,6 +629,9 @@ export function subscribeToAlerts(
   patientId: string,
   onData: (alerts: AlertItem[]) => void
 ) {
+  if (!auth.currentUser) {
+    return () => {};
+  }
   const path = `patients/${patientId}/alerts/default`;
   return onSnapshot(doc(db, 'patients', patientId, 'alerts', 'default'), (docSnap) => {
     if (docSnap.exists()) {
@@ -578,6 +648,7 @@ export function subscribeToAlerts(
 export async function saveAlertToDb(patientId: string, alert: AlertItem): Promise<void> {
   const path = `patients/${patientId}/alerts/default`;
   try {
+    if (!auth.currentUser) return;
     const docRef = doc(db, 'patients', patientId, 'alerts', 'default');
     const snap = await getDoc(docRef);
     let items: AlertItem[] = [];
@@ -640,6 +711,8 @@ export async function logAuditEvent(
   // 1. Save immediately to local encrypted/browser storage for 100% offline DPDP audit trail resilience
   saveLocalAuditLog(entry);
 
+  if (!auth.currentUser) return;
+
   // 2. Persist real-time audit list into the permitted dda_logs/audit_trail subcollection
   try {
     const listRef = doc(db, 'patients', patientId, 'dda_logs', 'audit_trail');
@@ -678,6 +751,10 @@ export function subscribeToAuditLogs(
   const initialLocal = getLocalAuditLogs();
   if (initialLocal.length > 0) {
     onData(initialLocal);
+  }
+
+  if (!auth.currentUser) {
+    return () => {};
   }
 
   return onSnapshot(doc(db, 'patients', patientId, 'dda_logs', 'audit_trail'), (docSnap) => {

@@ -1,14 +1,18 @@
 import React from 'react';
-import { ArrowLeft, Users, Stethoscope, ShieldCheck, Gamepad2 } from 'lucide-react';
+import { ArrowLeft, Users, Stethoscope, ShieldCheck, Gamepad2, Cloud, CloudOff, LogIn, LogOut, CheckCircle2 } from 'lucide-react';
 import { AppRole } from '../../types';
 import { soundController } from '../../utils/audio';
 import { useLanguage } from '../../context/LanguageContext';
+import { User } from 'firebase/auth';
 
 interface CaregiverSelectProps {
   onSelectRole: (role: AppRole) => void;
   onBack: () => void;
   patientName?: string;
   onOpenSetup?: () => void;
+  currentUser?: User | null;
+  onSignInGoogle?: () => Promise<void>;
+  onSignOutGoogle?: () => Promise<void>;
 }
 
 export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({ 
@@ -16,8 +20,36 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
   onBack,
   patientName = 'Player',
   onOpenSetup,
+  currentUser,
+  onSignInGoogle,
+  onSignOutGoogle,
 }) => {
   const { tx } = useLanguage();
+  const [authLoading, setAuthLoading] = React.useState(false);
+
+  const handleGoogleAuth = async () => {
+    if (!onSignInGoogle) return;
+    try {
+      setAuthLoading(true);
+      await onSignInGoogle();
+    } catch (err) {
+      console.warn('Google sign-in action notice:', err);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (!onSignOutGoogle) return;
+    try {
+      setAuthLoading(true);
+      await onSignOutGoogle();
+    } catch (err) {
+      console.warn('Sign-out action notice:', err);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   return (
     <div className="p-4 pb-24 space-y-5 animate-fadeIn">
@@ -160,6 +192,54 @@ export const CaregiverSelect: React.FC<CaregiverSelectProps> = ({
             <span className="px-4 py-2 rounded-xl bg-[#2D3A2F] text-white">
               {tx('Sign In →', 'लॉग इन करें →', 'লগ ইন কৰক →')}
             </span>
+          </div>
+        </div>
+
+        {/* Cloud Synchronization Section */}
+        <div className="bg-white p-5 rounded-3xl border-2 border-[#E0DCD3] shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${currentUser ? 'bg-[#EAF1E8] text-[#5B825B]' : 'bg-[#F2EFE9] text-[#5A6E5D]'}`}>
+                {currentUser ? <Cloud className="w-6 h-6 text-[#5B825B]" /> : <CloudOff className="w-6 h-6 text-[#8C827A]" />}
+              </div>
+              <div>
+                <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${currentUser ? 'bg-[#EAF1E8] text-[#5B825B]' : 'bg-[#F2EFE9] text-[#5A6E5D]'}`}>
+                  {currentUser ? tx('Live Cloud Sync Active', 'क्लाउड सिंक सक्रिय', 'ক্লাউড চিন্ক সক্ৰিয়') : tx('Offline / Local Mode', 'ऑफ़लाइन / स्थानीय मोड', 'অফলাইন / স্থানীয় ম’ড')}
+                </span>
+                <h4 className="text-sm font-black text-[#2D3A2F] mt-0.5">
+                  {currentUser 
+                    ? (currentUser.email || currentUser.displayName || tx('Caregiver Account Connected', 'देखभालकर्ता खाता कनेक्टेड', 'সেৱাযত্নকাৰী একাউণ্ট সংযোগিত'))
+                    : tx('Cross-Device Cloud Sync', 'मल्टी-डिवाइस क्लाउड सिंक', 'একাধিক ডিভাইচ ক্লাউড চিন্ক')}
+                </h4>
+                <p className="text-xs text-[#5A6E5D]">
+                  {currentUser
+                    ? tx('All memories, appointments, and care logs synchronize automatically.', 'सभी यादें, अपॉइंटमेंट और केयर लॉग स्वचालित रूप से सिंक होते हैं।', 'সকলো স্মৃতি, নিযুক্তি আৰু সেৱা লগ স্বয়ংক্ৰিয়ভাৱে চিন্ক হয়।')
+                    : tx('Sign in with your Google account to sync memories & telemetry across phones.', 'फ़ोन पर यादों और टेलीमेट्री को सिंक करने के लिए अपने Google खाते से साइन इन करें।', 'মোবাইলসমূহত স্মৃতি আৰু তথ্য সংৰক্ষণ কৰিবলৈ আপোনাৰ গুগল একাউণ্টেৰে লগ ইন কৰক।')}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-1 flex items-center justify-end">
+            {currentUser ? (
+              <button
+                onClick={handleSignOut}
+                disabled={authLoading}
+                className="px-4 py-2 rounded-xl bg-[#FAF8F5] border border-[#E0DCD3] text-xs font-bold text-[#8C827A] hover:text-[#C55345] hover:border-[#C55345]/30 flex items-center gap-1.5 transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>{authLoading ? '...' : tx('Disconnect Cloud Account', 'क्लाउड खाता डिस्कनेक्ट करें', 'ক্লাউড একাউণ্ট আঁতৰাওক')}</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleGoogleAuth}
+                disabled={authLoading}
+                className="px-4 py-2.5 rounded-xl bg-[#2D3A2F] hover:bg-[#1C2A2D] text-white text-xs font-black flex items-center gap-2 shadow-xs active:scale-95 transition-all"
+              >
+                <LogIn className="w-4 h-4 text-[#E8B25C]" />
+                <span>{authLoading ? '...' : tx('Sign in with Google', 'Google से साइन इन करें', 'Google ৰে ছাইন ইন কৰক')}</span>
+              </button>
+            )}
           </div>
         </div>
 
