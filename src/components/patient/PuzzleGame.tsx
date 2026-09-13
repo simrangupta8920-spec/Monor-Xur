@@ -577,6 +577,20 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
   // Subtle difficulty adjustment notification toast state
   const [difficultyToast, setDifficultyToast] = useState<DifficultyToastProps | null>(null);
 
+interface PendingLevelUpgradeData {
+  fromGrid: GridDimension;
+  toGrid: GridDimension;
+  encouragement: string;
+  reason?: string;
+}
+
+  // Pending Level Upgrade (queued from AI analysis to apply when clicking Next Picture)
+  const [pendingLevelUpgrade, setPendingLevelUpgrade] = useState<PendingLevelUpgradeData | null>(null);
+  const pendingLevelUpgradeRef = useRef<PendingLevelUpgradeData | null>(null);
+
+  // 10-second peaceful pause timer upon completing puzzle
+  const [pauseSecondsLeft, setPauseSecondsLeft] = useState<number>(10);
+
   // AI Cognitive Model & Telemetry State
   const [isAnalyzingAI, setIsAnalyzingAI] = useState<boolean>(false);
   const [latestAIResult, setLatestAIResult] = useState<PuzzleAIAnalysisResult | null>(null);
@@ -699,33 +713,6 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             // Ignore
           }
 
-          setAutoAdjustBanner({
-            show: true,
-            reason: aiResult.reasoning,
-            encouragement: aiResult.encouragement,
-            fromGrid: fromG,
-            toGrid: targetG,
-            timeTaken: timeTakenSeconds,
-            averageTime: designatedAvg,
-            action: aiResult.action,
-            modelSource: aiResult.modelSource,
-          });
-
-          // Trigger subtle notification toast with encouraging language
-          setDifficultyToast({
-            show: true,
-            gameTitle: 'Photo Puzzle',
-            action: aiResult.action,
-            previousLevelName: GRID_LABELS[fromG]?.name || `${fromG}×${fromG}`,
-            newLevelName: GRID_LABELS[targetG]?.name || `${targetG}×${targetG}`,
-            encouragement: aiResult.encouragement,
-            reason: aiResult.reasoning,
-            timeTaken: timeTakenSeconds,
-            averageTime: designatedAvg,
-            onUndo: () => handleSelectGridSize(fromG),
-            onDismiss: () => setDifficultyToast(null),
-          });
-
           // Log AI intervention metric for Caregiver & ASHA telemetry
           if (onLogDDAMetric) {
             onLogDDAMetric({
@@ -760,8 +747,22 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             setHasLoggedMetric(false);
             soundController.speak(aiResult.encouragement);
           } else {
-            // Round complete: set new grid size for next round!
-            setGridSize(targetG);
+            // Round complete: Queue level upgrade for when user clicks "Next Picture"!
+            // No notification banner or toast pops up so the player can admire the completed solution peacefully.
+            const upgradeData: PendingLevelUpgradeData = {
+              fromGrid: fromG,
+              toGrid: targetG,
+              encouragement: aiResult.encouragement || tx(
+                "You are doing very great! Wonderful job solving with ease and joy. Let's try this exciting new challenge together!",
+                "आप बहुत बढ़िया काम कर रहे हैं! शाबाश! आइए मिलकर यह नई चुनौती आजमाते हैं!",
+                "আপুনি বৰ ভাল কাম কৰিছে! শাবাছ! আহক আমি একেলগে এই নতুন প্ৰত্যাহ্বানটো চেষ্টা কৰোঁ!"
+              ),
+              reason: aiResult.reasoning,
+            };
+            pendingLevelUpgradeRef.current = upgradeData;
+            setPendingLevelUpgrade(upgradeData);
+            setAutoAdjustBanner(null);
+            setDifficultyToast(null);
           }
         } else {
           // Difficulty maintained
@@ -808,6 +809,8 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
   const handleSelectGridSize = (newSize: GridDimension) => {
     soundController.playClick();
     setGridSize(newSize);
+    pendingLevelUpgradeRef.current = null;
+    setPendingLevelUpgrade(null);
     setConsecutiveSolves(0);
     try {
       localStorage.setItem('monor_puzzle_consecutive_solves', '0');
@@ -826,6 +829,8 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     setElapsedSeconds(0);
     setHasLoggedMetric(false);
     setAutoAdjustBanner(null);
+    setDifficultyToast(null);
+    setPauseSecondsLeft(10);
   };
 
   // Simulation test helper for Caregivers / Testers
@@ -856,7 +861,6 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
       setLatestAIResult(aiResult);
 
       if (aiResult.triggerAutoShift && aiResult.recommendedGrid !== gridSize) {
-        const fromG = gridSize;
         const targetG = aiResult.recommendedGrid;
         if (aiResult.action === 'EASE_DIFFICULTY') {
           soundController.playChime(396, 0.7);
@@ -864,35 +868,37 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
           soundController.playChime(660, 0.6);
         }
 
-        setAutoAdjustBanner({
-          show: true,
-          reason: aiResult.reasoning,
-          encouragement: aiResult.encouragement,
-          fromGrid: fromG,
+        // 1. Give whole solution (all pieces assembled in board)
+        setBoardSlots(Array.from({ length: totalPieces }, (_, i) => i));
+        setTrayPieces([]);
+        setSelectedSource(null);
+        setIsComplete(true);
+        setPauseSecondsLeft(10);
+        triggerCelebratoryParticles();
+
+        // 2. Speak whole picture description + victory affirmation
+        const rawDescription = (currentPuzzle.description || currentPuzzle.title).trim();
+        const formattedDesc = rawDescription.endsWith('.') || rawDescription.endsWith('।') ? rawDescription : `${rawDescription}.`;
+        const victoryAffirmation = tx('Great work! Good job!', 'बहुत बढ़िया काम! शाबाश!', 'বৰ ভাল কাম! শাবাছ!');
+        const victorySpeech = `${formattedDesc} ${victoryAffirmation}`;
+        setNarrationText(victorySpeech);
+        speakVictoryStory(victorySpeech);
+
+        // 3. Queue level upgrade for when Next Picture is clicked (no notification)
+        const upgradeData: PendingLevelUpgradeData = {
+          fromGrid: gridSize,
           toGrid: targetG,
-          timeTaken: testTime,
-          averageTime: testBaseline,
-          action: aiResult.action,
-          modelSource: aiResult.modelSource,
-        });
-
-        // Trigger subtle notification toast
-        setDifficultyToast({
-          show: true,
-          gameTitle: 'Photo Puzzle',
-          action: aiResult.action,
-          previousLevelName: GRID_LABELS[fromG]?.name || `${fromG}×${fromG}`,
-          newLevelName: GRID_LABELS[targetG]?.name || `${targetG}×${targetG}`,
-          encouragement: aiResult.encouragement,
+          encouragement: aiResult.encouragement || tx(
+            "You are doing very great! Wonderful job solving with ease and joy. Let's try this exciting new challenge together!",
+            "आप बहुत बढ़िया काम कर रहे हैं! शाबाश! आइए मिलकर यह नई चुनौती आजमाते हैं!",
+            "আপুনি বৰ ভাল কাম কৰিছে! শাবাছ! আহক আমি একেলগে এই নতুন প্ৰত্যাহ্বানটো চেষ্টা কৰোঁ!"
+          ),
           reason: aiResult.reasoning,
-          timeTaken: testTime,
-          averageTime: testBaseline,
-          onUndo: () => handleSelectGridSize(fromG),
-          onDismiss: () => setDifficultyToast(null),
-        });
-
-        soundController.speak(aiResult.encouragement);
-        handleSelectGridSize(targetG);
+        };
+        pendingLevelUpgradeRef.current = upgradeData;
+        setPendingLevelUpgrade(upgradeData);
+        setAutoAdjustBanner(null);
+        setDifficultyToast(null);
       }
     } catch (e) {
       console.error('Simulation test error:', e);
@@ -900,6 +906,91 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
       setIsAnalyzingAI(false);
     }
   };
+
+  // 10-second peaceful pause countdown when puzzle is completed
+  useEffect(() => {
+    if (!isComplete || pauseSecondsLeft <= 0) return;
+    const interval = setInterval(() => {
+      setPauseSecondsLeft((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isComplete, pauseSecondsLeft]);
+
+  // Handle moving to next picture with upgraded level (no notification popup)
+  const handleNextPicture = useCallback(() => {
+    soundController.playClick();
+    soundController.stopSpeaking();
+    setIsSpeakingNarration(false);
+    setAutoAdjustBanner(null);
+    setDifficultyToast(null);
+
+    // Apply pending level upgrade if AI recommended one
+    let nextGridSize = gridSize;
+    const pending = pendingLevelUpgradeRef.current;
+    if (pending) {
+      nextGridSize = pending.toGrid;
+      pendingLevelUpgradeRef.current = null;
+      setPendingLevelUpgrade(null);
+      setGridSize(nextGridSize);
+      setConsecutiveSolves(0);
+      try {
+        localStorage.setItem('monor_puzzle_consecutive_solves', '0');
+      } catch {
+        // Ignore storage error
+      }
+
+      // Show the level advanced block with encouragement message right before the piece tray!
+      setAutoAdjustBanner({
+        show: true,
+        action: 'INCREASE_DIFFICULTY',
+        fromGrid: pending.fromGrid,
+        toGrid: pending.toGrid,
+        encouragement: pending.encouragement,
+        reason: pending.reason || '',
+        timeTaken: 0,
+        averageTime: 0,
+        modelSource: 'gemini-3.8-flash',
+      });
+      soundController.playChime(660, 0.6);
+      soundController.speak(pending.encouragement);
+    } else {
+      setAutoAdjustBanner(null);
+    }
+    setDifficultyToast(null);
+
+    // Advance to next image
+    if (mode === 'personalized' && photoMemories.length > 0) {
+      const currIdx = photoMemories.findIndex((m) => m.id === selectedPersonalizedId);
+      const nextIdx = (currIdx + 1) % photoMemories.length;
+      setSelectedPersonalizedId(photoMemories[nextIdx].id);
+    } else if (defaultPuzzles.length > 0) {
+      const currIdx = defaultPuzzles.findIndex((p) => p.id === selectedDefaultId);
+      const nextIdx = (currIdx + 1) % defaultPuzzles.length;
+      setSelectedDefaultId(defaultPuzzles[nextIdx].id);
+    }
+
+    // Reset board and timer
+    const newTotal = nextGridSize * nextGridSize;
+    const shuffled = shufflePieces(nextGridSize);
+    setBoardSlots(Array.from({ length: newTotal }, () => null));
+    setTrayPieces(shuffled);
+    setSelectedSource(null);
+    setIsComplete(false);
+    setNarrationText('');
+    setMoves(0);
+    setStartTime(Date.now());
+    setElapsedSeconds(0);
+    setHasLoggedMetric(false);
+    setPauseSecondsLeft(10);
+  }, [
+    gridSize,
+    mode,
+    photoMemories,
+    selectedPersonalizedId,
+    defaultPuzzles,
+    selectedDefaultId,
+    shufflePieces,
+  ]);
 
   // Reset / Scramble game for the active image
   const handleScramble = () => {
@@ -916,6 +1007,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     setStartTime(Date.now());
     setElapsedSeconds(0);
     setHasLoggedMetric(false);
+    setPauseSecondsLeft(10);
   };
 
   // Auto-Assemble / Solve / Put It Back
@@ -942,6 +1034,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
     setStartTime(Date.now());
     setElapsedSeconds(0);
     setHasLoggedMetric(false);
+    setPauseSecondsLeft(10);
   }, [currentPuzzle.image, gridSize, shufflePieces, totalPieces]);
 
   // Live timer & in-round auto-adjustment check
@@ -1077,6 +1170,13 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
   }, []);
 
   const triggerVictory = (currentMoves: number) => {
+    // Ensure the whole solution is assembled completely
+    setBoardSlots(Array.from({ length: totalPieces }, (_, i) => i));
+    setTrayPieces([]);
+    setSelectedSource(null);
+    setIsComplete(true);
+    setPauseSecondsLeft(10);
+
     // Launch celebratory confetti & particle sequence
     triggerCelebratoryParticles();
 
@@ -1495,13 +1595,18 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
                 <Sparkles className="w-5 h-5 text-amber-200 fill-current" />
               )}
             </div>
-            <div className="space-y-0.5">
-              <h4 className="text-sm font-black text-[#2D3A2F] leading-tight">
-                {autoAdjustBanner.action === 'EASE_DIFFICULTY'
-                  ? `${tx('Level Eased', 'आसान स्तर', 'সহজ স্তৰ')}: ${GRID_LABELS[autoAdjustBanner.fromGrid]?.name} ➔ ${GRID_LABELS[autoAdjustBanner.toGrid]?.name}`
-                  : `${tx('Level Advanced', 'स्तर उन्नत', 'স্তৰ উন্নত')}: ${GRID_LABELS[autoAdjustBanner.fromGrid]?.name} ➔ ${GRID_LABELS[autoAdjustBanner.toGrid]?.name}`}
+            <div className="space-y-1">
+              <h4 className="text-sm font-black text-[#2D3A2F] leading-tight flex items-center flex-wrap gap-1.5">
+                <span>
+                  {autoAdjustBanner.action === 'EASE_DIFFICULTY'
+                    ? `${tx('Level Eased', 'आसान स्तर', 'সহজ স্তৰ')}:`
+                    : `${tx('You have advanced one level!', 'आप एक स्तर आगे बढ़ गए हैं!', 'আপুনি এটা স্তৰ আগবাঢ়িছে!')}`}
+                </span>
+                <span className="text-xs font-bold text-[#5B825B] bg-[#5B825B]/15 px-2 py-0.5 rounded-full">
+                  {GRID_LABELS[autoAdjustBanner.fromGrid]?.name} ➔ {GRID_LABELS[autoAdjustBanner.toGrid]?.name}
+                </span>
               </h4>
-              <p className="text-xs text-[#445846] leading-relaxed font-medium">
+              <p className="text-xs sm:text-sm text-[#445846] leading-relaxed font-medium">
                 {autoAdjustBanner.encouragement}
               </p>
             </div>
@@ -1830,37 +1935,21 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
             </div>
           )}
 
-          {/* AI Cognitive Telemetry & Dynamic Difficulty Card */}
-          {latestAIResult && (
-            <div className="bg-white/95 rounded-2xl p-4 border border-[#5B825B]/25 shadow-xs text-left space-y-2.5 max-w-lg mx-auto">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-black uppercase tracking-wider text-[#5B825B] flex items-center gap-1.5">
-                  <Brain className="w-4 h-4 text-[#5B825B]" />
-                  <span>AI Cognitive Difficulty Analysis</span>
-                </span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#F8F6F0] border border-[#E0DCD3] text-[#5A6E5D]">
-                  {latestAIResult.modelSource === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : 'Adaptive ML Heuristic'}
-                </span>
-              </div>
-
-              <p className="text-xs text-[#2D3A2F] font-medium leading-relaxed bg-[#F8F6F0] p-3 rounded-xl border border-[#EAE6DF]">
-                {latestAIResult.reasoning}
-              </p>
-
-              <div className="flex items-center justify-between text-[11px] font-bold text-[#5B825B] pt-0.5 flex-wrap gap-1">
-                <span>
-                  {latestAIResult.action === 'EASE_DIFFICULTY'
-                    ? `Level eased 1 step to ${GRID_LABELS[latestAIResult.recommendedGrid]?.name}`
-                    : latestAIResult.action === 'INCREASE_DIFFICULTY'
-                    ? `Level stepped up 1 step to ${GRID_LABELS[latestAIResult.recommendedGrid]?.name}`
-                    : `Level maintained at ${GRID_LABELS[gridSize]?.name}`}
-                </span>
-                <span className="text-[#8A8070]">
-                  ⏱️ {latestAIResult.timeTaken}s vs {latestAIResult.averageTime}s baseline avg
-                </span>
-              </div>
+          {/* 10-Second Pause Badge */}
+          <div className="flex items-center justify-center pt-1 pb-0.5">
+            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black border transition-all ${
+              pauseSecondsLeft > 0 
+                ? 'bg-[#EAF1E8] text-[#3B5A3E] border-[#5B825B]/30' 
+                : 'bg-[#F8F6F0] text-[#5A6E5D] border-[#E0DCD3]'
+            }`}>
+              <Clock className="w-3.5 h-3.5 text-[#5B825B]" />
+              <span>
+                {pauseSecondsLeft > 0
+                  ? tx(`Pause & admire: ${pauseSecondsLeft}s`, `विश्राम व सुंदर याद: ${pauseSecondsLeft} से.`, `উপভোগ কৰক: ${pauseSecondsLeft} ছে.`)
+                  : tx('Pause complete · Ready for Next Picture', 'विश्राम पूर्ण · अगली तस्वीर के लिए तैयार', 'উপভোগ সম্পূৰ্ণ · পৰৱৰ্তী ছবিৰ বাবে প্ৰস্তুত')}
+              </span>
             </div>
-          )}
+          </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
             <button
@@ -1868,7 +1957,7 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
                 soundController.playClick();
                 triggerCelebratoryParticles();
               }}
-              className="py-3 px-4 rounded-2xl bg-[#FDF0D5] border border-[#E8B25C]/50 text-[#332610] font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#fae6b8] active:scale-95 shadow-xs transition-all"
+              className="py-3 px-4 rounded-2xl bg-[#FDF0D5] border border-[#E8B25C]/50 text-[#332610] font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#fae6b8] active:scale-95 shadow-xs transition-all cursor-pointer"
               title="Launch celebratory confetti shower"
             >
               <Sparkles className="w-4 h-4 text-[#E8B25C] fill-current" />
@@ -1877,30 +1966,22 @@ export const PuzzleGame: React.FC<PuzzleGameProps> = ({ memories, onBack, onLogD
 
             <button
               onClick={handleScramble}
-              className="py-3 px-4 rounded-2xl bg-white border border-[#5B825B]/30 text-[#2D3A2F] font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#F8F6F0] active:scale-95 shadow-xs transition-all"
+              className="py-3 px-4 rounded-2xl bg-white border border-[#5B825B]/30 text-[#2D3A2F] font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#F8F6F0] active:scale-95 shadow-xs transition-all cursor-pointer"
             >
               <RotateCcw className="w-4 h-4 text-[#5B825B]" />
               <span>Scramble Again</span>
             </button>
 
             <button
-              onClick={() => {
-                soundController.playClick();
-                // Pick next image
-                if (mode === 'personalized') {
-                  const currIdx = photoMemories.findIndex((m) => m.id === selectedPersonalizedId);
-                  const nextIdx = (currIdx + 1) % photoMemories.length;
-                  setSelectedPersonalizedId(photoMemories[nextIdx].id);
-                } else {
-                  const currIdx = defaultPuzzles.findIndex((p) => p.id === selectedDefaultId);
-                  const nextIdx = (currIdx + 1) % defaultPuzzles.length;
-                  setSelectedDefaultId(defaultPuzzles[nextIdx].id);
-                }
-              }}
-              className="py-3 px-5 rounded-2xl bg-[#5B825B] text-white font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#4a6d4a] active:scale-95 shadow-xs transition-all"
+              onClick={handleNextPicture}
+              className="py-3 px-5 rounded-2xl bg-[#5B825B] text-white font-black text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#4a6d4a] active:scale-95 shadow-xs transition-all cursor-pointer"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>Next Picture</span>
+              <Sparkles className="w-4 h-4 text-amber-200" />
+              <span>
+                {pauseSecondsLeft > 0
+                  ? `${tx('Next Picture', 'अगली तस्वीर', 'পৰৱৰ্তী ছবি')} (${pauseSecondsLeft}s)`
+                  : tx('Next Picture', 'अगली तस्वीर', 'পৰৱৰ্তী ছবি')}
+              </span>
             </button>
           </div>
         </div>
