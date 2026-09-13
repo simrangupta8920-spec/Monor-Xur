@@ -1,4 +1,4 @@
-# 🌿 Monor Xur (मनोर सुर)
+# 🌿 Monor Xur (मनोर सुर / মনৰ সুৰ)
 ### *Mobile-First Cognitive Engagement, Dementia Care-Support & Clinical Telemetry Ecosystem*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -7,7 +7,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38b2ac.svg?logo=tailwind-css)](https://tailwindcss.com/)
 [![Vite PWA](https://img.shields.io/badge/PWA-Offline_Ready-purple.svg?logo=pwa)](https://vite-pwa-org.netlify.app/)
 [![Recharts](https://img.shields.io/badge/Recharts-3.10-22c55e.svg)](https://recharts.org/)
-[![Firebase](https://img.shields.io/badge/Firebase-Firestore-FFA611.svg?logo=firebase)](https://firebase.google.com/)
+[![Firebase Auth & Firestore](https://img.shields.io/badge/Firebase-Auth_%26_Firestore-FFA611.svg?logo=firebase)](https://firebase.google.com/)
 [![Express](https://img.shields.io/badge/Express-5.2-lightgrey.svg?logo=express)](https://expressjs.com/)
 [![Google Gemini](https://img.shields.io/badge/AI-Gemini_3.8_Flash-orange.svg?logo=google)](https://ai.google.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933.svg?logo=node.js)](https://nodejs.org/)
@@ -18,17 +18,21 @@
 1. [Overview & Clinical Mission](#-overview--clinical-mission)
 2. [Ecosystem Architecture & System Topology](#-ecosystem-architecture--system-topology)
 3. [Core Pillars & User Personas](#-core-pillars--user-personas)
-4. [Clinical Dynamic Difficulty Adjustment (DDA) Engine](#-clinical-dynamic-difficulty-adjustment-dda-engine)
-5. [Game-Specific Cognitive Analytics & Telemetry](#-game-specific-cognitive-analytics--telemetry)
-6. [Data Persistence & Offline-First Synchronization](#-data-persistence--offline-first-synchronization)
-7. [API Reference](#-api-reference)
-8. [Vector Clinical PDF Report Generator](#-vector-clinical-pdf-report-generator)
-9. [Auditory & Relaxation Engineering](#-auditory--relaxation-engineering)
-10. [Security, Privacy & DPDP Act 2023 Compliance](#-security-privacy--dpdp-act-2023-compliance)
-11. [Project Directory Structure](#-project-directory-structure)
-12. [Getting Started & Local Development](#-getting-started--local-development)
-13. [Production Deployment & Containerization](#-production-deployment--containerization)
-14. [Accessibility & Ethical AI Principles](#-accessibility--ethical-ai-principles)
+4. [💊 Medicine Reminders & Adherence Module](#-medicine-reminders--adherence-module)
+5. [🧠 Clinical Dynamic Difficulty Adjustment (DDA) Engine](#-clinical-dynamic-difficulty-adjustment-dda-engine)
+6. [💡 Elder Accessibility & Easy-Mode Guidance](#-elder-accessibility--easy-mode-guidance)
+7. [📊 Game-Specific Cognitive Analytics & Telemetry](#-game-specific-cognitive-analytics--telemetry)
+8. [🎵 Auditory Engineering & Global Sound Controller](#-auditory-engineering--global-sound-controller)
+9. [🌅 Sundowning Syndrome Management & Calming Protocol](#-sundowning-syndrome-management--calming-protocol)
+10. [🌐 Multilingual Regionalization & Voice Accessibility](#-multilingual-regionalization--voice-accessibility)
+11. [💾 Data Persistence & Offline-First Synchronization](#-data-persistence--offline-first-synchronization)
+12. [🔒 Admin Security, RBAC & DPDP Act 2023 Compliance](#-admin-security-rbac--dpdp-act-2023-compliance)
+13. [📡 API Reference](#-api-reference)
+14. [📄 Vector Clinical PDF Report Generator](#-vector-clinical-pdf-report-generator)
+15. [📁 Project Directory Structure](#-project-directory-structure)
+16. [🚀 Getting Started & Local Development](#-getting-started--local-development)
+17. [🚢 Production Deployment & Containerization](#-production-deployment--containerization)
+18. [🛡️ Accessibility & Ethical AI Principles](#-accessibility--ethical-ai-principles)
 
 ---
 
@@ -36,17 +40,18 @@
 
 **Monor Xur** (*"Tune of the Mind"*) is an offline-capable, mobile-first healthcare web application designed specifically for older adults experiencing **Mild Cognitive Impairment (MCI)** or early-stage **dementia**, their **family caregivers**, and community frontline health workers (**ASHA** – *Accredited Social Health Activists*).
 
-In conventional dementia care, cognitive exercises often feel like tests—causing performance anxiety, agitation, and abandonment. Monor Xur reimagines this paradigm by blending:
+In conventional dementia care, cognitive exercises often feel like stressful tests—causing performance anxiety, agitation, and task abandonment. Monor Xur reimagines this paradigm by combining:
 - **Gentle Gerontological UX**: High-contrast, warm cream palette (`#FDFBF7`), deep botanical sage (`#2D3A2F`), generous negative space, large tactile targets ($\ge 48\text{px}$), and zero cognitive clutter.
-- **Reminiscence Therapy**: Familiar family photos, voice journal entries, comforting regional memories, and soothing raga frequencies.
+- **Reminiscence Therapy & Regional Personalization**: Assamese cultural cuisine puzzle collections, regional avatars, custom family photo puzzles, voice journal entries, comforting memories, and authentic raga soundscapes.
 - **Invisible Adaptive Intelligence**: Dynamic Difficulty Adjustment (DDA) powered by **Google Gemini 3.8 Flash** with an offline-resilient local ML heuristic fail-safe.
+- **Integrated Care Management**: Automated medicine reminders with real-time alert banners, 12h/24h dynamic time conversion, and caregiver/ASHA compliance tracking.
 - **Clinical Actionability**: Longitudinal cognitive telemetry, Recharts trend lines, and downloadable clinical PDF dossiers for doctors and neurologists.
 
 ---
 
 ## 🏛️ Ecosystem Architecture & System Topology
 
-Monor Xur employs a dual-tiered architecture combining a client-side Progressive Web App (PWA) with a Node.js/Express full-stack companion service and dual-layer data persistence (Cloud Firestore + Local Indexed/Storage Cache).
+Monor Xur employs a dual-tiered architecture combining a client-side Progressive Web App (PWA) with a Node.js/Express full-stack companion service, Firebase Authentication (Google Auth + PIN), and dual-layer data persistence (Cloud Firestore + Local Storage Queue/Cache).
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -54,20 +59,22 @@ Monor Xur employs a dual-tiered architecture combining a client-side Progressive
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                        │
 │   👵 Patient Experience            👨‍👩‍👧 Family Portal              🩺 ASHA Clinical Hub   │
-│   ├── Orientation & Daily Plan     ├── 9-Section Care Dashboard   ├── Household Visit Protocol│
-│   ├── Memory Match Game (DDA)      ├── Recharts Cognitive Trends  ├── Vitals & BP Entry │
-│   ├── Photo Jigsaw Puzzle (DDA)    ├── Routine & Med Manager      ├── MMSE-Aligned Notes│
-│   ├── Diaphragmatic Box Breathing  ├── Voice & Photo Reminiscence ├── Doctor Referrals  │
-│   ├── Web Audio Soundscapes        ├── Emergency SOS Dispatch     └── Task Assignment   │
-│   └── Web Speech Voice Journals    └── jsPDF Vector Report Engine                       │
+│   ├── Orientation & Daily Plan     ├── PIN & Google Auth Guard     ├── Household Visit Protocol│
+│   ├── Memory Match Game (DDA)      ├── Recharts Cognitive Trends   ├── Vitals & BP Entry │
+│   ├── Photo Jigsaw Puzzle (DDA)    ├── Routine & Med Manager       ├── MMSE-Aligned Notes│
+│   ├── Medicine Reminders & Alerts  ├── Voice & Photo Reminiscence  ├── Doctor Referrals  │
+│   ├── Elder Easy-Mode Audio Guide  ├── Emergency SOS Dispatch      ├── Avatar Profile Mgmt│
+│   ├── Diaphragmatic Box Breathing  └── jsPDF Vector Report Engine  └── Task Assignment   │
+│   ├── Regional Audio Soundscapes                                                       │
+│   └── Web Speech Voice Journals                                                        │
 │                                                                                        │
 │   ──────────────────────────────────┬───────────────────────────────────────────────   │
 │                                     ▼                                                  │
-│   [ Service Worker & PWA Cache ]   [ Offline Mutation Queue ]    [ Web Audio Synthesizer ]
-│   - Workbox cache (HTML/JS/Assets) - Queue offline reminders    - 432Hz/528Hz Solfeggio │
-│   - Google Fonts CacheFirst        - Auto-flush on 'online'      - Chimes & Ripple audio │
+│   [ Service Worker & PWA Cache ]   [ Offline Mutation Queue ]    [ Global Sound Controller ]
+│   - Workbox cache (HTML/JS/Assets) - Queue offline reminders    - Auto-cleanup on unmount 
+│   - Google Fonts CacheFirst        - Auto-flush on 'online'      - 432Hz/528Hz & MP3 audio │
 └─────────────────────────────────────┬──────────────────────────────────────────────────┘
-                                      │ HTTP / JSON REST & WebSocket Sync
+                                      │ HTTP / JSON REST & Firebase Sync
                                       ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │                              FULL-STACK APPLICATION SERVER                             │
@@ -91,13 +98,13 @@ Monor Xur employs a dual-tiered architecture combining a client-side Progressive
           ┌───────────────────────────┴───────────────────────────┐
           ▼                                                       ▼
 ┌───────────────────────────────────┐               ┌───────────────────────────────────┐
-│     EXTERNAL AI INTELLIGENCE      │               │     REAL-TIME CLOUD DATABASE      │
+│     EXTERNAL AI INTELLIGENCE      │               │  AUTHENTICATION & CLOUD DATABASE  │
 ├───────────────────────────────────┤               ├───────────────────────────────────┤
-│ Google GenAI API                  │               │ Google Cloud Firestore            │
-│ • Model: gemini-3.8-flash         │               │ • Collection: patients/{id}       │
-│ • Structured JSON Schema Outputs  │               │ • Sub: profile, medical, memories │
-│ • Cognitive latency & error eval  │               │ • Sub: reminders, calendar, alerts│
-│ • Non-stigmatizing encouragement  │               │ • Sub: careTasks, ddaMetrics      │
+│ Google GenAI API                  │               │ Firebase Auth & Cloud Firestore   │
+│ • Model: gemini-3.8-flash         │               │ • Google Sign-In & PIN Access     │
+│ • Structured JSON Schema Outputs  │               │ • Collection: patients/{id}       │
+│ • Cognitive latency & error eval  │               │ • Role-based rules: patient/care/ │
+│ • Non-stigmatizing encouragement  │               │   asha/admin access controls      │
 └───────────────────────────────────┘               └───────────────────────────────────┘
 ```
 
@@ -108,9 +115,10 @@ graph TB
         P["👵 Patient Experience"]
         F["👨‍👩‍👧 Family Portal"]
         A["🩺 ASHA Clinical Hub"]
+        MED["💊 Medicine Reminders Module"]
         SW["Service Worker & Workbox Cache"]
         MQ["Offline Mutation Queue"]
-        WA["Web Audio & Speech Engine"]
+        WA["Global Sound & Speech Engine"]
         PDF["jsPDF Vector Engine"]
     end
 
@@ -120,9 +128,10 @@ graph TB
         DDA_E["Adaptive DDA Engine"]
     end
 
-    subgraph Infra [CLOUD & AI PERSISTENCE]
+    subgraph Infra [CLOUD, AUTH & AI PERSISTENCE]
+        AUTH["Firebase Authentication (Google & PIN)"]
         GEMINI["Google Gemini 3.8 Flash"]
-        FS["Cloud Firestore"]
+        FS["Cloud Firestore (RBAC & Admin Rules)"]
         LOCAL["LocalStorage Snapshot Cache"]
     end
 
@@ -134,6 +143,10 @@ graph TB
     F <--> LOCAL
     A <--> LOCAL
 
+    P <--> AUTH
+    F <--> AUTH
+    A <--> AUTH
+
     REST --> DDA_E
     DDA_E --> GEMINI
     DDA_E --> FS
@@ -141,6 +154,7 @@ graph TB
     P <--> FS
     F <--> FS
     A <--> FS
+    MED <--> FS
     MQ -- "Auto-flush on reconnection" --> FS
 ```
 
@@ -148,13 +162,15 @@ graph TB
 
 | Architectural Layer | Core Technologies | Functional Responsibilities |
 | :--- | :--- | :--- |
-| **Presentation Layer** | React 18.3, TypeScript 5.7, Tailwind CSS 4 | Gerontological UI components, high-contrast layouts, touch optimization, role-based navigation guards. |
+| **Presentation Layer** | React 18.3, TypeScript 5.7, Tailwind CSS 4 | Gerontological UI components, high-contrast layouts, avatar selection, role-based navigation guards. |
+| **Authentication & RBAC** | Firebase Auth, `firestore.rules` | Google OAuth sign-in, PIN authorization, and explicit `isAdmin`, `caregiver`, and `asha` security roles. |
+| **Medicine Reminders** | Custom React hooks, `timeUtils.ts` | Scheduled dose tracking, active alert banners, 12h/24h time formatting, adherence status tracking. |
 | **Data Visualization** | Recharts 3.10 | Engagement trend lines (`AreaChart`), latency vs. difficulty (`LineChart`), error/hint distribution (`BarChart`). |
-| **PWA & Offline Layer** | Vite PWA, Workbox, Service Worker, LocalStorage | Client asset caching, offline snapshot persistence (`saveOfflineSnapshot`), queue-and-replay mutation sync. |
-| **Audio & Speech Engine** | Web Audio API, Web Speech API, MediaRecorder | Synthesized frequency generators, natural soundscape mixing, real-time speech transcription for voice diaries. |
+| **PWA & Offline Layer** | Vite PWA, Workbox, Service Worker, LocalStorage | Client asset caching, offline snapshot persistence (`offlineStorage.ts`), queue-and-replay mutation sync. |
+| **Audio & Speech Engine** | Web Audio API, HTMLAudioElement, Web Speech API | Centralized global audio lifecycle cleanup (`soundController`), Solfeggio soundscapes, regional raga MP3 tracks, voice diary TTS. |
 | **Application Server** | Express 5.2, `tsx`, `esbuild` | Host `/api` endpoints, proxy Google GenAI requests, serve static assets and single-page fallback in production. |
-| **Cognitive Intelligence** | `@google/genai` (Gemini 3.8 Flash) | Analyzes move latency, consecutive errors, solve times, and emits non-stigmatizing adaptive instructions. |
-| **Cloud Persistence** | Firebase Firestore 12.19 | Real-time bi-directional data synchronization with subcollections for clinical and daily care tracking. |
+| **Cognitive Intelligence** | `@google/genai` (Gemini 3.8 Flash) | Analyzes move latency, consecutive errors, solve times, and emits non-stigmatizing adaptive difficulty shifts. |
+| **Cloud Persistence** | Firebase Firestore 12.19 | Real-time bi-directional data synchronization with subcollections for clinical telemetry, reminders, and care plans. |
 | **Export & Reporting** | jsPDF 4.2 | Multi-page, print-ready vector PDF document generator for neurologist visits and caregiver reviews. |
 
 ---
@@ -169,42 +185,86 @@ graph TB
          ┌───────────────────────────────┼───────────────────────────────┐
          ▼                               ▼                               ▼
   👵 Patient Mode                👨‍👩‍👧 Family Portal              🩺 ASHA Clinical Hub
- • Gentle, High-Contrast UI     • Recharts DDA Trend Lines     • MMSE-Aligned Logbooks
- • Dynamic Difficulty (DDA)     • Audio Diary & Photo Gallery  • Home Visit Checklists
- • Voice Diaries (Web Speech)   • Remote Telemetry Tracking    • Cognitive Trend Reports
- • Calming Audio & Breathing    • Medication Scheduling        • Vitals & BP Logging
- • Emergency SOS & Reminders    • Cloud Firestore Live Sync    • AI Doctor Consultation Logs
+ • Gentle, High-Contrast UI     • Google Auth & PIN Access     • MMSE-Aligned Logbooks
+ • Dynamic Difficulty (DDA)     • Recharts DDA Trend Lines     • Home Visit Checklists
+ • Medicine Alert Banners       • Medicine Reminders Manager   • Cognitive Trend Reports
+ • Easy-Mode Audio Guidance     • Audio Diary & Photo Gallery  • Vitals & BP Logging
+ • Voice Diaries (Web Speech)   • Remote Telemetry Tracking    • Avatar Profile Setup
+ • Calming Audio & Breathing    • Vector PDF Clinical Exports  • AI Doctor Consultation Logs
+ • Emergency SOS & Reminders    • Cloud Firestore Live Sync    • Multi-Patient Tracking
 ```
 
 ### 1. 👵 Patient Experience (Persona: Anita Sharma, 68)
 - **Visual & Temporal Orientation**: Clear, calming greeting with current date, time of day, and comforting affirmations.
+- **Medicine Alert Banner & Reminders Module**:
+  - Displays upcoming or overdue medication doses directly on the home screen (`MedicineAlertBanner.tsx`).
+  - Interactive medication schedule (`MedicineReminders.tsx`) enabling one-tap dose marking with audio confirmation.
 - **Cognitive Stimulation Hub**:
-  - **Memory Match Game**: Active paired-card recall featuring nature, daily comforts, and musical instruments.
-  - **Photo Jigsaw Puzzle**: Familiar family photographs segmented into 2×2, 3×3, or 4×4 tactile grid puzzles.
+  - **Memory Match Game**: Active paired-card recall featuring nature, daily comforts, and musical instruments. Includes elder Easy-Mode guidance.
+  - **Photo Jigsaw Puzzle**: Supports both personalized family photo uploads and a **Default Mode** featuring 20 regional Assamese dish puzzles (`dish-1-khar.jpg` through `dish-20-payox.jpg`) segmented into 2×2, 3×3, or 4×4 grid layouts.
+- **Elder Easy-Mode Voice Guidance (`EasyModeGuide.tsx`)**:
+  - Interactive audio instructions in English, Hindi, and Assamese providing step-by-step game walkthroughs without pressure.
 - **Voice Journal & Reminiscence Gallery**:
-  - **Elder-Friendly Voice Station**: Uses the browser's **Web SpeechRecognition API** for real-time speech-to-text paired with audio recording.
+  - **Elder-Friendly Voice Station**: Uses the browser's **Web Speech Recognition API** for real-time speech-to-text paired with audio recording.
   - **Categorized Memories**: Family, Places, People, Special Moments, and Voice Diaries.
 - **Sensory Calming Hub**:
   - **Diaphragmatic 4-4-4-4 Breathing**: Gentle visual pulsing ring guiding inhale, hold, exhale, and rest phases.
-  - **Solfeggio Soundscapes**: Web Audio synthesized 432 Hz / 528 Hz ambient raga tones and natural binaural rhythms.
+  - **Solfeggio & Regional Soundscapes**: Hybrid audio engine playing authentic South Asian instrumental tracks (Sitar & Tanpura, Bansuri Melody, Kirtan, Sandhya Shanti Flute) and Web Audio 432 Hz / 528 Hz binaural raga tones.
 - **Daily Living Support**: Visual medication adherence checklists with audio announcements and one-tap emergency calling.
 
-### 2. 👨‍👩‍👧 Family Caregiver Portal (PIN-Guarded)
-- **9 Specialized Care Sections**:
-  1. **Patient Profile**: Full demographics, stage of cognitive condition, language, and primary caregiver identity.
+### 2. 👨‍👩‍👧 Family Caregiver Portal (PIN & Google Auth Guarded)
+- **Integrated Profile & Avatar Management**:
+  - Customize patient profiles with culturally relatable avatars (Assam Aita, Assam Koka, Assam Boanicar, Family Members).
+- **Comprehensive Care Sections**:
+  1. **Patient Profile & Setup**: Full demographics, stage of cognitive condition, language, primary caregiver identity, and avatar customization.
   2. **Medical Baseline**: Recorded physician consultations, allergies, current prescriptions, and specialist care guidance.
-  3. **Cognitive Progress & Telemetry**: Recharts graphs analyzing session speed, error rates, and difficulty level shifts.
-  4. **Vector PDF Export**: Instant download of comprehensive multi-page clinical summaries.
-  5. **Routine & Medications**: Create, toggle, and manage medication times and daily routines.
-  6. **Care Calendar**: Schedule doctor visits, household events, and family visits with Firestore sync.
+  3. **Medicine Reminders Hub**: Add, update, and monitor daily prescription schedules with customizable dose timings.
+  4. **Cognitive Progress & Telemetry**: Recharts graphs analyzing session speed, error rates, and difficulty level shifts.
+  5. **Vector PDF Export**: Instant download of comprehensive multi-page clinical summaries.
+  6. **Routine & Care Calendar**: Schedule doctor visits, household events, and family visits with Firestore sync.
   7. **Memories & Media Hub**: Upload family pictures, view voice journals, and play recorded audio notes.
   8. **Alert Feeds**: Real-time notifications of missed medications, low engagement, or SOS triggers.
   9. **Emergency Contacts**: Quick-dial configuration for primary doctor, caregiver, and emergency responders.
 
-### 3. 🩺 ASHA Health Worker Portal (Passcode-Guarded)
+### 3. 🩺 ASHA Health Worker Portal (Passcode & RBAC Guarded)
 - **Community Field Visit Protocol**: Standardized checklist covering hydration inspection, medication box audit, nutrition check, and blood pressure logging.
 - **MMSE-Aligned Cognitive Progression**: Observation logs tracking patient orientation, recall speed, and agitation markers.
 - **Clinical Summary Formulation**: Synthesizes longitudinal metrics into concise referral summaries for community health clinics (PHCs) and consulting neurologists.
+
+---
+
+## 💊 Medicine Reminders & Adherence Module
+
+To support independence while maintaining strict medical compliance, Monor Xur features a dedicated Medicine Reminders module ([src/components/patient/MedicineReminders.tsx](file:///f:/SIH/Monor-Xur/src/components/patient/MedicineReminders.tsx)) integrated with real-time home alert banners ([src/components/patient/MedicineAlertBanner.tsx](file:///f:/SIH/Monor-Xur/src/components/patient/MedicineAlertBanner.tsx)).
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        MEDICINE REMINDERS SYSTEM                       │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│   Caregiver / Doctor Setup           Patient Home Screen               │
+│   ┌────────────────────────┐         ┌──────────────────────────────┐  │
+│   │ Family Dashboard       │         │ MedicineAlertBanner          │  │
+│   │ Add Medication:        │ ──────► │ • Shows upcoming dose time   │  │
+│   │ • Name & Dosage        │         │ • Highlights OVERDUE status  │  │
+│   │ • Schedule (12h/24h)   │         │ • One-tap "Mark Taken" button│  │
+│   └────────────────────────┘         └──────────────┬───────────────┘  │
+│                                                     │                  │
+│                                                     ▼                  │
+│   ┌────────────────────────────────────────────────────────────────┐  │
+│   │ MedicineReminders View                                         │  │
+│   │ • Full daily schedule breakdown                                │  │
+│   │ • Audio voice reading via SpeakButton                          │  │
+│   │ • Dose completion status & adherence percentage tracking       │  │
+│   └────────────────────────────────────────────────────────────────┘  │
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Technical Capabilities:
+- **Dynamic Time Utilities (`timeUtils.ts`)**: Converts stored 24-hour schedules into localized 12-hour AM/PM formats and calculates time remaining or elapsed for overdue warnings.
+- **Real-Time Status Evaluation**: Automatically categorizes medications into `DUE_NOW`, `UPCOMING`, `TAKEN`, or `OVERDUE`.
+- **Cloud & Offline Synchronization**: Medication completions immediately update Firestore `patients/{id}/reminders` documents, with automatic fallback queuing when offline.
 
 ---
 
@@ -260,7 +320,7 @@ flowchart TD
 
 ### Game-Specific Clinical Rules
 
-#### 🎴 Memory Match Game:
+#### 🎴 Memory Match Game ([src/components/patient/MemoryMatchGame.tsx](file:///f:/SIH/Monor-Xur/src/components/patient/MemoryMatchGame.tsx)):
 - **Strict 1-Step Downshift**:
   - *Hard (6 Pairs, Level 3)* $\rightarrow$ If patient reaches **10 total mistakes** or **4 consecutive mismatches**, auto-shifts strictly to **Medium (4 Pairs, Level 2)**. The engine never abruptly drops two levels to Easy.
   - *Medium (4 Pairs, Level 2)* $\rightarrow$ If patient reaches **5 total mistakes** or **3 consecutive mismatches**, auto-shifts to **Easy (3 Pairs, Level 1)**.
@@ -269,19 +329,32 @@ flowchart TD
   - Winning **5 consecutive rounds** on Medium prompts advancement to Hard.
 - **Dignified Language**: Shifts are framed reassuringly: *"Let's take our time on a gentle board so you can relax and enjoy matching."* (Never mentions "mistakes" or "difficulty").
 
-#### 🧩 Photo Jigsaw Puzzle:
-- **Designated Baselines**:
+#### 🧩 Photo Jigsaw Puzzle ([src/components/patient/PuzzleGame.tsx](file:///f:/SIH/Monor-Xur/src/components/patient/PuzzleGame.tsx)):
+- **Dual Mode Support**: Toggle between personalized family photos and **Default Mode** containing 20 Assamese culinary dish puzzle images.
+- **Designated Speed Baselines**:
   - *Easy (2×2)*: 25 seconds
   - *Medium (3×3)*: 45 seconds
   - *Tough (4×4)*: 120 seconds
 - **Degrade Trigger**: If solve time exceeds designated baseline by **$+25\text{ seconds}$**, the grid downshifts 1 tier.
-- **Promotion Trigger**: Achieving **3 consecutive solves under baseline** promotes the player to the next grid size.
+- **Promotion Trigger**: Achieving **3 consecutive solves under baseline** queues a pending level upgrade.
+- **Pending Upgrade State & Pause Timer**: Introduces a post-puzzle celebration pause before transitioning grid sizes, preventing abrupt board switches.
+
+---
+
+## 💡 Elder Accessibility & Easy-Mode Guidance
+
+Monor Xur incorporates an elder-first guidance system ([src/components/patient/EasyModeGuide.tsx](file:///f:/SIH/Monor-Xur/src/components/patient/EasyModeGuide.tsx)) designed specifically for patients with low tech literacy or cognitive impairment.
+
+### Features of `EasyModeGuide`:
+- **Audio Walkthroughs**: Built-in voice narration in English, Hindi, and Assamese explaining game rules step-by-step.
+- **Visual Micro-Steps**: Displays simple icon-based instructions (e.g., *1. Tap a piece*, *2. Place on grid*, *3. Use Peek Photo if needed*).
+- **Non-Intrusive Guidance**: Can be expanded or collapsed easily, remaining available without crowding the game board.
 
 ---
 
 ## 📊 Game-Specific Cognitive Analytics & Telemetry
 
-To provide clinicians, neurologists, and family caregivers with precise insights into distinct cognitive domains (e.g., working spatial memory vs. visual-spatial assembly), Monor Xur processes telemetry segmented by game type (`memory_match` vs. `puzzle`).
+To provide clinicians, neurologists, and family caregivers with precise insights into distinct cognitive domains (e.g., working spatial memory vs. visual-spatial assembly), Monor Xur processes telemetry segmented by game type (`memory_match` vs. `puzzle`) via [src/utils/gameAnalytics.ts](file:///f:/SIH/Monor-Xur/src/utils/gameAnalytics.ts).
 
 ```
                               ┌───────────────────────────────┐
@@ -319,16 +392,100 @@ To provide clinicians, neurologists, and family caregivers with precise insights
 ```
 
 ### Analytical Capabilities & Metrics
-- **Zero Static Mock Data Architecture**: All clinical reports, cognitive insights, Recharts curves, MMSE trajectories, and downloadable PDF dossiers are generated 100% dynamically from real-time gameplay telemetry (`ddaMetrics`) saved during the player's active sessions. All static baseline mock sessions have been completely removed from the analytics engine; when 0 sessions exist, the system presents clear, non-stigmatizing invitations to play, updating instantaneously upon completing a game round.
-- **Multi-Game Scope Filtering**: Caregivers and health workers can toggle between `All Games` (combined aggregate), `Memory Match Only`, and `Photo Puzzle Only` across all dashboards, charts, and report generators.
+- **Zero Static Mock Data Architecture**: All clinical reports, cognitive insights, Recharts curves, MMSE trajectories, and downloadable PDF dossiers are generated 100% dynamically from real-time gameplay telemetry (`ddaMetrics`) saved during active sessions.
+- **Multi-Game Scope Filtering**: Caregivers and health workers can toggle between `All Games` (combined aggregate), `Memory Match Only`, and `Photo Puzzle Only` across dashboards and report generators.
 - **Side-by-Side Dual Game Comparison**: Directly contrasts session volume, mean accuracy, decision speed, error rates, and active DDA tiers between Memory Match and Photo Puzzle.
-- **Clinical Trend Visualizations**: Uses Recharts to plot chronological accuracy trajectories, move latencies, and adaptive tier progressions with clear visual game differentiation.
+- **Clinical Trend Visualizations**: Uses Recharts to plot chronological accuracy trajectories, move latencies, and adaptive tier progressions.
+
+---
+
+## 🎵 Auditory Engineering & Global Sound Controller
+
+Audio management across Monor Xur is handled by a centralized global sound controller ([src/utils/audio.ts](file:///f:/SIH/Monor-Xur/src/utils/audio.ts)) equipped with automatic lifecycle cleanup hooks.
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        GLOBAL AUDIO ARCHITECTURE                       │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│   Web Audio Synthesizer               HTMLAudioElement Regional Tracks │
+│   ┌─────────────────────────┐         ┌──────────────────────────────┐ │
+│   │ Solfeggio Oscillators   │         │ Regional Raga MP3 Tracks:    │ │
+│   │ • 432 Hz Calming Tone   │         │ • Sitar & Tanpura            │ │
+│   │ • 528 Hz Harmonic Tone  │         │ • Bansuri Melody             │ │
+│   │ • Pentatonic Flip Chimes│         │ • Madhur Madhab Kirtan       │ │
+│   └────────────┬────────────┘         │ • Sandhya Shanti Flute       │ │
+│                │                      └──────────────┬───────────────┘ │
+│                │                                     │                 │
+│                └──────────────────┬──────────────────┘                 │
+│                                   ▼                                    │
+│                   ┌───────────────────────────────┐                    │
+│                   │ soundController Singleton     │                    │
+│                   │ • Global Play/Pause State     │                    │
+│                   │ • Auto-stop on route change   │                    │
+│                   │ • Cleanup on unmount          │                    │
+│                   └───────────────────────────────┘                    │
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Technical Capabilities:
+- **Global Lifecycle Cleanup**: Integrating `soundController.stopAll()` into navigation change handlers, tab switches, and component unmounting ensures zero overlapping audio playback.
+- **Solfeggio Frequencies**: Pure sine/triangle wave generators for 432 Hz and 528 Hz ambient tones.
+- **Regional Audio Tracks**: Support for authentic MP3 instrumental soundscapes with client caching via [src/utils/audioStorage.ts](file:///f:/SIH/Monor-Xur/src/utils/audioStorage.ts).
+
+---
+
+## 🌅 Sundowning Syndrome Management & Calming Protocol
+
+**Sundowning Syndrome** is a state of confusion, anxiety, and agitation that commonly affects individuals with dementia or MCI in the late afternoon and early evening (typically between **4:00 PM and 8:00 PM**). Monor Xur incorporates automated, non-invasive clinical interventions ([src/components/patient/SundowningCalmBanner.tsx](file:///f:/SIH/Monor-Xur/src/components/patient/SundowningCalmBanner.tsx)):
+
+```mermaid
+graph TD
+    CLK["System Clock / Local Time"] --> HOOK["useSundowningState Hook"]
+    HOOK --> EVAL{"Is Time Between 16:00 & 20:00?"}
+    EVAL -- Yes --> BANNER["Activate SundowningCalmBanner"]
+    BANNER --> CALM1["Dim Visual Contrast & Shift Palette to Warm Dusk"]
+    BANNER --> CALM2["Auto-Initialize 432Hz / 528Hz Ambient Raga Tones"]
+    BANNER --> CALM3["Launch Diaphragmatic 4-4-4-4 Box Breathing Ring"]
+    BANNER --> CALM4["Prompts Guided Voice Reminiscence Memories"]
+    EVAL -- No --> NORMAL["Maintain Standard UI Mode"]
+```
+
+---
+
+## 🌐 Multilingual Regionalization & Voice Accessibility
+
+To serve diverse elderly populations across India and global regions, Monor Xur features deep localization and voice-first accessibility:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                      MULTILINGUAL & ACCESSIBILITY ENGINE                        │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│   🇬🇧 English               🇮🇳 Hindi (हिंदी)               🇮🇳 Assamese (অসমীয়া)   │
+│   ├── Full UI Strings       ├── Full Localized Dictionary   ├── Native Lexicon        │
+│   └── Doctor Telemetry      └── Elder Affirmations          └── Regional Memories     │
+│                                                                                 │
+│   ──────────────────────────────────┬────────────────────────────────────────   │
+│                                     ▼                                           │
+│   [ LanguageContext Provider ]    [ SpeakButton Web Speech TTS ]               │
+│   - Dynamic language switcher     - Native Web Speech synthesis                │
+│   - LocalStorage preference sync  - One-tap audio reading for low-literacy     │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Accessibility Capabilities:
+- **Comprehensive Lexicon Dictionaries**:
+  - `assameseDictionary.ts`: Native Assamese lexicon covering orientation, daily routine, culinary dish puzzles, and game instructions.
+  - `translations.ts`: Complete English and Hindi translation dictionaries.
+- **Voice-First Audio Reading ([src/components/common/SpeakButton.tsx](file:///f:/SIH/Monor-Xur/src/components/common/SpeakButton.tsx))**: Integrates Web Speech Synthesis (`window.speechSynthesis`) for one-tap reading of instructions, reminders, and daily affirmations.
 
 ---
 
 ## 💾 Data Persistence & Offline-First Synchronization
 
-Monor Xur is engineered for high-availability in rural and semi-urban settings with unstable internet access.
+Monor Xur is engineered for high availability in rural and semi-urban settings with unstable internet connectivity.
 
 ```
                   ┌────────────────────────────────┐
@@ -379,32 +536,36 @@ sequenceDiagram
     end
 ```
 
-### Cross-Device Game Difficulty Persistence Model
-The patient's clinical engagement state and current game difficulty level are persisted directly within `PatientProfile` in Firestore (`patients/{patientId}`) to ensure seamless continuity across devices, web browsers, and caregiver visits:
-- `gameDifficultyLevels`: Tracks active difficulty level for each game:
-  - `memoryMatch`: Level 1 (Easy 3-pair), Level 2 (Medium 4-pair), or Level 3 (Hard 6-pair)
-  - `puzzle`: Level 1 (2×2 grid), Level 2 (3×3 grid), or Level 3 (4×4 grid)
-- `gameStreaks`: Tracks consecutive win streaks and under-baseline solve counts required for DDA progression:
-  - `memoryMatchWins`: Consecutive round victories
-  - `puzzleUnderBaselineCount`: Consecutive solves under the clinical speed baseline
-- `lastGameSessionTimestamp`: Epoch millisecond timestamp of the player's most recent game session.
-- **Persistence Method**: `updateGameDifficultyProgress(patientId, gameType, newLevel, newStreak)` immediately writes updates to Firestore with fallback queuing in `offlineStorage`.
+---
 
-### Storage Collections & Keys
+## 🔒 Admin Security, RBAC & DPDP Act 2023 Compliance
 
-1. **Cloud Firestore Collections**:
-   - `patients/{patientId}`: Core demographic, active game difficulty levels, win streaks, and care profile document.
-   - `patients/{patientId}/medical/profile`: Neurologist consults, prescriptions, allergies.
-   - `patients/{patientId}/memories`: Photo/video stories and transcribed voice journals.
-   - `patients/{patientId}/reminders`: Scheduled medication times and routine alarms.
-   - `patients/{patientId}/calendarEvents`: Medical appointments and family events.
-   - `patients/{patientId}/careTasks`: ASHA and family home-care task list.
-   - `patients/{patientId}/contacts`: Emergency contact network.
-   - `patients/{patientId}/ddaMetrics`: Session latency, errors, and Gemini telemetry logs.
+Monor Xur strictly adheres to India's **Digital Personal Data Protection (DPDP) Act, 2023** and healthcare security best practices.
 
-2. **Client-Side Cache & Queue**:
-   - `monor_xur_offline_cache_v1`: JSON snapshot containing complete patient profile, active reminders, contacts, and calendar.
-   - `monor_xur_offline_mutation_queue_v1`: FIFO queue storing pending mutations performed while offline. A global `window.addEventListener('online')` hook automatically executes and flushes these mutations upon network recovery.
+### 1. Firestore Security Rules & RBAC Structure ([firestore.rules](file:///f:/SIH/Monor-Xur/firestore.rules))
+- **Role-Based Access Control**: Enforces specific access conditions for `patient`, `caregiver`, `asha`, and `isAdmin` roles.
+- **Admin Access Overrides**: Admins have audited read/write permissions for clinical supervision across authorized patient documents.
+
+```javascript
+// Scopes patient documents to authorized caregivers, ASHA workers, and system admins
+function isAssignedCaregiverOrAsha(patientId) {
+  let profile = get(/databases/$(database)/documents/patients/$(patientId)).data;
+  return request.auth != null && (
+    request.auth.uid == patientId ||
+    request.auth.uid == profile.caregiver.id ||
+    request.auth.uid in profile.authorizedUids ||
+    request.auth.token.role == "caregiver" ||
+    request.auth.token.role == "asha" ||
+    request.auth.token.role == "admin"
+  );
+}
+```
+
+### 2. DPDP Act 2023 Statutory Compliance Framework
+- **Explicit Consent**: Mandatory opt-in recorded during initial onboarding.
+- **Data Minimization**: Collects only essential cognitive telemetry, reminiscence assets, and routine schedules.
+- **Right to Access & Erase**: Self-service profile and media deletion tools in the Family Portal.
+- **Immutable Audit Trail**: Append-only event logging in `patients/{patientId}/auditLogs`.
 
 ---
 
@@ -487,168 +648,97 @@ The Node.js Express server (`server.ts`) exposes high-performance endpoints:
 
 ## 📄 Vector Clinical PDF Report Generator
 
-Monor Xur includes a client-side vector document compiler powered by **jsPDF**:
+Monor Xur includes a client-side vector document compiler powered by **jsPDF** ([src/utils/pdfReportGenerator.ts](file:///f:/SIH/Monor-Xur/src/utils/pdfReportGenerator.ts)):
 - **Format**: Structured medical dossier in A4 format.
-- **Dynamic Game Scope Configuration**:
-  - **Combined Assessment (`All Games`)**: Features 4 aggregate KPI metrics, followed by side-by-side comparative clinical cards contrasting Memory Match (recall latency, error rates, adaptive level) against Photo Puzzle (visual assembly time, hints, adaptive level).
-  - **Domain-Specific Assessment (`Memory Match Only` or `Photo Puzzle Only`)**: Isolates telemetry for targeted neurological evaluation of working spatial memory or visual-spatial reasoning.
+- **Dynamic Game Scope Configuration**: Toggle between aggregate (`All Games`), `Memory Match Only`, or `Photo Puzzle Only` report generation.
 - **Sections**:
-  1. **Executive Clinical Summary**: Patient demographics, stage of cognitive condition, blood group, primary physician and emergency contacts.
-  2. **Cognitive Engagement Trends & Multi-Game Telemetry (DDA)**: Mean accuracy percentage, response latency, current DDA difficulty tier, side-by-side game comparison panels, and an 8-row historical telemetry table with game badges, speed, errors, accuracy scores, and adaptive AI adjustments.
-  3. **Physician Visit Logs**: Detailed history of neurologist consultations, clinical observations, and care instructions.
-  4. **Daily Routine & Medication Adherence**: Weekly compliance breakdown and scheduled timings.
-  5. **Caregiver Field Notes**: Qualitative observations entered by family members.
-  6. **Standard Geriatric Disclaimer**: Verified medical notice regarding non-diagnostic assistive technology.
+  1. **Executive Clinical Summary**: Demographics, cognitive stage, primary physician, emergency contacts.
+  2. **Cognitive Telemetry & DDA Trends**: Accuracy percentage, response latencies, side-by-side game comparison panels, and historical telemetry table.
+  3. **Physician Visit & Prescription Logs**: Consult history, care guidance, and active medication schedule compliance.
+  4. **ASHA Field Visit Observations**: Vital signs, hydration, blood pressure logs, and MMSE orientation observations.
+  5. **Standard Geriatric Disclaimer**: Medical notice regarding non-diagnostic assistive technology.
 
 ---
 
-## 🎵 Auditory & Relaxation Engineering
-
-All audio components are built on the browser's native **Web Audio API**:
-- **Tone Synthesizer**: Uses pure sine and triangle wave oscillators to generate harmonic frequencies:
-  - **432 Hz**: Promotes parasympathetic nervous system activation.
-  - **528 Hz**: Known in solfeggio research for stress relief and emotional calm.
-  - **Raga Melodies**: Soft pentatonic intervals suited to South Asian cultural reminiscence.
-- **Card Flip Chimes**: Discrete, pentatonic chime bursts ($440\text{Hz} \rightarrow 880\text{Hz}$) confirming card selections without jarring or loud transients.
-- **No External Sound Assets Required**: Works completely offline without loading remote MP3 or WAV files.
-
----
-
-## 🔒 Security, Privacy & DPDP Act 2023 Compliance
-
-Monor Xur is engineered specifically for vulnerable elderly individuals navigating memory and cognitive challenges. To protect patient dignity and clinical privacy, the application strictly adheres to the principles of India's **Digital Personal Data Protection (DPDP) Act, 2023**, international healthcare privacy standards, and zero-trust engineering.
-
-### 1. DPDP Act 2023 Statutory Compliance Framework
-
-| Principle | Monor Xur Architectural Implementation |
-| :--- | :--- |
-| **Lawful Basis & Explicit Consent** | Mandatory, affirmative opt-in consent checkbox during initial setup (`consentGiven: true`, `consentDate: ISO_TIMESTAMP`). Consent details are permanently recorded in the patient profile and cannot be bypassed. |
-| **Purpose Limitation & Data Minimization** | Collects strictly what is clinically necessary: daily routine habits, reminiscence photos/stories, and game engagement telemetry (latency and accuracy) used for adaptive pacing. |
-| **Right to Access & Correction** | Caregivers and patients have full self-service rights in the Family Portal to inspect, edit, or purge personal photos, diary audio notes, emergency contacts, and medical profiles. |
-| **Protection of Vulnerable Principals** | Older adults with Mild Cognitive Impairment (MCI) or early dementia are protected through authorized family guardianship (`authorizedUids` & caregiver PIN security) and direct emergency dispatch. |
-| **Tamper-Evident Accountability** | Every read and modification by ASHA workers or caregivers is logged to an append-only audit trail (`patients/{patientId}/auditLogs`) to guarantee transparency. |
-
-### 2. Encryption & Data Protection Standards
-
-- **Data in Transit (HTTPS-Only Enforcement)**:
-  - Production deployments enforce HTTPS redirection across all routes.
-  - Reverse proxy awareness (`app.set("trust proxy", 1)`) detects non-secure protocol headers (`x-forwarded-proto`) and permanently redirects HTTP requests to secure HTTPS endpoints.
-  - **Helmet.js Security Headers**: Integrates strict HTTP headers including Content-Security-Policy (CSP), HTTP Strict Transport Security (HSTS), `X-Content-Type-Options: nosniff`, and DNS prefetch controls.
-
-- **Data at Rest (Dual-Layer Encryption)**:
-  - **Cloud Firestore**: All patient profile documents, routine plans, memories, and telemetry logs are encrypted server-side with AES-256 by Google Cloud infrastructure.
-  - **Client-Side AES-256-GCM Export Security**: Exported clinical dossier PDFs and local storage caches can be encrypted on-device using Web Crypto API (`AES-256-GCM` with PBKDF2 100,000-iteration key derivation and unique 12-byte initialization vectors) before saving or printing.
-
-### 3. Role-Based Access Control (RBAC) & Security Rules
-
-Firestore Security Rules enforce strict scoping:
-```javascript
-// Scopes all patient documents & subcollections to authorized caregivers and ASHA workers
-function isAssignedCaregiverOrAsha(patientId) {
-  let profile = get(/databases/$(database)/documents/patients/$(patientId)).data;
-  return request.auth != null && (
-    request.auth.uid == patientId ||
-    request.auth.uid == profile.caregiver.id ||
-    request.auth.uid in profile.authorizedUids ||
-    request.auth.token.role == "caregiver" ||
-    request.auth.token.role == "asha"
-  );
-}
-```
-
-### 4. Immutable Clinical Audit Trail
-
-The system logs all critical clinical and caregiver operations to `patients/{patientId}/auditLogs`:
-- `viewed_patient`: Logged when an ASHA worker or family caregiver accesses the patient summary.
-- `consent_granted`: Recorded when the DPDP Act 2023 consent is formally registered during onboarding.
-- `updated_patient_profile` & `updated_medical_profile`: Logged upon changes to medical concerns or care notes.
-- `toggled_reminder` & `added_reminder`: Records daily medicine and routine modifications.
-- `exported_pdf`: Audits whenever a clinical PDF summary is generated or encrypted.
-
-### 5. API Hardening & Rate Limiting
-
-- **Runtime Schema Validation**: All incoming payloads to `/api/ai/*` routes are strictly validated using **Zod** (`analyzeDifficultySchema`, `analyzePuzzleSchema`). Malformed inputs are rejected with `400 Bad Request` prior to execution.
-- **Express Rate Limiting**:
-  - Global API limiter: 100 requests per 15 minutes per IP.
-  - AI analysis limiter: 25 requests per 15 minutes to eliminate abuse, credential scraping, and model exhaustion.
-
----
-
-## 📂 Project Directory Structure
+## 📁 Project Directory Structure
 
 ```
-monor-xur/
-├── .env.example                          # Blueprint for required environment secrets (GEMINI_API_KEY)
-├── firebase-applet-config.json           # Firebase project credentials & Firestore database ID
-├── firestore.rules                       # Firestore security rules for patient & telemetry data
-├── index.html                            # HTML entry point with Nunito typography & meta tags
-├── metadata.json                         # Platform capabilities, frame permissions (microphone)
-├── package.json                          # Dependencies, scripts, and build metadata
-├── server.ts                             # Express 5 backend, Gemini 3.8 Flash SDK, Vite middleware
-├── tsconfig.json                         # TypeScript strict compiler configuration
-├── vite.config.ts                        # Vite bundler, Tailwind 4, and PWA Service Worker config
-│
-├── public/                               # PWA assets, icons, and web manifest resources
-│   ├── favicon.ico
-│   ├── icon.svg
-│   ├── logo.jpg
-│   ├── pwa-192x192.png
-│   ├── pwa-512x512.png
-│   └── pwa-maskable-512x512.png
-│
-└── src/
-    ├── main.tsx                          # React DOM mount point & Service Worker registration
-    ├── App.tsx                           # Root orchestrator: roles, views, and Firebase sync
-    ├── index.css                         # Tailwind CSS v4 design token layer
-    ├── types.ts                          # TypeScript domain models (Patient, DDA, Memory, etc.)
-    │
+Monor-Xur/
+├── firestore.rules               # Firebase Firestore RBAC Security Rules (Admin, Caregiver, ASHA)
+├── package.json                  # NPM dependencies & build scripts
+├── server.ts                     # Full-stack Node.js Express server with Vite SPA middleware
+├── tsconfig.json                 # TypeScript compiler configuration
+├── vite.config.ts                # Vite PWA build setup & bundle configuration
+├── public/                       # Static public assets
+│   ├── audio/                    # Ambient MP3 soundscapes (Sitar, Bansuri, Kirtan, Flute)
+│   ├── images/
+│   │   ├── avatars/              # Cultural & family profile avatars (Assam Aita, Koka, etc.)
+│   │   └── puzzles/              # 20 Native Assamese dish puzzle assets (Khar, Pitha, etc.)
+│   └── pwa-192x192.png           # PWA web manifest icons
+└── src/                          # Application source code
+    ├── App.tsx                   # Main React entrypoint & routing navigation
+    ├── index.css                 # Global CSS & Tailwind CSS 4 setup
+    ├── main.tsx                  # React root DOM renderer
+    ├── types.ts                  # TypeScript definitions (Patient, DDA, Medicines, Telemetry)
+    ├── assets/                   # Bundled project assets
     ├── components/
-    │   ├── caregiver/                    # Family & ASHA portal views
-    │   │   ├── AshaDashboard.tsx         # ASHA home visit protocol, game filter & observation logs
-    │   │   ├── AshaLogin.tsx             # Passcode authentication for health workers
-    │   │   ├── CaregiverSelect.tsx       # Dual-portal gateway (Family vs ASHA)
-    │   │   ├── CognitiveProgressView.tsx # Recharts interactive multi-game DDA visualization
-    │   │   ├── ExportPdfModal.tsx        # Vector PDF configuration modal with game scope selector
-    │   │   ├── FamilyDashboard.tsx       # Caregiver command dashboard with game-filtered tabs
-    │   │   └── FamilyLogin.tsx           # 4-digit PIN security lock
-    │   │
-    │   ├── common/                       # Shared design system components
-    │   │   ├── BottomNav.tsx             # Role-specific tactile bottom navigation bars
-    │   │   ├── DifficultyToast.tsx       # Non-stigmatizing adaptive encouragement notification
-    │   │   ├── Header.tsx                # Context-aware header with time, role & SOS
-    │   │   ├── OfflineIndicator.tsx      # Network status pill with pending queue count
-    │   │   └── PWAInstallButton.tsx      # Native browser home-screen install prompt
-    │   │
-    │   ├── patient/                      # Tactile elder-friendly interfaces
-    │   │   ├── AudioDiaryRecorder.tsx    # Web Speech + MediaRecorder voice journal modal
-    │   │   ├── BreathingExercise.tsx     # Diaphragmatic 4-4-4-4 rhythm animation
-    │   │   ├── DailyLife.tsx             # Large-target daily routine & medication tracker
-    │   │   ├── GamesHub.tsx              # Cognitive stimulation selection menu with live status
-    │   │   ├── MemoriesGallery.tsx       # Reminiscence gallery with audio badges
-    │   │   ├── MemoryMatchGame.tsx       # Adaptive paired-card recall game with DDA
-    │   │   ├── MemoryViewer.tsx          # Fullscreen media reader with audio playback
-    │   │   ├── PatientHome.tsx           # Daily orientation dashboard for Anita
-    │   │   ├── PatientSettings.tsx       # Font scale, contrast, and volume preferences
-    │   │   ├── PuzzleGame.tsx            # Photo jigsaw puzzle with time baseline pacing
-    │   │   ├── RelaxationHub.tsx         # Calming audio & breathing gateway
-    │   │   └── RelaxationMusic.tsx       # Solfeggio frequency & raga tone generator
-    │   │
+    │   ├── caregiver/            # Caregiver & ASHA portals
+    │   │   ├── AshaDashboard.tsx
+    │   │   ├── AshaLogin.tsx
+    │   │   ├── CaregiverSelect.tsx
+    │   │   ├── CognitiveProgressView.tsx
+    │   │   ├── ExportPdfModal.tsx
+    │   │   ├── FamilyDashboard.tsx
+    │   │   ├── FamilyLogin.tsx
+    │   │   └── MemoryInsightsView.tsx
+    │   ├── common/               # Shared reusable components
+    │   │   ├── BottomNav.tsx
+    │   │   ├── DifficultyToast.tsx
+    │   │   ├── Header.tsx
+    │   │   ├── OfflineIndicator.tsx
+    │   │   ├── PWAInstallButton.tsx
+    │   │   ├── SpeakButton.tsx
+    │   │   └── VoiceReminiscenceRecorder.tsx
+    │   ├── patient/              # Patient cognitive experience
+    │   │   ├── AudioDiaryRecorder.tsx
+    │   │   ├── BreathingExercise.tsx
+    │   │   ├── DailyLife.tsx
+    │   │   ├── EasyModeGuide.tsx        # Elder-first guided game audio instructions
+    │   │   ├── GamesHub.tsx
+    │   │   ├── MedicineAlertBanner.tsx  # Home screen upcoming/overdue medicine alerts
+    │   │   ├── MedicineReminders.tsx    # Interactive medicine schedule & adherence tracking
+    │   │   ├── MemoriesGallery.tsx
+    │   │   ├── MemoryMatchGame.tsx      # DDA-powered memory card match game
+    │   │   ├── MemoryViewer.tsx
+    │   │   ├── PatientHome.tsx          # Elder home dashboard
+    │   │   ├── PatientSettings.tsx      # High-contrast & theme controls
+    │   │   ├── PuzzleGame.tsx           # DDA-powered jigsaw puzzle (Default & Custom photos)
+    │   │   ├── RelaxationHub.tsx
+    │   │   ├── RelaxationMusic.tsx      # Solfeggio & regional audio player
+    │   │   └── SundowningCalmBanner.tsx # Evening sundowning syndrome intervention
     │   └── setup/
-    │       └── InitialSetupPage.tsx      # Onboarding configuration wizard
-    │
+    │       └── InitialSetupPage.tsx     # Onboarding setup with avatar selection
+    ├── context/                  # React state providers
+    │   ├── AuthContext.tsx       # Firebase Auth & Google Sign-In state
+    │   ├── CaregiverContext.tsx  # Caregiver data provider
+    │   ├── LanguageContext.tsx   # Multilingual i18n switcher
+    │   ├── PatientContext.tsx    # Active patient profile state
+    │   └── ThemeContext.tsx      # Visual contrast & theme management
     ├── data/
-    │   └── mockData.ts                   # Initial clinical baselines, memories & contacts
-    ├── hooks/
-    │   ├── useOnlineStatus.ts            # Reactive online/offline navigator status hook
-    │   └── usePWAInstall.ts              # PWA beforeinstallprompt handler hook
-    ├── services/
-    │   ├── aiDifficultyService.ts        # Client bridge to server DDA endpoints
-    │   ├── firebase.ts                   # Firestore real-time listeners & CRUD operations
-    │   └── offlineStorage.ts             # Snapshot cache & mutation queue manager
-    └── utils/
-        ├── audio.ts                      # Web Audio API harmonic sound synthesizers
-        ├── gameAnalytics.ts              # Multi-game stats, breakdowns, and baseline aggregation
-        └── pdfReportGenerator.ts         # jsPDF vector clinical report compiler with game scopes
+    │   └── mockData.ts           # Baseline defaults & fallback initializers
+    ├── i18n/                     # Localization dictionaries
+    │   ├── assameseDictionary.ts # Native Assamese vocabulary & dish labels
+    │   └── translations.ts       # English & Hindi translation lexicons
+    ├── services/                 # External service integrations
+    │   ├── aiDifficultyService.ts# Gemini 3.8 Flash SDK & local DDA engine
+    │   └── firebase.ts           # Firebase App, Auth, Firestore DB & Sync handlers
+    └── utils/                    # Helper utilities
+        ├── audio.ts              # Global soundController singleton & audio lifecycle
+        ├── audioStorage.ts       # Track caching & audio asset preloader
+        ├── gameAnalytics.ts      # Telemetry calculations & Recharts transformers
+        ├── offlineStorage.ts     # Offline queue & local snapshot storage
+        ├── pdfReportGenerator.ts # jsPDF vector clinical report engine
+        └── timeUtils.ts          # 12h/24h time converters & medicine alert helpers
 ```
 
 ---
@@ -657,11 +747,10 @@ monor-xur/
 
 ### Prerequisites
 - **Node.js**: `v20.0.0` or higher
-- **npm**: `v9.0.0` or higher
-- **Modern Web Browser**: Chrome, Edge, or Safari (microphone permissions enabled for voice diaries)
-- **Google Gemini API Key** *(Optional - the app seamlessly falls back to the local ML heuristic if missing)*: [Get an API Key on Google AI Studio](https://aistudio.google.com/)
+- **npm**: `v10.0.0` or higher
+- **Google Gemini API Key**: Obtainable from [Google AI Studio](https://aistudio.google.com/)
 
-### Installation
+### Installation & Setup
 
 1. **Clone the Repository**:
    ```bash
@@ -675,13 +764,15 @@ monor-xur/
    ```
 
 3. **Configure Environment Variables**:
-   Copy the example environment template:
-   ```bash
-   cp .env.example .env
-   ```
-   Provide your Gemini API key in `.env`:
+   Create a `.env` file in the root directory:
    ```env
    GEMINI_API_KEY=your_gemini_api_key_here
+   VITE_FIREBASE_API_KEY=your_firebase_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
    ```
 
 4. **Launch Development Server**:
