@@ -1,19 +1,52 @@
 // Web Speech & Web Audio helpers for Monor Xur
 import { getAssameseTranslation } from '../i18n/assameseDictionary';
 
+export type CalmingTrackId = 
+  | 'sitar_tanpura' 
+  | 'bansuri_melody' 
+  | 'madhur_madhab' 
+  | 'sandhya_shanti';
+
+export const CALMING_TRACK_SOURCES: Record<CalmingTrackId, string> = {
+  sitar_tanpura: '/audio/track-1-sitar-tanpura.mp3',
+  bansuri_melody: '/audio/track-2-bansuri-melody.mp3',
+  madhur_madhab: '/audio/track-3-madhur-madhab-kirtan.mp3',
+  sandhya_shanti: '/audio/track-4-sandhya-shanti-flute.mp3',
+};
+
 class SoundController {
   private ctx: AudioContext | null = null;
-  private ambientGain: GainNode | null = null;
-  private ambientOscs: OscillatorNode[] = [];
+  private currentAudio: HTMLAudioElement | null = null;
+  public activeTrackId: CalmingTrackId | null = null;
   public isAmbientPlaying = false;
   public isSundowningActive = false;
+  private audioListeners: Array<(event: string, data?: any) => void> = [];
 
   setSundowningMode(active: boolean) {
     this.isSundowningActive = active;
+    if (this.currentAudio) {
+      // Soften volume by 35% during sundowning hours
+      this.currentAudio.volume = active ? 0.45 : 0.75;
+    }
   }
 
   getSundowningMode(): boolean {
     return this.isSundowningActive;
+  }
+
+  addAudioListener(cb: (event: string, data?: any) => void) {
+    this.audioListeners.push(cb);
+    return () => {
+      this.audioListeners = this.audioListeners.filter(l => l !== cb);
+    };
+  }
+
+  private notifyAudio(event: string, data?: any) {
+    this.audioListeners.forEach(cb => {
+      try {
+        cb(event, data);
+      } catch {}
+    });
   }
 
   private initCtx() {
@@ -117,65 +150,127 @@ class SoundController {
     });
   }
 
-  // Serene ambient drone for Relaxation Music & Sundowning Raga
-  startAmbient(soundType: 'nature' | 'harp' | 'flute' | 'singing_bowl' | 'raga_yaman' = 'nature') {
-    try {
-      this.stopAmbient();
-      this.initCtx();
-      if (!this.ctx) return;
+  // Play one of the four authentic calming music tracks
+  playCalmingTrack(trackId: CalmingTrackId, customSrc?: string, loop = true): Promise<void> {
+    return new Promise((resolve) => {
+      try {
+        this.stopCalmingTrack();
 
-      this.ambientGain = this.ctx.createGain();
-      // Gentle volume, slightly softer in sundowning mode
-      const masterGain = this.isSundowningActive ? 0.055 : 0.08;
-      this.ambientGain.gain.setValueAtTime(masterGain, this.ctx.currentTime);
-      this.ambientGain.connect(this.ctx.destination);
+        const src = customSrc || CALMING_TRACK_SOURCES[trackId];
+        const audio = new Audio(src);
+        audio.loop = loop;
+        audio.volume = this.isSundowningActive ? 0.45 : 0.75;
 
-      const baseFreqs = soundType === 'raga_yaman'
-        ? [146.83, 220, 277.18, 329.63, 440] // Evening Raga Yaman (Tanpura D, A, C#, E drone)
-        : soundType === 'singing_bowl' 
-        ? [432, 216, 648] 
-        : soundType === 'harp' 
-        ? [330, 392, 494, 587] 
-        : soundType === 'flute' 
-        ? [440, 523.25, 659.25] 
-        : [220, 277.18, 329.63, 440];
+        audio.addEventListener('play', () => {
+          this.isAmbientPlaying = true;
+          this.activeTrackId = trackId;
+          this.notifyAudio('play', { trackId });
+        });
 
-      this.ambientOscs = baseFreqs.map((f, index) => {
-        const osc = this.ctx!.createOscillator();
-        osc.type = index % 2 === 0 ? 'sine' : 'triangle';
-        osc.frequency.setValueAtTime(f, this.ctx!.currentTime);
-        osc.connect(this.ambientGain!);
-        osc.start();
-        return osc;
-      });
+        audio.addEventListener('pause', () => {
+          this.isAmbientPlaying = false;
+          this.notifyAudio('pause', { trackId });
+        });
 
-      this.isAmbientPlaying = true;
-    } catch {
-      // Ignore
+        audio.addEventListener('timeupdate', () => {
+          this.notifyAudio('timeupdate', {
+            currentTime: audio.currentTime,
+            duration: audio.duration || 0,
+            trackId,
+          });
+        });
+
+        audio.addEventListener('ended', () => {
+          if (!audio.loop) {
+            this.isAmbientPlaying = false;
+            this.activeTrackId = null;
+            this.notifyAudio('ended', { trackId });
+          }
+        });
+
+        audio.addEventListener('error', (e) => {
+          console.warn('Audio playback notice:', e);
+          this.notifyAudio('error', { error: e, trackId });
+        });
+
+        this.currentAudio = audio;
+        this.activeTrackId = trackId;
+        this.isAmbientPlaying = true;
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => resolve())
+            .catch((err) => {
+              console.warn('Audio autoplay prevented or error:', err);
+              resolve();
+            });
+        } else {
+          resolve();
+        }
+      } catch (err) {
+        console.warn('Could not initialize audio:', err);
+        resolve();
+      }
+    });
+  }
+
+  pauseCalmingTrack() {
+    if (this.currentAudio && !this.currentAudio.paused) {
+      this.currentAudio.pause();
+      this.isAmbientPlaying = false;
     }
   }
 
-  stopAmbient() {
-    try {
-      if (this.ambientOscs.length > 0) {
-        this.ambientOscs.forEach(osc => {
-          try {
-            osc.stop();
-            osc.disconnect();
-          } catch {
-            // Already stopped
-          }
-        });
-        this.ambientOscs = [];
-      }
-      if (this.ambientGain) {
-        this.ambientGain.disconnect();
-        this.ambientGain = null;
-      }
-      this.isAmbientPlaying = false;
-    } catch {
-      // Ignore
+  resumeCalmingTrack() {
+    if (this.currentAudio && this.currentAudio.paused) {
+      this.currentAudio.play().catch(() => {});
+      this.isAmbientPlaying = true;
     }
+  }
+
+  stopCalmingTrack() {
+    if (this.currentAudio) {
+      try {
+        this.currentAudio.pause();
+        this.currentAudio.currentTime = 0;
+        this.currentAudio.src = '';
+      } catch {}
+      this.currentAudio = null;
+    }
+    this.activeTrackId = null;
+    this.isAmbientPlaying = false;
+    this.notifyAudio('stop');
+  }
+
+  seekCalmingTrack(timeSec: number) {
+    if (this.currentAudio && Number.isFinite(timeSec)) {
+      this.currentAudio.currentTime = Math.max(0, timeSec);
+    }
+  }
+
+  setCalmingVolume(volume: number) {
+    if (this.currentAudio) {
+      this.currentAudio.volume = Math.max(0, Math.min(1, volume));
+    }
+  }
+
+  getCurrentAudio(): HTMLAudioElement | null {
+    return this.currentAudio;
+  }
+
+  // Backward compatible methods routing directly to the 4 authentic tracks
+  startAmbient(soundType: CalmingTrackId | string = 'sandhya_shanti') {
+    const validTrackId: CalmingTrackId = 
+      soundType === 'sitar_tanpura' ? 'sitar_tanpura' :
+      soundType === 'bansuri_melody' ? 'bansuri_melody' :
+      soundType === 'madhur_madhab' ? 'madhur_madhab' :
+      'sandhya_shanti';
+    this.playCalmingTrack(validTrackId);
+  }
+
+  stopAmbient() {
+    this.stopCalmingTrack();
   }
 
   public currentLanguage: 'en' | 'hi' | 'as' = 'en';

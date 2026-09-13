@@ -375,8 +375,16 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
 
       {/* ITEM E: HIGH-VISIBILITY CAREGIVER FACE & NAME CALL BUTTON */}
       <div className="bg-gradient-to-br from-[#FAF8F3] to-[#F2EFE8] p-1.5 rounded-3xl border-2 border-[#5B825B]/30 shadow-xs">
-        <button
+        <div
+          role="button"
+          tabIndex={0}
           onClick={onCallFamily}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onCallFamily();
+            }
+          }}
           className="w-full p-4 rounded-2xl bg-white border border-[#E0DCD3] shadow-xs flex items-center justify-between hover:bg-[#FDFBF7] active:scale-[0.99] transition-all cursor-pointer group"
           aria-label={tx(`Call ${caregiverName}`, `${caregiverName} को फोन करें`, `${caregiverName} লৈ ফোন কৰক`)}
         >
@@ -419,7 +427,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
               <span>{t('callNow')}</span>
             </span>
           </div>
-        </button>
+        </div>
       </div>
 
       {/* Subtle Caregiver Mode / Single-Focus Switch Bar at very bottom */}

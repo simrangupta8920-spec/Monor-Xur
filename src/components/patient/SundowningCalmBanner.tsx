@@ -27,7 +27,7 @@ export const SundowningCalmBanner: React.FC<SundowningCalmBannerProps> = ({
       soundController.stopAmbient();
       setIsPlayingRaga(false);
     } else {
-      soundController.startAmbient('raga_yaman');
+      soundController.startAmbient('sandhya_shanti');
       setIsPlayingRaga(true);
       soundController.playSuccess();
     }
