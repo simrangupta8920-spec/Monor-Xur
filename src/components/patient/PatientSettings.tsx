@@ -23,10 +23,9 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
   contacts = [],
   onOpenSetup,
 }) => {
-  const [largeText, setLargeText] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const { language, setLanguage, t, tx, isHindi, isAssamese } = useLanguage();
-  const { theme, setTheme, toggleTheme, isNorthEast } = useTheme();
+  const { theme, setTheme, toggleTheme, isNorthEast, largeText, toggleLargeText } = useTheme();
 
   const playerName = patientProfile?.name || (isAssamese ? 'খেলুৱৈ' : isHindi ? 'खिलाड़ी' : 'Player');
   const playerFullName = patientProfile?.fullName || (isAssamese ? 'মনৰ অন্বেষক' : isHindi ? 'माइंड एक्सप्लोरर' : 'Mind Explorer');
@@ -349,23 +348,65 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
 
       <div className="space-y-3">
         {/* Large Text Preference */}
-        <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs flex items-center justify-between">
+        <div 
+          id="extra-large-text-setting"
+          className={`rounded-3xl p-5 border shadow-xs flex items-center justify-between transition-all ${
+            largeText 
+              ? 'bg-[#F7FAF7] border-[#5B825B] ring-1 ring-[#5B825B]/30' 
+              : 'bg-white border-[#E0DCD3]'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-[#EAF1E8] text-[#5B825B] flex items-center justify-center">
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-colors ${
+              largeText ? 'bg-[#5B825B] text-white' : 'bg-[#EAF1E8] text-[#5B825B]'
+            }`}>
               <Type className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="font-extrabold text-base text-[#2D3A2F]">{t('extraLargeText')}</h4>
+              <div className="flex items-center gap-2">
+                <h4 className="font-extrabold text-base text-[#2D3A2F]">{t('extraLargeText')}</h4>
+                {largeText && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#EAF1E8] text-[#5B825B] border border-[#5B825B]/30">
+                    {language === 'as' ? 'সক্ৰিয়' : language === 'hi' ? 'सक्रिय' : 'Active'}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-[#5A6E5D]">{t('extraLargeTextSub')}</p>
             </div>
           </div>
           <button
-            onClick={() => setLargeText(!largeText)}
-            className={`w-14 h-8 rounded-full transition-colors p-1 flex items-center ${
+            id="extra-large-text-toggle"
+            role="switch"
+            aria-checked={largeText}
+            aria-label={t('extraLargeText')}
+            onClick={() => {
+              soundController.playClick();
+              toggleLargeText();
+              if (soundEnabled) {
+                if (!largeText) {
+                  if (language === 'as') {
+                    soundController.speak('ডাঙৰ আখৰ সক্ৰিয় কৰা হ’ল।', undefined, 'as');
+                  } else if (language === 'hi') {
+                    soundController.speak('बड़ा फ़ॉन्ट सक्रिय किया गया।', undefined, 'hi');
+                  } else {
+                    soundController.speak('Extra large text enabled.', undefined, 'en');
+                  }
+                } else {
+                  if (language === 'as') {
+                    soundController.speak('স্বাভাৱিক ফন্ট নিৰ্ধাৰণ কৰা হ’ল।', undefined, 'as');
+                  } else if (language === 'hi') {
+                    soundController.speak('सामान्य फ़ॉन्ट सेट किया गया।', undefined, 'hi');
+                  } else {
+                    soundController.speak('Standard text size restored.', undefined, 'en');
+                  }
+                }
+              }
+            }}
+            className={`w-14 h-8 rounded-full transition-colors p-1 flex items-center cursor-pointer shadow-inner ${
               largeText ? 'bg-[#5B825B] justify-end' : 'bg-gray-200 justify-start'
             }`}
           >
-            <div className="w-6 h-6 rounded-full bg-white shadow-xs" />
+            <div className="w-6 h-6 rounded-full bg-white shadow-xs transition-transform" />
           </button>
         </div>
 

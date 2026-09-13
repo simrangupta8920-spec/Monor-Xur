@@ -23,6 +23,8 @@ import { RelaxationHub } from './components/patient/RelaxationHub';
 import { BreathingExercise } from './components/patient/BreathingExercise';
 import { RelaxationMusic } from './components/patient/RelaxationMusic';
 import { DailyLife } from './components/patient/DailyLife';
+import { MedicineReminders } from './components/patient/MedicineReminders';
+import { MedicineAlertBanner } from './components/patient/MedicineAlertBanner';
 import { PatientSettings } from './components/patient/PatientSettings';
 import { CaregiverSelect } from './components/caregiver/CaregiverSelect';
 import { FamilyLogin } from './components/caregiver/FamilyLogin';
@@ -41,7 +43,6 @@ import {
 } from './services/offlineStorage';
 import { soundController } from './utils/audio';
 import { useSundowningState } from './hooks/useSundowningState';
-import { SundowningCalmBanner } from './components/patient/SundowningCalmBanner';
 import { Phone } from 'lucide-react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
@@ -213,6 +214,9 @@ export function App() {
 
   // Calling simulation modal
   const [callingContact, setCallingContact] = useState<EmergencyContact | null>(null);
+
+  // Simulated medicine alert trigger for preview testing
+  const [simulationAlertTrigger, setSimulationAlertTrigger] = useState(0);
 
   // Sundowning Evening Calming Automation state (4:30 PM - 7:30 PM)
   const sundowningState = useSundowningState(patientProfile);
@@ -638,16 +642,27 @@ export function App() {
         {/* ROLE 1: PATIENT MODE */}
         {role === 'patient' && (
           <div>
-            {/* Sundowning Evening Calming Banner (4:30 PM - 7:30 PM or Caregiver Preview) */}
-            {patientSubView === 'none' && !selectedMemory && (
-              <div className="px-4 pt-3 pb-2">
-                <SundowningCalmBanner
-                  isActive={sundowningState.isActive}
-                  isManualOverride={sundowningState.isManualOverride}
-                  onOpenBreathing={() => setPatientSubView('breathing')}
-                  onOpenMusic={() => setPatientSubView('music')}
-                />
-              </div>
+            {/* Real-Time Medicine Notification Alert Banner */}
+            <MedicineAlertBanner
+              reminders={reminders}
+              onToggleReminder={handleToggleReminder}
+              onOpenMedicineList={() => {
+                setPatientTab('medicines');
+                setPatientSubView('none');
+              }}
+              simulationTrigger={simulationAlertTrigger}
+            />
+
+            {/* Sub-view: Medicine Reminders */}
+            {patientSubView === 'medicines' && (
+              <MedicineReminders
+                reminders={reminders}
+                onToggleReminder={handleToggleReminder}
+                onBack={() => setPatientSubView('none')}
+                onCallFamily={triggerCallFamily}
+                caregiverName={patientProfile.caregiver?.name}
+                onTriggerTestAlert={() => setSimulationAlertTrigger((c) => c + 1)}
+              />
             )}
 
             {/* Sub-view: Puzzle Game */}
@@ -720,6 +735,17 @@ export function App() {
                     reminders={reminders}
                     onCallFamily={triggerCallFamily}
                     caregiver={patientProfile.caregiver}
+                  />
+                )}
+
+                {patientTab === 'medicines' && (
+                  <MedicineReminders
+                    reminders={reminders}
+                    onToggleReminder={handleToggleReminder}
+                    onBack={() => setPatientTab('home')}
+                    onCallFamily={triggerCallFamily}
+                    caregiverName={patientProfile.caregiver?.name}
+                    onTriggerTestAlert={() => setSimulationAlertTrigger((c) => c + 1)}
                   />
                 )}
 

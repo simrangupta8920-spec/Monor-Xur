@@ -26,6 +26,7 @@ import {
   getWeeklyActivityDistribution, 
   GameFilterType
 } from '../../utils/gameAnalytics';
+import { parseTimeToMinutes } from '../../utils/timeUtils';
 
 interface FamilyDashboardProps {
   currentTab: FamilyCaregiverTab;
@@ -235,7 +236,7 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
       title: newReminderTitle.trim(),
       type: newReminderType,
       time_label: newReminderTime,
-      minutes: 600,
+      minutes: parseTimeToMinutes(newReminderTime),
       note: newReminderNote.trim(),
       completed: false,
     });

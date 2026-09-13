@@ -340,117 +340,25 @@ export const GamesHub: React.FC<GamesHubProps> = ({
           </button>
         </div>
 
-        {/* Contextual Mode Information & Previews */}
-        {activeMode === 'default' ? (
-          <div className="bg-[#FAF8F3] rounded-2xl p-3.5 border border-[#EAE6DF] space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#5B825B] animate-pulse" />
-                <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider">
-                  {tx('Default Mode Active', 'डिफ़ॉल्ट मोड सक्रिय', 'ডিফল্ট মোড সক্ৰিয়')}
-                </span>
-              </div>
-              <span className="text-[11px] font-bold text-[#5B825B] bg-[#EAF1E8] px-2.5 py-0.5 rounded-full">
-                {tx('Ready to Play', 'खेलने के लिए तैयार', 'খেলিবলৈ প্ৰস্তুত')}
+        {/* Gentle hint only if Personalized mode is chosen without any family photos */}
+        {activeMode === 'personalized' && !hasPhotos && (
+          <div className="bg-[#FAF8F3] rounded-2xl p-3 border border-[#EAE6DF] flex items-center justify-between gap-2 text-xs text-[#5A6E5D]">
+            <div className="flex items-center gap-2">
+              <Info className="w-4 h-4 text-[#E8B25C] shrink-0" />
+              <span>
+                {tx(
+                  'No family photos uploaded yet. You can play with classic treasures!',
+                  'अभी पारिवारिक फोटो नहीं हैं। आप क्लासिक चित्रों से खेल सकते हैं!',
+                  'এতিয়ালৈ কোনো ফটো নাই। আপুনি ক্লাছিক ছবিৰে খেলিব পাৰে!'
+                )}
               </span>
             </div>
-            <p className="text-xs text-[#5A6E5D] leading-relaxed">
-              {tx(
-                'Carefully curated with uplifting everyday themes: ripe Alphonso mangoes, traditional Assamese Khar & Pitha, and tranquil blooming gardens.',
-                'शांतिदायक क्लासिक चित्रों से सुसज्जित: रसीले पके आम, असमिया स्वादिष्ट व्यंजन और सुंदर प्रकृति।',
-                'সুন্দৰ পৰম্পৰাগত ছবিৰে সজোৱা: পকা আম, অসমীয়া খাৰ-পিঠা আৰু ফুলনি বাগিচা।'
-              )}
-            </p>
-            {/* Quick theme tags */}
-            <div className="flex flex-wrap gap-1.5 pt-0.5">
-              <span className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[11px] font-black text-[#8C4E0B]">
-                🥭 {tx('Juicy Mangoes', 'रसीले आम', 'ৰসাল পকা আম')}
-              </span>
-              <span className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[11px] font-black text-[#5B825B]">
-                🍲 {tx('Assamese Khar & Pitha', 'असमिया व्यंजन', 'অসমীয়া খাৰ আৰু পিঠা')}
-              </span>
-              <span className="px-2.5 py-1 rounded-xl bg-white border border-[#E0DCD3] text-[11px] font-black text-[#0284C7]">
-                🌺 {tx('Nature & Birds', 'प्रकृति और चिड़िया', 'প্ৰকৃতি আৰু চৰাই')}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-[#FAF8F3] rounded-2xl p-3.5 border border-[#EAE6DF] space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#E11D48] animate-pulse" />
-                <span className="text-xs font-black text-[#2D3A2F] uppercase tracking-wider">
-                  {tx('Personalised Mode Active', 'पर्सनलाइज्ड मोड सक्रिय', 'ব্যক্তিগত মোড সক্ৰিয়')}
-                </span>
-              </div>
-              <span className="text-[11px] font-bold text-[#E11D48] bg-[#FFE4E6] px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                <Heart className="w-3 h-3 fill-current" />
-                {hasPhotos
-                  ? `${photoMemories.length} ${tx('Memories Loaded', 'यादें', 'স্মৃতি')}`
-                  : tx('Awaiting Photos', 'फोटो बाकी है', 'ফটো বাকী')}
-              </span>
-            </div>
-
-            {hasPhotos ? (
-              <div className="space-y-2">
-                <p className="text-xs text-[#5A6E5D] leading-relaxed">
-                  {tx(
-                    'Featuring photos uploaded by your family caregivers. Solve the puzzle to hear the voice story of that cherished memory!',
-                    'आपकी पारिवारिक तस्वीरों के साथ। पहेली हल करने पर उस सुंदर याद की कहानी आवाज़ में सुनाई देगी!',
-                    'আপোনাৰ পৰিয়ালৰ ফটোৰে সজোৱা। ধাঁধা সম্পূৰ্ণ কৰিলে সেই স্মৃতিৰ কাহিনী শুনিবলৈ পাব!'
-                  )}
-                </p>
-
-                {/* Horizontal strip of personal photos */}
-                <div className="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none">
-                  {photoMemories.slice(0, 5).map((mem) => (
-                    <div
-                      key={mem.id}
-                      className="shrink-0 flex items-center gap-2 bg-white px-2.5 py-1.5 rounded-xl border border-[#E0DCD3] shadow-2xs"
-                    >
-                      <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 bg-[#F4EDE2]">
-                        <img
-                          src={mem.image}
-                          alt={mem.title}
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <div className="text-left">
-                        <span className="block text-[11px] font-black text-[#2D3A2F] line-clamp-1 max-w-[100px]">
-                          {mem.title}
-                        </span>
-                        {mem.person && (
-                          <span className="block text-[10px] font-bold text-[#5B825B] line-clamp-1">
-                            {mem.person}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2 bg-white p-3 rounded-xl border border-[#E0DCD3]">
-                <div className="flex items-start gap-2 text-xs text-[#5A6E5D]">
-                  <Info className="w-4 h-4 text-[#E8B25C] shrink-0 mt-0.5" />
-                  <p>
-                    {tx(
-                      'No personal family photos uploaded yet. Your family caregiver can upload memories anytime in Caregiver Mode. You can also enjoy Default Mode right now!',
-                      'अभी कोई व्यक्तिगत फोटो अपलोड नहीं हुई है। आपके परिवार के सदस्य केयरगिवर पोर्टल में तस्वीरें जोड़ सकते हैं। आप डिफ़ॉल्ट मोड खेल सकते हैं!',
-                      'এতিয়ালৈ কোনো ব্যক্তিগত ফটো নাই। পৰিয়ালৰ সদস্যই কেয়াৰগিভাৰ পৰ্টেলত ছবি যোগ কৰিব পাৰে। আপুনি এতিয়াই ডিফল্ট মোড খেলিব পাৰে!'
-                    )}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleModeChange('default')}
-                  className="w-full py-2 rounded-xl bg-[#5B825B] text-white text-xs font-black hover:bg-[#4a6d4a] transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[#E8B25C]" />
-                  <span>{tx('Switch to Default Mode', 'डिफ़ॉल्ट मोड पर जाएं', 'ডিফল্ট মোডলৈ যাওক')}</span>
-                </button>
-              </div>
-            )}
+            <button
+              onClick={() => handleModeChange('default')}
+              className="text-[#5B825B] font-bold underline shrink-0 cursor-pointer"
+            >
+              {tx('Switch', 'बदलें', 'সলাওক')}
+            </button>
           </div>
         )}
       </div>

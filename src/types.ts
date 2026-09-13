@@ -7,12 +7,13 @@ export type AppRole =
   | 'family' 
   | 'asha';
 
-export type PatientTab = 'home' | 'play' | 'memories' | 'settings';
+export type PatientTab = 'home' | 'medicines' | 'memories' | 'settings' | 'play';
 
 export type PlayMode = 'default' | 'personalized';
 
 export type PatientSubView = 
   | 'none' 
+  | 'medicines'
   | 'relaxation' 
   | 'breathing' 
   | 'music' 

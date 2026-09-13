@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Puzzle, Image as ImageIcon, Settings, Calendar, Bell, User, ClipboardList, BarChart3, TrendingUp, Sparkles } from 'lucide-react';
+import { Home, Puzzle, Pill, Image as ImageIcon, Settings, Calendar, Bell, User, ClipboardList, BarChart3, TrendingUp, Sparkles } from 'lucide-react';
 import { PatientTab, FamilyCaregiverTab, AshaTab } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -9,17 +9,18 @@ interface PatientNavProps {
 }
 
 export const PatientBottomNav: React.FC<PatientNavProps> = ({ activeTab, onSelectTab }) => {
-  const { t } = useLanguage();
+  const { t, tx } = useLanguage();
 
   const tabs: { key: PatientTab; label: string; icon: React.FC<{ className?: string }> }[] = [
     { key: 'home', label: t('navHome'), icon: Home },
     { key: 'play', label: t('navPlay'), icon: Puzzle },
+    { key: 'medicines', label: t('navMedicines'), icon: Pill },
     { key: 'memories', label: t('navMemories'), icon: ImageIcon },
     { key: 'settings', label: t('navSettings'), icon: Settings },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-30 bg-white/95 backdrop-blur-md border-t border-[#E0DCD3] px-3 py-2 flex items-center justify-around shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto z-30 bg-white/95 backdrop-blur-md border-t border-[#E0DCD3] px-2 py-1.5 flex items-center justify-around shadow-lg">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.key;
@@ -27,14 +28,14 @@ export const PatientBottomNav: React.FC<PatientNavProps> = ({ activeTab, onSelec
           <button
             key={tab.key}
             onClick={() => onSelectTab(tab.key)}
-            className={`flex flex-col items-center justify-center py-1.5 px-4 rounded-2xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all ${
               isActive
                 ? 'text-[#5B825B] font-extrabold scale-105 bg-[#EAF1E8]'
                 : 'text-[#5A6E5D] font-bold hover:text-[#2D3A2F]'
             }`}
           >
-            <Icon className={`w-6 h-6 mb-0.5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
-            <span className="text-[11px]">{tab.label}</span>
+            <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+            <span className="text-[10px] sm:text-[11px] whitespace-nowrap">{tab.label}</span>
           </button>
         );
       })}

@@ -1,9 +1,8 @@
 import React from 'react';
-import { Gamepad2, Stethoscope, ArrowLeft, Phone, Languages, Palette } from 'lucide-react';
+import { Gamepad2, Stethoscope, ArrowLeft, Phone, Languages } from 'lucide-react';
 import { AppRole } from '../../types';
 import { PWAInstallButton } from './PWAInstallButton';
 import { useLanguage } from '../../context/LanguageContext';
-import { useTheme } from '../../context/ThemeContext';
 import { soundController } from '../../utils/audio';
 
 interface HeaderProps {
@@ -28,7 +27,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSettings,
 }) => {
   const { t, language, setLanguage } = useLanguage();
-  const { toggleTheme, isNorthEast } = useTheme();
 
   const handleToggleLanguage = () => {
     soundController.playClick();
@@ -110,24 +108,6 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Languages className="w-3.5 h-3.5 text-[#5B825B]" />
           <span>{language === 'as' ? 'অসমীয়া' : language === 'hi' ? 'हिन्दी' : 'EN'}</span>
-        </button>
-
-        {/* Quick Theme Toggle Button */}
-        <button
-          onClick={() => {
-            soundController.playClick();
-            toggleTheme();
-          }}
-          className={`flex items-center gap-1 px-2 py-1.5 rounded-2xl border transition-all shadow-xs active:scale-95 text-xs font-black cursor-pointer ${
-            isNorthEast
-              ? 'border-[#B23B2A] bg-[#FCEEEB] text-[#B23B2A]'
-              : 'border-[#E0DCD3] bg-white text-[#2D3A2F] hover:bg-[#EAF1E8]'
-          }`}
-          title={isNorthEast ? 'Active: North Eastern States Palette. Tap to toggle' : 'Active: Classic Tea Garden Palette. Tap to toggle'}
-          aria-label="Toggle theme palette"
-        >
-          <Palette className={`w-3.5 h-3.5 ${isNorthEast ? 'text-[#B23B2A]' : 'text-[#5B825B]'}`} />
-          <span className="text-[11px]">{isNorthEast ? '🌺' : '🌿'}</span>
         </button>
 
         <PWAInstallButton compact />

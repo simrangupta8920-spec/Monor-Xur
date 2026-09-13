@@ -9,7 +9,6 @@ import { DDAMetric, AIAnalysisResult, Memory } from '../../types';
 import { analyzePlayerDifficulty } from '../../services/aiDifficultyService';
 import { useLanguage } from '../../context/LanguageContext';
 import { SpeakButton } from '../common/SpeakButton';
-import { EasyModeGuide } from './EasyModeGuide';
 
 interface MemoryMatchGameProps {
   onBack: () => void;
@@ -510,11 +509,6 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({
           </span>
         </div>
       </div>
-
-      {/* Easy Mode Step-by-Step Guidance Banner */}
-      {level === 1 && !isComplete && (
-        <EasyModeGuide game="memory" isEasyMode={true} defaultExpanded={true} />
-      )}
 
       {/* Dynamic step instruction bar when in Easy Mode */}
       {level === 1 && !isComplete && (

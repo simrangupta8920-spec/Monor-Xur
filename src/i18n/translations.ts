@@ -21,6 +21,7 @@ export interface Translations {
   navPlay: string;
   navMemories: string;
   navSettings: string;
+  navMedicines: string;
   navInsights: string;
   navProgress: string;
   navCalendar: string;
@@ -39,6 +40,8 @@ export interface Translations {
   tileMemoriesSub: string;
   tileGames: string;
   tileGamesSub: string;
+  tileMedicineReminder: string;
+  tileMedicineReminderSub: string;
   tileRelaxation: string;
   tileRelaxationSub: string;
   tileDailyLife: string;
@@ -214,6 +217,7 @@ export const translations: Record<Language, Translations> = {
     navPlay: 'Play',
     navMemories: 'Memories',
     navSettings: 'Settings',
+    navMedicines: 'Medicines',
     navInsights: 'Insights',
     navProgress: 'Progress',
     navCalendar: 'Calendar',
@@ -232,6 +236,8 @@ export const translations: Record<Language, Translations> = {
     tileMemoriesSub: 'Family & moments',
     tileGames: 'Games & Puzzle',
     tileGamesSub: 'Photo puzzle & memory quests',
+    tileMedicineReminder: 'Medicine Reminder',
+    tileMedicineReminderSub: 'Prescriptions & daily doses',
     tileRelaxation: 'Relaxation',
     tileRelaxationSub: 'Music & breathing',
     tileDailyLife: 'Daily Life',
@@ -406,6 +412,7 @@ export const translations: Record<Language, Translations> = {
     navPlay: 'खेलें',
     navMemories: 'यादें',
     navSettings: 'सेटिंग्स',
+    navMedicines: 'दवाइयाँ',
     navInsights: 'अंतर्दृष्टि',
     navProgress: 'प्रगति',
     navCalendar: 'कैलेंडर',
@@ -424,6 +431,8 @@ export const translations: Record<Language, Translations> = {
     tileMemoriesSub: 'परिवार और अनमोल यादें',
     tileGames: 'खेल और पहेली',
     tileGamesSub: 'फोटो पहेली और दिमागी खेल',
+    tileMedicineReminder: 'दवाई रिमाइंडर',
+    tileMedicineReminderSub: 'दैनिक दवाइयाँ और समय',
     tileRelaxation: 'विश्राम और सुकून',
     tileRelaxationSub: 'शांत संगीत और श्वास अभ्यास',
     tileDailyLife: 'दिनचर्या',
@@ -598,6 +607,7 @@ export const translations: Record<Language, Translations> = {
     navPlay: 'খেলক',
     navMemories: 'স্মৃতিমালা',
     navSettings: 'ছেটিংছ',
+    navMedicines: 'দৰব',
     navInsights: 'অন্তৰ্দৃষ্টি',
     navProgress: 'অগ্ৰগতি',
     navCalendar: 'কেলেণ্ডাৰ',
@@ -616,6 +626,8 @@ export const translations: Record<Language, Translations> = {
     tileMemoriesSub: 'পৰিয়াল আৰু আপোন স্মৃতি',
     tileGames: 'খেল আৰু সাঁথৰ',
     tileGamesSub: 'ছবিৰ সাঁথৰ আৰু মনৰ খেল',
+    tileMedicineReminder: 'দৰবৰ সোঁৱৰণি',
+    tileMedicineReminderSub: 'প্ৰেছক্ৰিপশ্বন আৰু দৈনিক পালি',
     tileRelaxation: 'বিৰাম আৰু শান্তি',
     tileRelaxationSub: 'সুৰীয়া সংগীত আৰু উশাহৰ অভ্যাস',
     tileDailyLife: 'দৈনন্দিন জীৱন',

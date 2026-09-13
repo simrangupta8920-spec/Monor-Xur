@@ -3,16 +3,20 @@ import { soundController } from '../utils/audio';
 
 export type AppTheme = 'default' | 'northeast';
 
-interface ThemeContextType {
+export interface ThemeContextType {
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
   toggleTheme: () => void;
   isNorthEast: boolean;
+  largeText: boolean;
+  setLargeText: (enabled: boolean) => void;
+  toggleLargeText: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'monor_xur_theme';
+const LARGE_TEXT_KEY = 'monor_xur_large_text';
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<AppTheme>(() => {
@@ -27,6 +31,17 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
     }
     return 'default'; // Existing palette is default
+  });
+
+  const [largeText, setLargeTextState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return localStorage.getItem(LARGE_TEXT_KEY) === 'true';
+      } catch {
+        return false;
+      }
+    }
+    return false;
   });
 
   const applyThemeToDocument = useCallback((currentTheme: AppTheme) => {
@@ -58,6 +73,24 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   }, []);
 
+  const applyTextSizeToDocument = useCallback((isLarge: boolean) => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    const body = document.body;
+
+    if (isLarge) {
+      root.setAttribute('data-text-size', 'extra-large');
+      body.setAttribute('data-text-size', 'extra-large');
+      root.classList.add('extra-large-text');
+      body.classList.add('extra-large-text');
+    } else {
+      root.removeAttribute('data-text-size');
+      body.removeAttribute('data-text-size');
+      root.classList.remove('extra-large-text');
+      body.classList.remove('extra-large-text');
+    }
+  }, []);
+
   const setTheme = useCallback((newTheme: AppTheme) => {
     setThemeState(newTheme);
     try {
@@ -76,10 +109,30 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setTheme(next);
   }, [theme, setTheme]);
 
-  // Synchronize on mount and whenever theme changes
+  const setLargeText = useCallback((enabled: boolean) => {
+    setLargeTextState(enabled);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(LARGE_TEXT_KEY, String(enabled));
+      }
+    } catch {
+      // Ignore
+    }
+    applyTextSizeToDocument(enabled);
+  }, [applyTextSizeToDocument]);
+
+  const toggleLargeText = useCallback(() => {
+    setLargeText(!largeText);
+  }, [largeText, setLargeText]);
+
+  // Synchronize on mount and whenever theme or largeText changes
   useEffect(() => {
     applyThemeToDocument(theme);
   }, [theme, applyThemeToDocument]);
+
+  useEffect(() => {
+    applyTextSizeToDocument(largeText);
+  }, [largeText, applyTextSizeToDocument]);
 
   return (
     <ThemeContext.Provider
@@ -88,6 +141,9 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setTheme,
         toggleTheme,
         isNorthEast: theme === 'northeast',
+        largeText,
+        setLargeText,
+        toggleLargeText,
       }}
     >
       {children}

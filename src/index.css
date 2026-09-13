@@ -237,3 +237,88 @@ body.theme-northeast {
   background-color: #D0DFE3 !important;
 }
 
+/* ==========================================================================
+   EXTRA LARGE TEXT ACCESSIBILITY MODE (ডাঙৰ আখৰ / बड़ा फ़ॉन्ट)
+   Enlarges typography, buttons, labels, and interactive items across the entire app
+   ========================================================================== */
+
+html[data-text-size="extra-large"],
+html.extra-large-text {
+  font-size: 125% !important; /* 16px -> 20px base, scaling all rem units */
+}
+
+/* Ensure smooth typography scaling across Tailwind font-size tokens */
+[data-text-size="extra-large"],
+.extra-large-text {
+  --text-xs: 0.9375rem !important;
+  --text-sm: 1.0625rem !important;
+  --text-base: 1.25rem !important;
+  --text-lg: 1.375rem !important;
+  --text-xl: 1.55rem !important;
+  --text-2xl: 1.85rem !important;
+  --text-3xl: 2.25rem !important;
+}
+
+/* Base text scaling */
+[data-text-size="extra-large"] body,
+body.extra-large-text {
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+/* Heading scaling */
+[data-text-size="extra-large"] h1,
+body.extra-large-text h1 {
+  font-size: 2.1rem !important;
+  line-height: 1.25 !important;
+}
+
+[data-text-size="extra-large"] h2,
+body.extra-large-text h2 {
+  font-size: 1.85rem !important;
+  line-height: 1.3 !important;
+}
+
+[data-text-size="extra-large"] h3,
+body.extra-large-text h3 {
+  font-size: 1.6rem !important;
+  line-height: 1.35 !important;
+}
+
+[data-text-size="extra-large"] h4,
+body.extra-large-text h4 {
+  font-size: 1.35rem !important;
+  line-height: 1.4 !important;
+}
+
+[data-text-size="extra-large"] p,
+body.extra-large-text p {
+  line-height: 1.65;
+}
+
+/* Specific scale for small pixel utilities */
+[data-text-size="extra-large"] .text-\[10px\],
+body.extra-large-text .text-\[10px\] {
+  font-size: 13.5px !important;
+  line-height: 1.4 !important;
+}
+
+[data-text-size="extra-large"] .text-\[11px\],
+body.extra-large-text .text-\[11px\] {
+  font-size: 15px !important;
+  line-height: 1.4 !important;
+}
+
+/* Ensure buttons, badges, chips and tabs adjust gracefully */
+[data-text-size="extra-large"] button,
+body.extra-large-text button {
+  min-height: 48px;
+}
+
+/* Navigation tabs & bottom bars touch comfort */
+[data-text-size="extra-large"] nav button,
+body.extra-large-text nav button {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+}
+

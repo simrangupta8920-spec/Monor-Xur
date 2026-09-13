@@ -36,7 +36,35 @@ export const INITIAL_MEMORIES: Memory[] = [];
 
 export const INITIAL_CALENDAR_EVENTS: CalendarEvent[] = [];
 
-export const INITIAL_REMINDERS: Reminder[] = [];
+export const INITIAL_REMINDERS: Reminder[] = [
+  {
+    id: 'rem_med_morning',
+    title: 'Morning Memory Support (Donepezil 5mg)',
+    type: 'medicine',
+    time_label: '08:30 AM',
+    minutes: 510,
+    note: 'Take after breakfast with half a glass of warm water',
+    completed: false,
+  },
+  {
+    id: 'rem_med_afternoon',
+    title: 'Afternoon Multivitamin & Hydration',
+    type: 'medicine',
+    time_label: '01:30 PM',
+    minutes: 810,
+    note: 'Take with midday meal and fresh water',
+    completed: false,
+  },
+  {
+    id: 'rem_med_evening',
+    title: 'Evening Blood Pressure Care (Amlodipine 5mg)',
+    type: 'medicine',
+    time_label: '08:00 PM',
+    minutes: 1200,
+    note: 'Take before dinner as prescribed by family physician',
+    completed: false,
+  },
+];
 
 export const INITIAL_CARE_TASKS: CareTask[] = [];
 

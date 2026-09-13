@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Play, Image as ImageIcon, Puzzle, Wind, CalendarCheck, PhoneCall, 
-  Sparkles, Heart, Sun, Music, Eye, ChevronDown, ChevronUp 
+  Sparkles, Heart, Sun, Music, Eye, ChevronDown, ChevronUp, Pill, Clock, ChevronRight 
 } from 'lucide-react';
 import { PatientTab, PatientSubView, Reminder, CaregiverAccount } from '../../types';
 import { soundController } from '../../utils/audio';
@@ -30,6 +30,9 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
   const { t, tx, language, isHindi, formatLocalizedDate } = useLanguage();
   const todayStr = formatLocalizedDate(new Date());
   const nextReminder = reminders.find((r) => !r.completed);
+  const medicineList = reminders.filter((r) => r.type === 'medicine');
+  const relevantMeds = medicineList.length > 0 ? medicineList : reminders;
+  const pendingMedsCount = relevantMeds.filter((r) => !r.completed).length;
 
   // Caregiver toggle for Single-Focus Mode
   const [isSingleFocus, setIsSingleFocus] = useState<boolean>(() => {
@@ -211,18 +214,33 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             </button>
           </div>
 
-          {/* Quick Option to Switch between Single Focus and All Activities */}
-          <div className="flex items-center justify-center gap-3 pt-1">
+          {/* Quick Option to Switch between Single Focus, All Activities, and Medicines */}
+          <div className="flex items-center justify-center gap-2.5 pt-1 flex-wrap">
             <button
               onClick={() => {
                 soundController.playClick();
                 setShowAllTiles(true);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-[#E0DCD3] text-xs font-bold text-[#5A6E5D] hover:text-[#2D3A2F] shadow-xs active:scale-95"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-[#E0DCD3] text-xs font-bold text-[#5A6E5D] hover:text-[#2D3A2F] shadow-xs active:scale-95 cursor-pointer"
             >
               <Eye className="w-4 h-4 text-[#5B825B]" />
               <span>{tx('Show All Activities', 'अन्य सभी गतिविधियाँ देखें', 'অন্যান্য সকলো কাৰ্যকলাপ চাওক')}</span>
               <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                soundController.playClick();
+                onSelectSubView('medicines');
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#FFFBEB] border border-[#FDE68A] text-xs font-bold text-[#B45309] shadow-xs active:scale-95 cursor-pointer"
+            >
+              <Pill className="w-4 h-4 text-[#D97706]" />
+              <span>{t('tileMedicineReminder')}</span>
+              {pendingMedsCount > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-[#D97706] text-white text-[10px] font-bold">
+                  {pendingMedsCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -231,6 +249,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
           {/* Big Dementia-Friendly Play Button */}
           <div className="bg-gradient-to-br from-[#EAF1E8] to-[#DCEAD2] rounded-3xl p-4 sm:p-5 border-2 border-[#5B825B]/25 shadow-sm">
             <button
+              id="patient-big-play-btn"
               onClick={() => {
                 soundController.playClick();
                 onSelectTab('play');
@@ -248,6 +267,49 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
                 <span className="block text-base font-bold text-white/90 mt-1.5">
                   {t('playButtonSub')}
                 </span>
+              </div>
+            </button>
+          </div>
+
+          {/* Medicine & Daily Reminders Feature Card */}
+          <div className="bg-gradient-to-r from-[#FEF3C7] via-[#FFFBEB] to-[#FDE68A] rounded-3xl p-4 sm:p-5 border-2 border-[#F59E0B]/35 shadow-sm">
+            <button
+              id="patient-home-medicines-card"
+              onClick={() => {
+                soundController.playClick();
+                onSelectSubView('medicines');
+              }}
+              className="w-full text-left flex items-center justify-between gap-3 group cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-13 h-13 rounded-2xl bg-white text-[#D97706] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform shrink-0 border border-[#FDE68A]">
+                  <Pill className="w-7 h-7" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#B45309] bg-white/90 px-2.5 py-0.5 rounded-full shadow-2xs">
+                      {t('tileMedicineReminder')}
+                    </span>
+                    {pendingMedsCount > 0 ? (
+                      <span className="px-2 py-0.5 rounded-full bg-[#D97706] text-white text-[11px] font-black">
+                        {pendingMedsCount} {tx('due today', 'आज बाकी', 'আজি বাকী')}
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-[#10B981] text-white text-[11px] font-bold">
+                        {tx('All taken', 'सभी ली गई', 'সকলো লোৱা হ’ল')}
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="text-base sm:text-lg font-black text-[#78350F] leading-tight mt-1">
+                    {nextReminder ? `${nextReminder.time_label} • ${nextReminder.title}` : tx('Daily Medicines & Reminders', 'दैनिक दवाइयाँ और सोहबत', 'দৈনন্দিন দৰব আৰু সোঁৱৰণি')}
+                  </h4>
+                  <p className="text-xs font-semibold text-[#92400E]/80 mt-0.5">
+                    {t('tileMedicineReminderSub')}
+                  </p>
+                </div>
+              </div>
+              <div className="hidden sm:flex items-center justify-center w-9 h-9 rounded-xl bg-white/90 text-[#D97706] group-hover:translate-x-1 transition-transform shrink-0 shadow-2xs">
+                <ChevronRight className="w-5 h-5" />
               </div>
             </button>
           </div>
@@ -273,6 +335,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
 
             {/* Games Tile (Pastel Yellow) */}
             <button
+              id="patient-tile-games"
               onClick={() => {
                 soundController.playClick();
                 onSelectTab('play');
