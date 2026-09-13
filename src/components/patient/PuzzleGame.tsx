@@ -908,6 +908,7 @@ interface PendingLevelUpgradeData {
     setAutoAdjustBanner(null);
     setDifficultyToast(null);
     setPauseSecondsLeft(10);
+<<<<<<< HEAD
 
     // Audio guidance announcement for Easy Mode
     if (newSize === 2) {
@@ -918,6 +919,8 @@ interface PendingLevelUpgradeData {
         'সহজ মোড বাছনি কৰা হ’ল। তলৰ ট্ৰে’ৰ পৰা এটা টুকুৰা বাছি লৈ ব’ৰ্ডৰ খালী স্থানত বহুৱাওক।'
       );
     }
+=======
+>>>>>>> 1006be965adcee8a179f88f5489044261b349041
   };
 
   // Simulation test helper for Caregivers / Testers
@@ -1026,11 +1029,18 @@ interface PendingLevelUpgradeData {
         // Ignore storage error
       }
 
+<<<<<<< HEAD
       // Show the level shift block with encouragement message right before the piece tray!
       const isEasing = pending.toGrid < pending.fromGrid;
       setAutoAdjustBanner({
         show: true,
         action: isEasing ? 'EASE_DIFFICULTY' : 'INCREASE_DIFFICULTY',
+=======
+      // Show the level advanced block with encouragement message right before the piece tray!
+      setAutoAdjustBanner({
+        show: true,
+        action: 'INCREASE_DIFFICULTY',
+>>>>>>> 1006be965adcee8a179f88f5489044261b349041
         fromGrid: pending.fromGrid,
         toGrid: pending.toGrid,
         encouragement: pending.encouragement,
@@ -1039,11 +1049,15 @@ interface PendingLevelUpgradeData {
         averageTime: 0,
         modelSource: 'gemini-3.8-flash',
       });
+<<<<<<< HEAD
       if (isEasing) {
         soundController.playChime(396, 0.7);
       } else {
         soundController.playChime(660, 0.6);
       }
+=======
+      soundController.playChime(660, 0.6);
+>>>>>>> 1006be965adcee8a179f88f5489044261b349041
       soundController.speak(pending.encouragement);
     } else {
       setAutoAdjustBanner(null);
@@ -1686,6 +1700,7 @@ interface PendingLevelUpgradeData {
               ) : (
                 <Sparkles className="w-5 h-5 text-amber-200 fill-current" />
               )}
+<<<<<<< HEAD
             </div>
             <div className="space-y-1">
               <h4 className="text-sm font-black text-[#2D3A2F] leading-tight flex items-center flex-wrap gap-1.5">
@@ -1753,6 +1768,48 @@ interface PendingLevelUpgradeData {
             )}
           </div>
 
+=======
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-black text-[#2D3A2F] leading-tight flex items-center flex-wrap gap-1.5">
+                <span>
+                  {autoAdjustBanner.action === 'EASE_DIFFICULTY'
+                    ? `${tx('Level Eased', 'आसान स्तर', 'সহজ স্তৰ')}:`
+                    : `${tx('You have advanced one level!', 'आप एक स्तर आगे बढ़ गए हैं!', 'আপুনি এটা স্তৰ আগবাঢ়িছে!')}`}
+                </span>
+                <span className="text-xs font-bold text-[#5B825B] bg-[#5B825B]/15 px-2 py-0.5 rounded-full">
+                  {GRID_LABELS[autoAdjustBanner.fromGrid]?.name} ➔ {GRID_LABELS[autoAdjustBanner.toGrid]?.name}
+                </span>
+              </h4>
+              <p className="text-xs sm:text-sm text-[#445846] leading-relaxed font-medium">
+                {autoAdjustBanner.encouragement}
+              </p>
+            </div>
+          </div>
+
+          <button
+            id="dismiss-level-banner-btn"
+            onClick={() => setAutoAdjustBanner(null)}
+            className="text-xs font-bold text-[#5A6E5D] hover:text-[#2D3A2F] px-2.5 py-1 rounded-lg hover:bg-black/5 shrink-0 cursor-pointer"
+          >
+            {tx('Dismiss', 'हटाएं', 'বাতিল কৰক')}
+          </button>
+        </div>
+      )}
+
+      {/* Piece Tray (Waiting Unplaced Pieces) - Positioned ABOVE Assembly Board */}
+      {!isComplete && (
+        <div className="bg-white rounded-3xl p-5 border border-[#E0DCD3] shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-[#2D3A2F]">
+              {tx('Piece Tray', 'टुकड़े', 'টুকুৰা বাছনি')} ({trayPieces.length} of {totalPieces} {tx('available', 'उपलब्ध', 'উপলব্ধ')})
+            </span>
+            <span className="text-[11px] text-[#5A6E5D]">
+              {tx('Tap piece, then tap slot on board below', 'टुकड़े पर टैप करें, फिर नीचे बोर्ड में रखें', 'টুকুৰা বাছনি কৰি তলৰ ব’ৰ্ডত ৰাখক')}
+            </span>
+          </div>
+
+>>>>>>> 1006be965adcee8a179f88f5489044261b349041
           {trayPieces.length === 0 ? (
             <div className="p-4 rounded-2xl bg-[#EAF1E8] text-[#5B825B] text-center text-xs font-black">
               {tx(
