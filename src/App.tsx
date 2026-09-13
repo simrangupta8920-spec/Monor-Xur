@@ -221,12 +221,13 @@ export function App() {
   // Sundowning Evening Calming Automation state (4:30 PM - 7:30 PM)
   const sundowningState = useSundowningState(patientProfile);
 
-  // --- Background synchronization of offline queue when network reconnects ---
+  // --- Background synchronization of offline queue when network reconnects or user authenticates ---
   useEffect(() => {
     const handleOnlineSync = async () => {
+      if (!currentUser) return;
       const queue = getOfflineQueue();
       if (queue.length === 0) return;
-      console.log(`Monor Xur: Network online. Flushing ${queue.length} offline updates...`);
+      console.log(`Monor Xur: Syncing ${queue.length} offline updates with authenticated cloud...`);
       for (const item of queue) {
         try {
           if (item.type === 'toggle_reminder' || item.type === 'add_reminder') {
@@ -251,7 +252,7 @@ export function App() {
     return () => {
       window.removeEventListener('online', handleOnlineSync);
     };
-  }, []);
+  }, [currentUser]);
 
   // --- Real-time Firebase Synchronization & Offline Cache Update ---
   useEffect(() => {
@@ -261,9 +262,11 @@ export function App() {
     }
 
     // Ensure the patient document is established for the authenticated caregiver
-    savePatientProfile(DEFAULT_PATIENT_ID, patientProfile).catch((err) => {
-      console.warn('Patient profile cloud sync notice:', err);
-    });
+    if (patientProfile.name) {
+      savePatientProfile(DEFAULT_PATIENT_ID, patientProfile).catch((err) => {
+        console.warn('Patient profile cloud sync notice:', err);
+      });
+    }
 
     // 1. Patient Profile
     const unsubPatient = subscribeToPatientProfile(DEFAULT_PATIENT_ID, (data) => {
@@ -385,37 +388,50 @@ export function App() {
     localStorage.setItem('monor_xur_setup_completed', 'true');
     localStorage.setItem('monor_xur_patient', JSON.stringify(data.patient));
     localStorage.setItem('monor_xur_medical', JSON.stringify(data.medical));
+    saveOfflineSnapshot({
+      patientProfile: data.patient,
+      medicalProfile: data.medical,
+      contacts: [data.emergencyContact],
+    });
 
-    try {
-      await savePatientProfile(DEFAULT_PATIENT_ID, data.patient);
-      await saveMedicalProfile(DEFAULT_PATIENT_ID, data.medical);
-      await saveContactToDb(DEFAULT_PATIENT_ID, data.emergencyContact);
+    if (currentUser) {
+      try {
+        await savePatientProfile(DEFAULT_PATIENT_ID, data.patient);
+        await saveMedicalProfile(DEFAULT_PATIENT_ID, data.medical);
+        await saveContactToDb(DEFAULT_PATIENT_ID, data.emergencyContact);
 
-      await logAuditEvent(DEFAULT_PATIENT_ID, {
-        action: 'consent_granted',
-        actorRole: 'caregiver',
-        actorName: data.caregiver.name,
-        details: `Initial setup consent confirmed under DPDP Act 2023 on ${data.patient.consentDate || new Date().toISOString()}`,
-      });
-
-      // Create reminders based on prescriptions if user has no reminders yet
-      if (data.medical.prescriptions && data.medical.prescriptions.length > 0 && reminders.length === 0) {
-        const initialReminders: Reminder[] = data.medical.prescriptions.map((rx, i) => {
-          const isNight = rx.toLowerCase().includes('night') || rx.toLowerCase().includes('evening');
-          return {
-            id: `rx_${Date.now()}_${i}`,
-            title: `Take ${rx}`,
-            type: 'medicine',
-            time_label: isNight ? '08:00 PM' : '09:00 AM',
-            minutes: isNight ? 20 * 60 : 9 * 60,
-            note: 'Prescribed daily medicine',
-            completed: false,
-          };
+        await logAuditEvent(DEFAULT_PATIENT_ID, {
+          action: 'consent_granted',
+          actorRole: 'caregiver',
+          actorName: data.caregiver.name,
+          details: `Initial setup consent confirmed under DPDP Act 2023 on ${data.patient.consentDate || new Date().toISOString()}`,
         });
-        await saveRemindersListToDb(DEFAULT_PATIENT_ID, initialReminders);
+
+        // Create reminders based on prescriptions if user has no reminders yet
+        if (data.medical.prescriptions && data.medical.prescriptions.length > 0 && reminders.length === 0) {
+          const initialReminders: Reminder[] = data.medical.prescriptions.map((rx, i) => {
+            const isNight = rx.toLowerCase().includes('night') || rx.toLowerCase().includes('evening');
+            return {
+              id: `rx_${Date.now()}_${i}`,
+              title: `Take ${rx}`,
+              type: 'medicine',
+              time_label: isNight ? '08:00 PM' : '09:00 AM',
+              minutes: isNight ? 20 * 60 : 9 * 60,
+              note: 'Prescribed daily medicine',
+              completed: false,
+            };
+          });
+          await saveRemindersListToDb(DEFAULT_PATIENT_ID, initialReminders);
+        }
+      } catch (err) {
+        console.warn('Notice saving setup data to Firestore:', err);
       }
-    } catch (err) {
-      console.error('Error saving setup data to Firestore:', err);
+    } else {
+      // Queue update so it will automatically sync once caregiver signs in
+      queueOfflineMutation({
+        type: 'update_profile',
+        payload: data.patient,
+      });
     }
 
     soundController.playSuccess();
@@ -636,6 +652,9 @@ export function App() {
             onComplete={handleCompleteSetup}
             onCancel={() => handleSwitchRole('patient')}
             isEditing={Boolean(patientProfile.name && isSetupCompletedLocally)}
+            currentUser={currentUser}
+            onSignInGoogle={handleGoogleSignIn}
+            onSignOutGoogle={handleGoogleSignOut}
           />
         )}
 

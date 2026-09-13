@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
 import { 
   Heart, User, ShieldCheck, Stethoscope, Sparkles, ArrowRight, ArrowLeft, 
-  Check, Lock, Phone, Plus, Trash2, KeyRound, AlertCircle, RefreshCw 
+  Check, Lock, Phone, Plus, Trash2, KeyRound, AlertCircle, RefreshCw, Upload, Image as ImageIcon 
 } from 'lucide-react';
 import { PatientProfile, MedicalProfile, CaregiverAccount, AshaAccount, EmergencyContact } from '../../types';
 import { soundController } from '../../utils/audio';
 import { useLanguage } from '../../context/LanguageContext';
+import avatarKoka from '../../assets/images/avatar_assam_koka_1789331373618.jpg';
+import avatarAita from '../../assets/images/avatar_assam_aita_1789331388057.jpg';
+import avatarBoanicar from '../../assets/images/avatar_assam_boanicar_1789331402341.jpg';
+import caregiverDaughter from '../../assets/images/caregiver_assam_daughter_1789334295494.jpg';
+import caregiverSon from '../../assets/images/caregiver_assam_son_1789334311319.jpg';
+import caregiverRelative from '../../assets/images/caregiver_assam_relative_1789334327164.jpg';
+import caregiverGrandson from '../../assets/images/caregiver_assam_grandson_1789334340256.jpg';
+import type { User as FirebaseUser } from 'firebase/auth';
 
 interface InitialSetupPageProps {
   initialPatient?: PatientProfile;
@@ -19,61 +27,56 @@ interface InitialSetupPageProps {
   }) => void;
   onCancel?: () => void;
   isEditing?: boolean;
+  currentUser?: FirebaseUser | null;
+  onSignInGoogle?: () => Promise<void>;
+  onSignOutGoogle?: () => Promise<void>;
 }
 
-const ELDER_AVATARS = [
+export const ELDER_AVATARS = [
   {
-    id: 'elder-female-1',
-    label: 'Gentle Smile',
-    url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80',
+    id: 'assam-koka',
+    label: 'Koka (ককা)',
+    subtitle: 'Assam Grandfather • Gamusa',
+    url: avatarKoka,
   },
   {
-    id: 'elder-female-2',
-    label: 'Warm Grandmother',
-    url: 'https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?auto=format&fit=crop&w=300&q=80',
+    id: 'assam-aita',
+    label: 'Aita (আইতা)',
+    subtitle: 'Assam Grandmother • Chador',
+    url: avatarAita,
   },
   {
-    id: 'elder-male-1',
-    label: 'Wise Grandfather',
-    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+    id: 'assam-boanicar',
+    label: 'Boanicar (বোৱনী)',
+    subtitle: 'Assam Weaver & Elder',
+    url: avatarBoanicar,
   },
-  {
-    id: 'elder-male-2',
-    label: 'Kind Elder',
-    url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&q=80',
-  },
-  {
-    id: 'elder-symbolic-1',
-    label: 'Morning Sun',
-    url: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=300&q=80',
-  },
-  {
-    id: 'elder-symbolic-2',
-    label: 'Lotus Garden',
-    url: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=300&q=80',
-  }
 ];
 
 export const CAREGIVER_AVATARS = [
   {
-    id: 'cg-female-1',
-    label: 'Daughter Priya',
-    url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
+    id: 'cg-assam-daughter',
+    label: 'Priyadarshini (জীয়াৰী)',
+    subtitle: 'Assam Daughter & Caregiver',
+    url: caregiverDaughter,
   },
   {
-    id: 'cg-female-2',
-    label: 'Caring Relative',
-    url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=300&q=80',
+    id: 'cg-assam-son',
+    label: 'Nilav (ল’ৰা)',
+    subtitle: 'Assam Son with Gamusa',
+    url: caregiverSon,
   },
   {
-    id: 'cg-male-1',
-    label: 'Son / Family Member',
-    url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
+    id: 'cg-assam-relative',
+    label: 'Ananya (ভতিজী / জীউ)',
+    subtitle: 'Assam Youth Relative',
+    url: caregiverRelative,
   },
   {
-    id: 'cg-male-2',
-    label: 'Grandson / Caregiver',
-    url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbbce?auto=format&fit=crop&w=300&q=80',
+    id: 'cg-assam-grandson',
+    label: 'Manas (নাতি)',
+    subtitle: 'Assam Youth Grandson',
+    url: caregiverGrandson,
   },
 ];
 
@@ -83,6 +86,9 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
   onComplete,
   onCancel,
   isEditing = false,
+  currentUser,
+  onSignInGoogle,
+  onSignOutGoogle,
 }) => {
   const { tx } = useLanguage();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -181,6 +187,27 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
   );
 
   const [formError, setFormError] = useState<string | null>(null);
+  const [playerDragOver, setPlayerDragOver] = useState(false);
+  const [caregiverDragOver, setCaregiverDragOver] = useState(false);
+
+  const processImageFile = (file: File, callback: (dataUrl: string) => void) => {
+    if (!file.type.startsWith('image/')) {
+      alert(tx('Please select an image file (JPG, PNG, WEBP).', 'कृपया एक छवि फ़ाइल (JPG, PNG, WEBP) चुनें।', 'অনুগ্ৰহ কৰি এখন ফটো ফাইল (JPG, PNG, WEBP) বাছক।'));
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert(tx('Image size must be under 10MB.', 'छवि का आकार 10MB से कम होना चाहिए।', 'ছবিৰ আকাৰ ১০MB তকৈ কম হ’ব লাগে।'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (typeof e.target?.result === 'string') {
+        callback(e.target.result);
+        soundController.playClick();
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Add Prescription item
   const handleAddRx = () => {
@@ -437,45 +464,147 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             </div>
 
             {/* Avatar Selector */}
-            <div>
-              <label className="block text-xs font-extrabold text-[#2D3A2F] mb-1.5">
-                {tx('Choose Player Avatar / Photo', 'खिलाड़ी का अवतार / फोटो चुनें')}
-              </label>
-              <div className="grid grid-cols-3 gap-2.5">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-extrabold text-[#2D3A2F]">
+                  {tx('Choose Player Avatar / Photo', 'खिलाड़ी का अवतार / फोटो चुनें', 'খেলুৱৈৰ অৱতাৰ / ফটো বাছক')}
+                </label>
+                <span className="text-[10px] font-bold text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
+                  {tx('Assam Heritage Avatars', 'असम सांस्कृतिक अवतार', 'অসমীয়া ঐতিহ্য অৱতাৰ')}
+                </span>
+              </div>
+
+              {/* Preset Assam Elder Avatars */}
+              <div className="grid grid-cols-3 gap-3">
                 {ELDER_AVATARS.map((item) => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => { soundController.playClick(); setAvatar(item.url); }}
-                    className={`relative rounded-2xl overflow-hidden border-2 p-1 transition-all ${
+                    className={`relative rounded-2xl overflow-hidden border-2 p-1.5 transition-all text-left flex flex-col ${
                       avatar === item.url
-                        ? 'border-[#5B825B] bg-[#EAF1E8] scale-105 shadow-xs'
-                        : 'border-[#E0DCD3] bg-[#FDFBF7] opacity-75 hover:opacity-100'
+                        ? 'border-[#5B825B] bg-[#EAF1E8] shadow-sm ring-2 ring-[#5B825B]/20 scale-[1.02]'
+                        : 'border-[#E0DCD3] bg-[#FDFBF7] opacity-85 hover:opacity-100 hover:border-[#5B825B]/40'
                     }`}
                   >
-                    <img 
-                      src={item.url} 
-                      alt={item.label}
-                      className="w-full h-16 object-cover rounded-xl"
-                      referrerPolicy="no-referrer"
-                    />
-                    <span className="block text-[10px] font-bold text-center mt-1 truncate text-[#2D3A2F]">
+                    <div className="w-full aspect-square rounded-xl overflow-hidden mb-1.5 bg-[#EAE5DC]">
+                      <img 
+                        src={item.url} 
+                        alt={item.label}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <span className="block text-[11px] font-black leading-tight text-[#2D3A2F]">
                       {item.label}
                     </span>
+                    <span className="block text-[9px] font-semibold text-[#5A6E5D] leading-tight mt-0.5">
+                      {item.subtitle}
+                    </span>
                     {avatar === item.url && (
-                      <div className="absolute top-2 right-2 w-4 h-4 bg-[#5B825B] text-white rounded-full flex items-center justify-center shadow-xs">
-                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-[#5B825B] text-white rounded-full flex items-center justify-center shadow-md">
+                        <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     )}
                   </button>
                 ))}
               </div>
-              <div className="mt-2">
+
+              {/* Upload Own Photo Card / Drag & Drop */}
+              <div 
+                onDragOver={(e) => { e.preventDefault(); setPlayerDragOver(true); }}
+                onDragLeave={() => setPlayerDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setPlayerDragOver(false);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) processImageFile(file, setAvatar);
+                }}
+                className={`p-3 rounded-2xl border-2 transition-all ${
+                  playerDragOver 
+                    ? 'border-[#5B825B] bg-[#EAF1E8]/70 border-dashed' 
+                    : !ELDER_AVATARS.some(a => a.url === avatar) && avatar
+                      ? 'border-[#5B825B] bg-[#F4F8F3]'
+                      : 'border-[#E0DCD3] bg-[#FAF8F5] border-dashed hover:border-[#5B825B]/60'
+                }`}
+              >
+                {!ELDER_AVATARS.some(a => a.url === avatar) && avatar ? (
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={avatar} 
+                      alt="Custom Player" 
+                      className="w-14 h-14 rounded-xl object-cover border-2 border-[#5B825B] shadow-xs shrink-0" 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
+                          {tx('Custom Photo Active', 'कस्टम फोटो सक्रिय', 'আপলোড কৰা ফটো')}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#5A6E5D] truncate mt-0.5">{tx('Uploaded player photo selected', 'अपलोड की गई तस्वीर चुनी गई', 'আপলোড কৰা খেলুৱৈৰ ফটো বাছনি কৰা হ’ল')}</p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <label className="text-[10px] font-bold text-[#5B825B] hover:underline cursor-pointer flex items-center gap-1">
+                          <Upload className="w-3 h-3" /> {tx('Replace File', 'फ़ाइल बदलें', 'ফাইল সলনি কৰক')}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) processImageFile(f, setAvatar);
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                        <span className="text-[#A09D96] text-[10px]">•</span>
+                        <button
+                          type="button"
+                          onClick={() => setAvatar(ELDER_AVATARS[0].url)}
+                          className="text-[10px] font-bold text-[#C25E5E] hover:underline"
+                        >
+                          {tx('Reset to Preset', 'प्रीसेट पर रीसेट करें', 'পূৰ্বনিৰ্ধাৰিতলৈ উভতি যাওক')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-white border border-[#E0DCD3] text-[#5B825B] flex items-center justify-center shrink-0 shadow-2xs">
+                        <Upload className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="block text-xs font-bold text-[#2D3A2F]">
+                          {tx('Upload Player\'s Real Photo', 'बुजुर्ग की असली फोटो अपलोड करें', 'খেলুৱৈৰ নিজা ফটো আপলোড কৰক')}
+                        </span>
+                        <span className="block text-[10px] text-[#5A6E5D]">
+                          {tx('Drag & drop photo here or click to browse (PNG, JPG)', 'यहाँ फोटो खींचें या ब्राउज़ करने के लिए क्लिक करें', 'ফটোখন ইয়ালৈ টানি আনক বা ব্ৰাউজ কৰিবলৈ ক্লিক কৰক')}
+                        </span>
+                      </div>
+                    </div>
+                    <label className="px-3.5 py-1.5 rounded-xl bg-white border border-[#5B825B] text-[#5B825B] font-bold text-xs hover:bg-[#EAF1E8] transition-colors cursor-pointer shrink-0 shadow-2xs flex items-center gap-1.5">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{tx('Choose File', 'फ़ाइल चुनें', 'ফাইল বাছক')}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) processImageFile(f, setAvatar);
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {/* Optional custom URL input */}
+              <div>
                 <input
                   type="url"
-                  value={avatar}
+                  value={avatar.startsWith('data:') ? '' : avatar}
                   onChange={(e) => setAvatar(e.target.value)}
-                  placeholder={tx('Or paste custom photo URL...', 'या कस्टम फोटो URL पेस्ट करें...')}
+                  placeholder={tx('Or paste photo URL if hosted online...', 'या ऑनलाइन फोटो URL पेस्ट करें...', 'বা অনলাইন ফটো URL পেষ্ট কৰক...')}
                   className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#E0DCD3] bg-[#FAF8F5] focus:outline-hidden focus:border-[#5B825B]"
                 />
               </div>
@@ -838,6 +967,54 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
               </span>
             </div>
 
+            {/* Google Cloud Backup & Sync Connection */}
+            <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white border border-[#E0DCD3] flex items-center justify-center shrink-0 shadow-2xs text-[#5B825B]">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-[#2D3A2F]">
+                      {currentUser ? tx('Google Account Connected', 'गूगल खाता जुड़ा हुआ है', 'গুগল একাউণ্ট সংযোজিত') : tx('Google Cloud Backup & Sync', 'गूगल क्लाउड बैकअप एवं सिंक', 'গুগল ক্লাউড বেকআপ')}
+                    </span>
+                    {currentUser && (
+                      <span className="text-[10px] font-bold text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
+                        {tx('Online', 'सक्रिय', 'অনলাইন')}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[#5A6E5D]">
+                    {currentUser 
+                      ? currentUser.email 
+                      : tx('Sign in with Google to enable multi-device sync and cloud backup', 'मल्टी-डिवाइस सिंक सक्षम करने के लिए गूगल से साइन इन करें', 'অনলাইন বেকআপৰ বাবে গুগল একাউণ্ট ব্যৱহাৰ কৰক')}
+                  </p>
+                </div>
+              </div>
+              {currentUser ? (
+                <button
+                  type="button"
+                  onClick={onSignOutGoogle}
+                  className="px-3 py-1.5 rounded-xl border border-[#E0DCD3] bg-white text-xs font-bold text-[#C25E5E] hover:bg-[#FDF6F6] transition-colors shrink-0"
+                >
+                  {tx('Sign Out', 'साइन आउट')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (onSignInGoogle) {
+                      await onSignInGoogle();
+                    }
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-white border border-[#5B825B] text-xs font-bold text-[#5B825B] hover:bg-[#F4F8F3] transition-colors shrink-0 flex items-center gap-1.5 shadow-2xs"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  {tx('Sign in with Google', 'गूगल से साइन इन करें', 'গুগলৰ সৈতে ছাইন ইন কৰক')}
+                </button>
+              )}
+            </div>
+
             {/* Caregiver Name & Relationship */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -894,37 +1071,51 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
             </div>
 
             {/* ITEM E: Caregiver Face Portrait & Photo Picker */}
-            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-3">
-              <div className="flex items-center gap-2 text-[#5B825B]">
-                <Heart className="w-4 h-4" />
-                <span className="text-xs font-black uppercase tracking-wider">
-                  {tx('Caregiver Photo (Displayed on Senior Call Button)', 'देखभालकर्ता की तस्वीर (कॉल बटन पर दिखेगी)')}
+            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[#5B825B]">
+                  <Heart className="w-4 h-4" />
+                  <span className="text-xs font-black uppercase tracking-wider">
+                    {tx('Caregiver Photo (Displayed on Senior Call Button)', 'देखभालकर्ता की तस्वीर (कॉल बटन पर दिखेगी)', 'যত্নকৰ্তাৰ ফটো (কল বুটামত দেখা যাব)')}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
+                  {tx('Assam Youth Caregivers', 'असम युवा देखभालकर्ता', 'অসমীয়া যুৱ যত্নকৰ্তা')}
                 </span>
               </div>
               <p className="text-[11px] text-[#5A6E5D] leading-relaxed">
-                {tx('Choose a familiar, smiling portrait so your elder immediately recognizes who they are calling with zero confusion.', 'एक परिचित, मुस्कुराती हुई तस्वीर चुनें ताकि बुजुर्ग बिना किसी भ्रम के तुरंत पहचान सकें कि वे किसे कॉल कर रहे हैं।')}
+                {tx('Choose a familiar, smiling portrait so your elder immediately recognizes who they are calling with zero confusion.', 'एक परिचित, मुस्कुराती हुई तस्वीर चुनें ताकि बुजुर्ग बिना किसी भ्रम के तुरंत पहचान सकें कि वे किसे कॉल कर रहे हैं।', 'এখন চিনাকি, হাঁহিমুখীয়া ছবি বাছক যাতে বৃদ্ধজনে কাক কল কৰিছে কোনো বিভ্ৰান্তি নোহোৱাকৈ চিনি পায়।')}
               </p>
 
-              <div className="grid grid-cols-4 gap-2.5">
+              {/* 4 Assam Youth Caregiver Presets */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {CAREGIVER_AVATARS.map((av) => (
                   <button
                     key={av.id}
                     type="button"
-                    onClick={() => setCaregiverAvatar(av.url)}
-                    className={`aspect-square rounded-2xl overflow-hidden border-2 transition-all p-0.5 relative group ${
+                    onClick={() => { soundController.playClick(); setCaregiverAvatar(av.url); }}
+                    className={`rounded-2xl overflow-hidden border-2 transition-all p-1.5 text-left flex flex-col relative group ${
                       caregiverAvatar === av.url
-                        ? 'border-[#5B825B] ring-2 ring-[#5B825B]/40 shadow-xs scale-102'
-                        : 'border-[#E0DCD3] hover:border-[#5B825B]/50'
+                        ? 'border-[#5B825B] bg-[#EAF1E8] shadow-sm ring-2 ring-[#5B825B]/30 scale-[1.02]'
+                        : 'border-[#E0DCD3] bg-white hover:border-[#5B825B]/50'
                     }`}
                   >
-                    <img 
-                      src={av.url} 
-                      alt={av.label} 
-                      className="w-full h-full object-cover rounded-xl"
-                      referrerPolicy="no-referrer"
-                    />
+                    <div className="w-full aspect-square rounded-xl overflow-hidden mb-1 bg-[#EAE5DC]">
+                      <img 
+                        src={av.url} 
+                        alt={av.label} 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <span className="block text-[11px] font-extrabold text-[#2D3A2F] truncate leading-tight">
+                      {av.label}
+                    </span>
+                    <span className="block text-[9px] font-medium text-[#5A6E5D] truncate leading-tight mt-0.5">
+                      {av.subtitle}
+                    </span>
                     {caregiverAvatar === av.url && (
-                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#5B825B] text-white flex items-center justify-center shadow-xs">
+                      <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#5B825B] text-white flex items-center justify-center shadow-md">
                         <Check className="w-2.5 h-2.5 stroke-[3]" />
                       </div>
                     )}
@@ -932,16 +1123,102 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
                 ))}
               </div>
 
-              <div className="pt-1">
-                <label className="block text-[11px] font-bold text-[#5A6E5D] mb-1">
-                  {tx('Or enter custom photo URL:', 'या कस्टम फोटो यूआरएल दर्ज करें:')}
-                </label>
+              {/* Upload Caregiver's Own Photo Card */}
+              <div 
+                onDragOver={(e) => { e.preventDefault(); setCaregiverDragOver(true); }}
+                onDragLeave={() => setCaregiverDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setCaregiverDragOver(false);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) processImageFile(file, setCaregiverAvatar);
+                }}
+                className={`p-3 rounded-2xl border-2 transition-all ${
+                  caregiverDragOver 
+                    ? 'border-[#5B825B] bg-[#EAF1E8]/70 border-dashed' 
+                    : !CAREGIVER_AVATARS.some(a => a.url === caregiverAvatar) && caregiverAvatar
+                      ? 'border-[#5B825B] bg-[#F4F8F3]'
+                      : 'border-[#E0DCD3] bg-white border-dashed hover:border-[#5B825B]/60'
+                }`}
+              >
+                {!CAREGIVER_AVATARS.some(a => a.url === caregiverAvatar) && caregiverAvatar ? (
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={caregiverAvatar} 
+                      alt="Custom Caregiver" 
+                      className="w-14 h-14 rounded-xl object-cover border-2 border-[#5B825B] shadow-xs shrink-0" 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
+                          {tx('Custom Caregiver Photo Active', 'कस्टम देखभालकर्ता फोटो सक्रिय', 'আপলোড কৰা যত্নকৰ্তাৰ ফটো')}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#5A6E5D] truncate mt-0.5">{tx('Your real photo will appear on elder\'s screen', 'आपकी असली फोटो बुजुर्ग की स्क्रीन पर दिखेगी', 'আপোনাৰ নিজা ফটো খেলুৱৈৰ স্ক্ৰীনত দেখা যাব')}</p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <label className="text-[10px] font-bold text-[#5B825B] hover:underline cursor-pointer flex items-center gap-1">
+                          <Upload className="w-3 h-3" /> {tx('Replace File', 'फ़ाइल बदलें', 'ফাইল সলনি কৰক')}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) processImageFile(f, setCaregiverAvatar);
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                        <span className="text-[#A09D96] text-[10px]">•</span>
+                        <button
+                          type="button"
+                          onClick={() => setCaregiverAvatar(CAREGIVER_AVATARS[0].url)}
+                          className="text-[10px] font-bold text-[#C25E5E] hover:underline"
+                        >
+                          {tx('Reset to Preset', 'प्रीसेट पर रीसेट करें', 'পূৰ্বনিৰ্ধাৰিতলৈ উভতি যাওক')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-[#FAF8F5] border border-[#E0DCD3] text-[#5B825B] flex items-center justify-center shrink-0 shadow-2xs">
+                        <Upload className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="block text-xs font-bold text-[#2D3A2F]">
+                          {tx('Upload Caregiver\'s Real Photo', 'अपनी असली तस्वीर अपलोड करें', 'যত্নকৰ্তাৰ নিজা ফটো আপলোড কৰক')}
+                        </span>
+                        <span className="block text-[10px] text-[#5A6E5D]">
+                          {tx('Drag & drop your smiling photo or click to browse (PNG, JPG)', 'अपनी तस्वीर यहाँ खींचें या ब्राउज़ करने के लिए क्लिक करें', 'আপোনাৰ হাঁহিমুখীয়া ফটোখন ইয়ালৈ টানি আনক বা ব্ৰাউজ কৰক')}
+                        </span>
+                      </div>
+                    </div>
+                    <label className="px-3.5 py-1.5 rounded-xl bg-white border border-[#5B825B] text-[#5B825B] font-bold text-xs hover:bg-[#EAF1E8] transition-colors cursor-pointer shrink-0 shadow-2xs flex items-center gap-1.5">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{tx('Choose File', 'फ़ाइल चुनें', 'ফাইল বাছক')}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) processImageFile(f, setCaregiverAvatar);
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {/* URL fallback */}
+              <div>
                 <input
                   type="url"
-                  value={caregiverAvatar}
+                  value={caregiverAvatar.startsWith('data:') ? '' : caregiverAvatar}
                   onChange={(e) => setCaregiverAvatar(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E0DCD3] focus:outline-hidden focus:border-[#5B825B]"
+                  placeholder={tx('Or enter custom photo URL...', 'या कस्टम फोटो यूआरएल दर्ज करें...', 'বা অনলাইন ফটো URL দিয়ক...')}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E0DCD3] bg-white focus:outline-hidden focus:border-[#5B825B]"
                 />
               </div>
             </div>

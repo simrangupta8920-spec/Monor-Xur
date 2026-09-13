@@ -27,6 +27,7 @@ import {
   GameFilterType
 } from '../../utils/gameAnalytics';
 import { parseTimeToMinutes } from '../../utils/timeUtils';
+import { ELDER_AVATARS } from '../setup/InitialSetupPage';
 
 interface FamilyDashboardProps {
   currentTab: FamilyCaregiverTab;
@@ -963,7 +964,14 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
             <div className="divide-y divide-[#EAE6DF]">
               <div className="py-2.5 flex items-center justify-between text-sm">
                 <span className="font-bold text-[#5A6E5D]">{tx('Caregiver Name', 'देखभालकर्ता का नाम')}</span>
-                <span className="font-extrabold text-[#2D3A2F]">{patientProfile.caregiver?.name || tx('Family Caregiver', 'पारिवारिक देखभालकर्ता')}</span>
+                <div className="flex items-center gap-2">
+                  <img
+                    src={patientProfile.caregiver?.avatar || '/images/avatars/caregiver-assam-daughter.jpg'}
+                    alt="Caregiver"
+                    className="w-7 h-7 rounded-full object-cover border border-[#5B825B]"
+                  />
+                  <span className="font-extrabold text-[#2D3A2F]">{patientProfile.caregiver?.name || tx('Family Caregiver', 'पारिवारिक देखभालकर्ता')}</span>
+                </div>
               </div>
               <div className="py-2.5 flex items-center justify-between text-sm">
                 <span className="font-bold text-[#5A6E5D]">{tx('Relationship', 'संबंध')}</span>
@@ -1852,6 +1860,24 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                     placeholder={tx('Image URL', 'तस्वीर का URL')}
                     className="w-full px-2.5 py-1 rounded-lg border border-[#E0DCD3] text-[11px]"
                   />
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[10px] font-bold text-[#5A6E5D]">{tx('Assam Avatars:', 'असम अवतार:', 'অসমীয়া অৱতাৰ:')}</span>
+                    {ELDER_AVATARS.map((av) => (
+                      <button
+                        key={av.id}
+                        type="button"
+                        onClick={() => setProfileForm({ ...profileForm, avatar: av.url })}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all ${
+                          profileForm.avatar === av.url
+                            ? 'border-[#5B825B] bg-[#EAF1E8] text-[#5B825B]'
+                            : 'border-[#E0DCD3] bg-white text-[#2D3A2F] hover:bg-[#FAF8F5]'
+                        }`}
+                      >
+                        <img src={av.url} alt={av.label} className="w-3.5 h-3.5 rounded-full object-cover" />
+                        <span>{av.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

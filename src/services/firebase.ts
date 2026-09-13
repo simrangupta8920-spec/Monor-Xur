@@ -37,6 +37,84 @@ import {
 
 export const DEFAULT_PATIENT_ID = 'default_patient';
 
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  };
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+/**
+ * Strips all undefined fields recursively from an object so that Firestore setDoc / updateDoc
+ * never throws "Unsupported field value: undefined".
+ */
+export function sanitizeFirestoreData<T>(data: T): T {
+  if (data === undefined) {
+    return undefined as any;
+  }
+  if (data === null) {
+    return null as any;
+  }
+  if (Array.isArray(data)) {
+    return data
+      .filter((item) => item !== undefined)
+      .map((item) => sanitizeFirestoreData(item)) as any;
+  }
+  if (typeof data === 'object' && !(data instanceof Date)) {
+    const cleaned: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data as Record<string, any>)) {
+      if (value !== undefined) {
+        const sanitizedChild = sanitizeFirestoreData(value);
+        if (sanitizedChild !== undefined) {
+          cleaned[key] = sanitizedChild;
+        }
+      }
+    }
+    return cleaned as T;
+  }
+  return data;
+}
+
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 const firestoreDatabaseId = (firebaseConfig as { firestoreDatabaseId?: string }).firestoreDatabaseId;
@@ -90,7 +168,7 @@ export function subscribeToPatientProfile(
       callback(null);
     }
   }, (err) => {
-    console.warn('Patient profile sync notice:', err);
+    handleFirestoreError(err, OperationType.GET, `patients/${patientId}`);
   });
 }
 
@@ -102,14 +180,25 @@ export async function savePatientProfile(patientId: string, profile: PatientProf
     existingUids.push(uid);
   }
 
-  const payload: PatientProfile = {
+  const assignedCaregiverUid = profile.assignedCaregiverUid || uid;
+
+  const rawPayload: Record<string, any> = {
     ...profile,
-    assignedCaregiverUid: profile.assignedCaregiverUid || uid,
     authorizedUids: existingUids,
     updatedAt: new Date().toISOString(),
   };
 
-  await setDoc(patientDoc, payload, { merge: true });
+  if (assignedCaregiverUid) {
+    rawPayload.assignedCaregiverUid = assignedCaregiverUid;
+  }
+
+  const payload = sanitizeFirestoreData(rawPayload);
+
+  try {
+    await setDoc(patientDoc, payload, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `patients/${patientId}`);
+  }
 }
 
 // 2. Medical Profile
@@ -125,16 +214,21 @@ export function subscribeToMedicalProfile(
       callback(null);
     }
   }, (err) => {
-    console.warn('Medical profile sync notice:', err);
+    handleFirestoreError(err, OperationType.GET, `patients/${patientId}/medical/current`);
   });
 }
 
 export async function saveMedicalProfile(patientId: string, profile: MedicalProfile): Promise<void> {
   const medicalDoc = doc(db, 'patients', patientId, 'medical', 'current');
-  await setDoc(medicalDoc, {
+  const payload = sanitizeFirestoreData({
     ...profile,
     updatedAt: new Date().toISOString(),
-  }, { merge: true });
+  });
+  try {
+    await setDoc(medicalDoc, payload, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `patients/${patientId}/medical/current`);
+  }
 }
 
 // Persist game difficulty progression directly
@@ -172,27 +266,27 @@ export async function updateGameDifficultyProgress(
     const existingLevels = existingPatientData?.gameDifficultyLevels || {};
     const existingStreaks = existingPatientData?.gameStreaks || {};
 
-    const updatedLevels = {
+    const updatedLevels = sanitizeFirestoreData({
       ...existingLevels,
       [gameKey]: level,
-    };
-    const updatedStreaks = streaks ? { ...existingStreaks, ...streaks } : existingStreaks;
+    });
+    const updatedStreaks = streaks ? sanitizeFirestoreData({ ...existingStreaks, ...streaks }) : existingStreaks;
 
-    await setDoc(patientDocRef, {
+    await setDoc(patientDocRef, sanitizeFirestoreData({
       gameDifficultyLevel: normalizedLevel,
       gameDifficultyLevels: updatedLevels,
       gameStreaks: updatedStreaks,
       lastGameSessionTimestamp: Date.now(),
       updatedAt: nowIso,
-    }, { merge: true });
+    }), { merge: true });
 
     const medicalDocRef = doc(db, 'patients', patientId, 'medical', 'current');
-    await setDoc(medicalDocRef, {
+    await setDoc(medicalDocRef, sanitizeFirestoreData({
       cognitiveDifficultyLevel: normalizedLevel,
       gameDifficultyLevels: updatedLevels,
       lastCognitiveAssessment: nowIso,
       updatedAt: nowIso,
-    }, { merge: true });
+    }), { merge: true });
   } catch (err) {
     console.warn('Game difficulty progress sync notice:', err);
   }
@@ -211,23 +305,32 @@ export function subscribeToMemories(
     });
     callback(list);
   }, (err) => {
-    console.warn('Memories sync notice:', err);
+    handleFirestoreError(err, OperationType.GET, `patients/${patientId}/memories`);
   });
 }
 
 export async function addMemoryToDb(patientId: string, memory: Memory): Promise<void> {
   const memId = memory.id || `mem_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
   const memDoc = doc(db, 'patients', patientId, 'memories', memId);
-  await setDoc(memDoc, {
+  const payload = sanitizeFirestoreData({
     ...memory,
     id: memId,
     createdAt: memory.createdAt || new Date().toISOString(),
-  }, { merge: true });
+  });
+  try {
+    await setDoc(memDoc, payload, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `patients/${patientId}/memories/${memId}`);
+  }
 }
 
 export async function deleteMemoryFromDb(patientId: string, memoryId: string): Promise<void> {
   const memDoc = doc(db, 'patients', patientId, 'memories', memoryId);
-  await deleteDoc(memDoc);
+  try {
+    await deleteDoc(memDoc);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `patients/${patientId}/memories/${memoryId}`);
+  }
 }
 
 // 4. Reminders Subcollection
@@ -244,18 +347,23 @@ export function subscribeToReminders(
     list.sort((a, b) => a.minutes - b.minutes);
     callback(list);
   }, (err) => {
-    console.warn('Reminders sync notice:', err);
+    handleFirestoreError(err, OperationType.GET, `patients/${patientId}/reminders`);
   });
 }
 
 export async function saveReminderToDb(patientId: string, reminder: Reminder): Promise<void> {
   const remId = reminder.id || `rem_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
   const remDoc = doc(db, 'patients', patientId, 'reminders', remId);
-  await setDoc(remDoc, {
+  const payload = sanitizeFirestoreData({
     ...reminder,
     id: remId,
     updatedAt: new Date().toISOString(),
-  }, { merge: true });
+  });
+  try {
+    await setDoc(remDoc, payload, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `patients/${patientId}/reminders/${remId}`);
+  }
 }
 
 export async function saveRemindersListToDb(patientId: string, reminders: Reminder[]): Promise<void> {
@@ -266,7 +374,11 @@ export async function saveRemindersListToDb(patientId: string, reminders: Remind
 
 export async function deleteReminderFromDb(patientId: string, reminderId: string): Promise<void> {
   const remDoc = doc(db, 'patients', patientId, 'reminders', reminderId);
-  await deleteDoc(remDoc);
+  try {
+    await deleteDoc(remDoc);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `patients/${patientId}/reminders/${reminderId}`);
+  }
 }
 
 // 5. Calendar Events Subcollection
@@ -282,18 +394,23 @@ export function subscribeToEvents(
     });
     callback(list);
   }, (err) => {
-    console.warn('Events sync notice:', err);
+    handleFirestoreError(err, OperationType.GET, `patients/${patientId}/events`);
   });
 }
 
 export async function saveCalendarEventToDb(patientId: string, event: CalendarEvent): Promise<void> {
   const evId = event.id || `ev_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
   const evDoc = doc(db, 'patients', patientId, 'events', evId);
-  await setDoc(evDoc, {
+  const payload = sanitizeFirestoreData({
     ...event,
     id: evId,
     updatedAt: new Date().toISOString(),
-  }, { merge: true });
+  });
+  try {
+    await setDoc(evDoc, payload, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `patients/${patientId}/events/${evId}`);
+  }
 }
 
 // 6. Alerts Subcollection
@@ -309,18 +426,23 @@ export function subscribeToAlerts(
     });
     callback(list);
   }, (err) => {
-    console.warn('Alerts sync notice:', err);
+    handleFirestoreError(err, OperationType.GET, `patients/${patientId}/alerts`);
   });
 }
 
 export async function saveAlertToDb(patientId: string, alert: AlertItem): Promise<void> {
   const alId = alert.id || `alert_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
   const alertDoc = doc(db, 'patients', patientId, 'alerts', alId);
-  await setDoc(alertDoc, {
+  const payload = sanitizeFirestoreData({
     ...alert,
     id: alId,
     updatedAt: new Date().toISOString(),
-  }, { merge: true });
+  });
+  try {
+    await setDoc(alertDoc, payload, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `patients/${patientId}/alerts/${alId}`);
+  }
 }
 
 // 7. Care Tasks Subcollection
@@ -336,18 +458,23 @@ export function subscribeToCareTasks(
     });
     callback(list);
   }, (err) => {
-    console.warn('Tasks sync notice:', err);
+    handleFirestoreError(err, OperationType.GET, `patients/${patientId}/care_tasks`);
   });
 }
 
 export async function saveCareTaskToDb(patientId: string, task: CareTask): Promise<void> {
   const taskId = task.id || `task_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
   const taskDoc = doc(db, 'patients', patientId, 'care_tasks', taskId);
-  await setDoc(taskDoc, {
+  const payload = sanitizeFirestoreData({
     ...task,
     id: taskId,
     updatedAt: new Date().toISOString(),
-  }, { merge: true });
+  });
+  try {
+    await setDoc(taskDoc, payload, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `patients/${patientId}/care_tasks/${taskId}`);
+  }
 }
 
 // 8. Emergency Contacts Subcollection
@@ -363,18 +490,23 @@ export function subscribeToContacts(
     });
     callback(list);
   }, (err) => {
-    console.warn('Contacts sync notice:', err);
+    handleFirestoreError(err, OperationType.GET, `patients/${patientId}/contacts`);
   });
 }
 
 export async function saveContactToDb(patientId: string, contact: EmergencyContact): Promise<void> {
   const contactId = contact.id || `contact_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
   const contactDoc = doc(db, 'patients', patientId, 'contacts', contactId);
-  await setDoc(contactDoc, {
+  const payload = sanitizeFirestoreData({
     ...contact,
     id: contactId,
     updatedAt: new Date().toISOString(),
-  }, { merge: true });
+  });
+  try {
+    await setDoc(contactDoc, payload, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `patients/${patientId}/contacts/${contactId}`);
+  }
 }
 
 // 9. DPDP Act 2023 Audit Logs Subcollection (Append-only)
@@ -391,7 +523,7 @@ export function subscribeToAuditLogs(
     });
     callback(list);
   }, (err) => {
-    console.warn('Audit logs sync notice:', err);
+    handleFirestoreError(err, OperationType.GET, `patients/${patientId}/auditLogs`);
   });
 }
 
@@ -401,11 +533,16 @@ export async function logAuditEvent(
 ): Promise<void> {
   const logId = 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
   const logDoc = doc(db, 'patients', patientId, 'auditLogs', logId);
-  await setDoc(logDoc, {
+  const payload = sanitizeFirestoreData({
     ...log,
     id: logId,
     timestamp: log.timestamp || new Date().toISOString(),
   });
+  try {
+    await setDoc(logDoc, payload);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, `patients/${patientId}/auditLogs/${logId}`);
+  }
 }
 
 // 10. DDA Cognitive Game Metrics Subcollection
@@ -422,15 +559,20 @@ export function subscribeToDDALogs(
     });
     callback(list);
   }, (err) => {
-    console.warn('DDA logs sync notice:', err);
+    handleFirestoreError(err, OperationType.GET, `patients/${patientId}/dda_logs`);
   });
 }
 
 export async function logDDAMetricToDb(patientId: string, metric: DDAMetric): Promise<void> {
   const logId = `dda_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
   const docRef = doc(db, 'patients', patientId, 'dda_logs', logId);
-  await setDoc(docRef, {
+  const payload = sanitizeFirestoreData({
     ...metric,
     createdAt: new Date().toISOString(),
-  }, { merge: true });
+  });
+  try {
+    await setDoc(docRef, payload, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `patients/${patientId}/dda_logs/${logId}`);
+  }
 }

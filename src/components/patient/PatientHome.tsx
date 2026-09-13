@@ -113,7 +113,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
 
   const caregiverName = caregiver?.name || emergencyContactName || 'Priya Sharma';
   const caregiverRel = caregiver?.relationship || (language === 'as' ? 'জীয়াৰী' : isHindi ? 'बेटी' : 'Daughter');
-  const caregiverPhoto = caregiver?.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80';
+  const caregiverPhoto = caregiver?.avatar || '/images/avatars/caregiver-assam-daughter.jpg';
 
   const toggleSingleFocus = () => {
     soundController.playClick();
