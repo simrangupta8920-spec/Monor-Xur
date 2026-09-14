@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/logo.jpg" alt="Monor Xur Logo" width="200"/>
+</p>
+
 # 🌿 Monor Xur (मनोर सुर / মনৰ সুৰ)
 ### *Mobile-First Cognitive Engagement, Dementia Care-Support & Clinical Telemetry Ecosystem*
 
@@ -33,6 +37,7 @@
 16. [🚀 Getting Started & Local Development](#-getting-started--local-development)
 17. [🚢 Production Deployment & Containerization](#-production-deployment--containerization)
 18. [🛡️ Accessibility & Ethical AI Principles](#-accessibility--ethical-ai-principles)
+19. [📚 Documentation & Reports](#-documentation--reports)
 
 ---
 
@@ -832,6 +837,17 @@ CMD ["node", "dist/server.cjs"]
 3. **Privacy by Design**:
    - API secrets remain isolated on the Node.js server.
    - Voice transcriptions are executed locally in the browser via the SpeechRecognition API without external third-party data broker routing.
+
+---
+
+## 📚 Documentation & Reports
+
+| Document | Description |
+| :--- | :--- |
+| 🔒 [Security](https://docs.google.com/document/d/1vK3KKqlONC3mx6ezw8ZPS_OR5B6Av1sD/edit?usp=sharing&ouid=116529789348167297192&rtpof=true&sd=true) | Security architecture, threat model & data protection practices |
+| 🚶 [Product Walkthrough](https://docs.google.com/document/d/1aPvbmUnfjXrPrNJxHiNazxV9XOY6_jfX/edit?usp=sharing&ouid=116529789348167297192&rtpof=true&sd=true) | End-to-end walkthrough of the product experience |
+| 🎯 [Relevancy](https://docs.google.com/document/d/1z0KOzhswrWTYDxXBaObpOaIWIz_nYIg6/edit?usp=sharing&ouid=116529789348167297192&rtpof=true&sd=true) | Clinical relevancy & problem-fit rationale |
+| 📈 [Scalability](https://docs.google.com/document/d/14UwkMcPDlfIEIWVgEKabzuAIQYc0QgOy/edit?usp=sharing&ouid=116529789348167297192&rtpof=true&sd=true) | Scalability approach & infrastructure planning |
 
 ---
 
