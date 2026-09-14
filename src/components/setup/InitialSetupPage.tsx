@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { 
   Heart, User, ShieldCheck, Stethoscope, Sparkles, ArrowRight, ArrowLeft, 
-  Check, Lock, Phone, Plus, Trash2, KeyRound, AlertCircle, RefreshCw, Upload, Image as ImageIcon 
+  Check, Lock, Phone, Plus, Trash2, KeyRound, AlertCircle, RefreshCw, Upload, Image as ImageIcon,
+  Video, Film, X, Eye
 } from 'lucide-react';
-import { PatientProfile, MedicalProfile, CaregiverAccount, AshaAccount, EmergencyContact } from '../../types';
+import { PatientProfile, MedicalProfile, CaregiverAccount, AshaAccount, EmergencyContact, Memory, MemoryCategory } from '../../types';
+import { SAMPLE_MEDIA_PRESETS } from '../../data/mockData';
+import { VoiceReminiscenceRecorder, VoiceReminiscenceData } from '../common/VoiceReminiscenceRecorder';
+import { createHarmonicVoiceSnippet } from '../../utils/audioSnippetGenerator';
 import { soundController } from '../../utils/audio';
 import { useLanguage } from '../../context/LanguageContext';
 import avatarKoka from '../../assets/images/avatar_assam_koka_1789331373618.jpg';
@@ -18,12 +22,14 @@ import type { User as FirebaseUser } from 'firebase/auth';
 interface InitialSetupPageProps {
   initialPatient?: PatientProfile;
   initialMedical?: MedicalProfile;
+  initialMemories?: Memory[];
   onComplete: (data: {
     patient: PatientProfile;
     medical: MedicalProfile;
     caregiver: CaregiverAccount;
     asha?: AshaAccount;
     emergencyContact: EmergencyContact;
+    initialMemories?: Memory[];
   }) => void;
   onCancel?: () => void;
   isEditing?: boolean;
@@ -83,6 +89,7 @@ export const CAREGIVER_AVATARS = [
 export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
   initialPatient,
   initialMedical,
+  initialMemories,
   onComplete,
   onCancel,
   isEditing = false,
@@ -189,6 +196,124 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
   const [formError, setFormError] = useState<string | null>(null);
   const [playerDragOver, setPlayerDragOver] = useState(false);
   const [caregiverDragOver, setCaregiverDragOver] = useState(false);
+
+  // STEP 3: OPTIONAL INITIAL MEMORIES
+  const [initialMemoriesList, setInitialMemoriesList] = useState<Memory[]>(initialMemories || []);
+  const [showAddMemoryModal, setShowAddMemoryModal] = useState(false);
+  const [newMemoryMediaType, setNewMemoryMediaType] = useState<'photo' | 'video'>('photo');
+  const [newMemoryTitle, setNewMemoryTitle] = useState('');
+  const [newMemoryPerson, setNewMemoryPerson] = useState('');
+  const [newMemoryCategory, setNewMemoryCategory] = useState<MemoryCategory>('Family');
+  const [newMemoryDesc, setNewMemoryDesc] = useState('');
+  const [newMemoryMediaUrl, setNewMemoryMediaUrl] = useState('');
+  const [memoryUploadPreview, setMemoryUploadPreview] = useState<string | null>(null);
+  const [newMemoryVoiceSnippet, setNewMemoryVoiceSnippet] = useState<VoiceReminiscenceData | null>(null);
+  const [previewMemory, setPreviewMemory] = useState<Memory | null>(null);
+
+  const handleMemoryFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const isVid = file.type.startsWith('video');
+      setNewMemoryMediaType(isVid ? 'video' : 'photo');
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const result = uploadEvent.target?.result as string;
+        if (result) {
+          setMemoryUploadPreview(result);
+          setNewMemoryMediaUrl(result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCreateMemory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMemoryTitle.trim() || !newMemoryDesc.trim()) return;
+
+    const mediaSrc = newMemoryMediaUrl.trim() || memoryUploadPreview || (
+      newMemoryMediaType === 'video'
+        ? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
+        : 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=80'
+    );
+
+    const newMem: Memory = {
+      id: 'm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      title: newMemoryTitle.trim(),
+      person: newMemoryPerson.trim() || undefined,
+      category: newMemoryCategory,
+      mediaType: newMemoryMediaType,
+      image: newMemoryMediaType === 'video'
+        ? 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=80'
+        : mediaSrc,
+      videoUrl: newMemoryMediaType === 'video' ? mediaSrc : undefined,
+      description: newMemoryDesc.trim(),
+      date: 'Added in Setup',
+      voiceSnippet: newMemoryVoiceSnippet?.audioUrl,
+      voiceSnippetDuration: newMemoryVoiceSnippet?.duration,
+      voiceRecordedBy: newMemoryVoiceSnippet?.recordedBy,
+      voicePromptText: newMemoryVoiceSnippet?.promptText,
+    };
+
+    setInitialMemoriesList((prev) => [newMem, ...prev]);
+    setNewMemoryTitle('');
+    setNewMemoryPerson('');
+    setNewMemoryDesc('');
+    setNewMemoryMediaUrl('');
+    setMemoryUploadPreview(null);
+    setNewMemoryVoiceSnippet(null);
+    setShowAddMemoryModal(false);
+    soundController.playSuccess();
+  };
+
+  const applyMemoryPreset = (preset: typeof SAMPLE_MEDIA_PRESETS[0]) => {
+    setNewMemoryMediaType(preset.type);
+    setNewMemoryTitle(preset.title);
+    setNewMemoryPerson(preset.person);
+    setNewMemoryCategory(preset.category);
+    setNewMemoryDesc(preset.desc);
+    setNewMemoryMediaUrl(preset.url);
+    setMemoryUploadPreview(preset.url);
+
+    if (preset.voicePromptText) {
+      setNewMemoryVoiceSnippet({
+        audioUrl: createHarmonicVoiceSnippet(preset.voiceDuration || 14),
+        duration: preset.voiceDuration || 14,
+        recordedBy: preset.voiceRecordedBy || caregiverName || 'Family Caregiver',
+        promptText: preset.voicePromptText,
+      });
+    } else {
+      setNewMemoryVoiceSnippet(null);
+    }
+    soundController.playClick();
+  };
+
+  const handleQuickAddPreset = (preset: typeof SAMPLE_MEDIA_PRESETS[0]) => {
+    const newMem: Memory = {
+      id: 'm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      title: preset.title,
+      person: preset.person || undefined,
+      category: preset.category,
+      mediaType: preset.type,
+      image: preset.type === 'video'
+        ? 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=80'
+        : preset.url,
+      videoUrl: preset.type === 'video' ? preset.url : undefined,
+      description: preset.desc,
+      date: 'Added in Setup',
+      voiceSnippet: preset.voicePromptText ? createHarmonicVoiceSnippet(preset.voiceDuration || 14) : undefined,
+      voiceSnippetDuration: preset.voiceDuration,
+      voiceRecordedBy: preset.voiceRecordedBy || caregiverName || 'Family Caregiver',
+      voicePromptText: preset.voicePromptText,
+    };
+    setInitialMemoriesList((prev) => [newMem, ...prev]);
+    soundController.playSuccess();
+  };
+
+  const handleRemoveMemory = (id: string) => {
+    setInitialMemoriesList((prev) => prev.filter((m) => m.id !== id));
+    soundController.playClick();
+  };
 
   const processImageFile = (file: File, callback: (dataUrl: string) => void) => {
     if (!file.type.startsWith('image/')) {
@@ -349,6 +474,7 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
       caregiver: caregiverAccount,
       asha: ashaAccount,
       emergencyContact,
+      initialMemories: initialMemoriesList,
     });
   };
 
@@ -1306,6 +1432,132 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
               )}
             </div>
 
+            {/* ================= OPTIONAL INITIAL MEMORIES UPLOAD ================= */}
+            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#ECE8DE] space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[#5B825B]">
+                  <ImageIcon className="w-4 h-4" />
+                  <span className="text-xs font-black uppercase tracking-wider">
+                    {tx('Initial Player Memories', 'प्रारंभिक यादें', 'প্ৰাৰম্ভিক স্মৃতি')}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-[#5B825B] bg-[#EAF1E8] px-2.5 py-0.5 rounded-full border border-[#5B825B]/20">
+                  {tx('Optional', 'वैकल्पिक', 'ঐচ্ছিক')}
+                </span>
+              </div>
+
+              <p className="text-[11px] text-[#5A6E5D] leading-relaxed">
+                {tx(
+                  'Upload family photos, home videos, or voice recordings so the elder has cherished memories ready to view right from day one. This is completely optional—if you skip, you can always upload memories anytime later from the Caregiver dashboard.',
+                  'पारिवारिक तस्वीरें, घरेलू वीडियो या आवाज़ की रिकॉर्डिंग जोड़ें ताकि बुजुर्ग के पास पहले दिन से ही यादें देखने के लिए तैयार हों। यह पूरी तरह से वैकल्पिक है—यदि आप छोड़ते हैं, तो आप बाद में भी देखभालकर्ता डैशबोर्ड से यादें जोड़ सकते हैं।',
+                  'পৰিয়ালৰ ফটো, ঘৰুৱা ভিডিঅ’ বা মাতৰ ৰেকৰ্ডিং যোগ কৰক যাতে প্ৰথম দিনৰ পৰাই জেষ্ঠ্যজনে স্মৃতি চাব পাৰে। এইটো সম্পূৰ্ণৰূপে ঐচ্ছিক—আপুনি এতিয়া এৰি পাছতো যত্নকৰ্তাৰ পৰা স্মৃতি যোগ কৰিব পাৰিব।'
+                )}
+              </p>
+
+              {/* Action Buttons: Add Memory button & Quick Presets */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundController.playClick();
+                    setShowAddMemoryModal(true);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-[#5B825B] text-white text-xs font-black flex items-center gap-1.5 shadow-xs hover:bg-[#4a6b4a] active:scale-95 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{tx('Add Memory', 'याद जोड़ें', 'স্মৃতি যোগ কৰক')}</span>
+                </button>
+
+                <span className="text-[10px] text-[#8C877D] font-bold">
+                  {tx('or quick sample:', 'या त्वरित नमूना:', 'বা নমুনা:')}
+                </span>
+                {SAMPLE_MEDIA_PRESETS.slice(0, 2).map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleQuickAddPreset(preset)}
+                    className="px-2.5 py-1.5 rounded-xl bg-white border border-[#E0DCD3] text-[10px] font-bold text-[#2D3A2F] hover:bg-[#EAF1E8] hover:border-[#5B825B]/40 transition-all flex items-center gap-1 shadow-2xs"
+                  >
+                    <Sparkles className="w-3 h-3 text-[#E8B25C]" />
+                    <span>+ {preset.label.split('+')[0].trim()}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* List of currently added memories (if any) */}
+              {initialMemoriesList.length > 0 ? (
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-[#5A6E5D]">
+                    <span>
+                      {tx('Initial memories configured:', 'प्रारंभिक यादें तैयार:', 'প্ৰাৰম্ভিক স্মৃতি সাজু:')} ({initialMemoriesList.length})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundController.playClick();
+                        setShowAddMemoryModal(true);
+                      }}
+                      className="text-[#5B825B] hover:underline font-extrabold flex items-center gap-1 text-[11px]"
+                    >
+                      <Plus className="w-3 h-3" />
+                      {tx('Add another', 'एक और जोड़ें', 'আৰু এটা যোগ কৰক')}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {initialMemoriesList.map((mem) => (
+                      <div
+                        key={mem.id}
+                        className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#E0DCD3] shadow-2xs gap-2"
+                      >
+                        <div 
+                          className="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1"
+                          onClick={() => { soundController.playClick(); setPreviewMemory(mem); }}
+                        >
+                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-black shrink-0 relative">
+                            <img
+                              src={mem.image}
+                              alt={mem.title}
+                              className="w-full h-full object-cover"
+                            />
+                            {mem.mediaType === 'video' && (
+                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                <Film className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="block text-xs font-bold text-[#2D3A2F] truncate">
+                              {mem.title}
+                            </span>
+                            <span className="block text-[10px] text-[#5A6E5D] truncate">
+                              {mem.category} {mem.person ? `• ${mem.person}` : ''}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMemory(mem.id)}
+                          className="p-1.5 text-[#C46A66] hover:bg-[#FCF2F0] rounded-lg transition-colors shrink-0"
+                          title={tx('Remove', 'हटाएं', 'আঁতৰাওক')}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-white border border-dashed border-[#E0DCD3] text-center text-[11px] text-[#8C877D]">
+                  {tx(
+                    'No initial memories added yet. This is completely optional—you can proceed or add one above.',
+                    'अभी तक कोई याद नहीं जोड़ी गई है। यह पूरी तरह से वैकल्पिक है—आप आगे बढ़ सकते हैं या ऊपर से जोड़ सकते हैं।',
+                    'এতিয়ালৈকে কোনো স্মৃতি যোগ কৰা নাই। এইটো সম্পূৰ্ণৰূপে ঐচ্ছিক—আপুনি আগবাঢ়িব পাৰে বা ওপৰত যোগ কৰিব পাৰে।'
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Navigation Buttons */}
             <div className="pt-2 flex items-center justify-between">
               <button
@@ -1497,6 +1749,279 @@ export const InitialSetupPage: React.FC<InitialSetupPageProps> = ({
           >
             {tx('Cancel and Return to App', 'रद्द करें और ऐप पर वापस जाएं')}
           </button>
+        </div>
+      )}
+
+      {/* ================= ADD MEMORY MODAL (STEP 3 CAREGIVER) ================= */}
+      {showAddMemoryModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl border border-[#E0DCD3] space-y-4 my-8 animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-[#F0ECE4]">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#EAF1E8] text-[#5B825B] flex items-center justify-center">
+                  <ImageIcon className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#2D3A2F]">
+                    {tx('Add Initial Memory', 'प्रारंभिक याद जोड़ें', 'প্ৰাৰম্ভিক স্মৃতি যোগ কৰক')}
+                  </h3>
+                  <p className="text-[10px] text-[#5A6E5D]">
+                    {tx('Upload photos, videos & voice messages', 'तस्वीरें, वीडियो और आवाज़ जोड़ें', 'ফটো, ভিডিঅ’ আৰু কণ্ঠস্বৰ যোগ কৰক')}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { soundController.stopSpeaking(); setShowAddMemoryModal(false); }}
+                className="w-7 h-7 rounded-full bg-[#FAF8F5] text-[#5A6E5D] hover:bg-[#F0ECE4] flex items-center justify-center text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Media Type Switcher: Photo Memory vs Video Story */}
+            <div className="flex rounded-xl bg-[#FAF8F5] p-1 border border-[#E0DCD3]">
+              <button
+                type="button"
+                onClick={() => {
+                  setNewMemoryMediaType('photo');
+                  soundController.playClick();
+                }}
+                className={`flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+                  newMemoryMediaType === 'photo'
+                    ? 'bg-[#5B825B] text-white shadow-xs'
+                    : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
+                }`}
+              >
+                <ImageIcon className="w-3.5 h-3.5" /> {tx('Photo Memory', 'फ़ोटो याद', 'ফটো স্মৃতি')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewMemoryMediaType('video');
+                  soundController.playClick();
+                }}
+                className={`flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+                  newMemoryMediaType === 'video'
+                    ? 'bg-[#E8B25C] text-white shadow-xs'
+                    : 'text-[#5A6E5D] hover:text-[#2D3A2F]'
+                }`}
+              >
+                <Video className="w-3.5 h-3.5" /> {tx('Video Story', 'वीडियो कहानी', 'ভিডিঅ’ কাহিনী')}
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateMemory} className="space-y-3 text-xs">
+              {/* Media File Upload Area */}
+              <div className="border-2 border-dashed border-[#5B825B]/40 rounded-2xl p-4 text-center bg-[#FDFBF7] space-y-2 hover:bg-[#EAF1E8]/30 transition-colors">
+                <input
+                  type="file"
+                  id="setup-memory-file-input"
+                  accept="image/*,video/*"
+                  onChange={handleMemoryFileUpload}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="setup-memory-file-input"
+                  className="cursor-pointer flex flex-col items-center gap-1.5"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-[#EAF1E8] text-[#5B825B] flex items-center justify-center">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <span className="font-extrabold text-sm text-[#2D3A2F]">
+                    {memoryUploadPreview ? tx('File Selected! Tap to change', 'फ़ाइल चुनी गई! बदलने के लिए टैप करें', 'ফাইল নিৰ্বাচিত! সলনি কৰিবলৈ টেপ কৰক') : tx('Upload Photo or Video', 'फ़ोटो या वीडियो अपलोड करें', 'ফটো বা ভিডিঅ’ আপলোড কৰক')}
+                  </span>
+                  <span className="text-[11px] text-[#5A6E5D]">
+                    {tx('Supports JPG, PNG, MP4, WebM from your device', 'उपकरण से JPG, PNG, MP4, WebM समर्थित', 'ডিভাইচৰ পৰা JPG, PNG, MP4, WebM')}
+                  </span>
+                </label>
+
+                {memoryUploadPreview && (
+                  <div className="pt-2">
+                    {newMemoryMediaType === 'video' ? (
+                      <video
+                        src={memoryUploadPreview}
+                        controls
+                        className="w-full max-h-36 rounded-xl bg-black object-contain mx-auto"
+                      />
+                    ) : (
+                      <img
+                        src={memoryUploadPreview}
+                        alt="Preview"
+                        className="w-full max-h-36 rounded-xl object-cover mx-auto"
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Direct Media URL */}
+              <div>
+                <label className="block font-black text-[#2D3A2F] mb-1">
+                  {tx('Or Paste', 'या पेस्ट करें', 'বা পেষ্ট কৰক')} {newMemoryMediaType === 'video' ? tx('Video URL', 'वीडियो URL', 'ভিডিঅ’ URL') : tx('Photo URL', 'फ़ोटो URL', 'ফটো URL')}
+                </label>
+                <input
+                  type="text"
+                  value={newMemoryMediaUrl}
+                  onChange={(e) => {
+                    setNewMemoryMediaUrl(e.target.value);
+                    setMemoryUploadPreview(e.target.value);
+                  }}
+                  placeholder={newMemoryMediaType === 'video' ? 'https://.../video.mp4' : 'https://.../photo.jpg'}
+                  className="w-full px-3 py-2 rounded-xl border border-[#E0DCD3] text-xs focus:border-[#5B825B]"
+                />
+              </div>
+
+              {/* Quick Sample Presets */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold text-[#5A6E5D] block">
+                  {tx('Quick Sample Media:', 'त्वरित नमूना मीडिया:', 'নমুনা বাছক:')}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {SAMPLE_MEDIA_PRESETS.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => applyMemoryPreset(preset)}
+                      className="px-2.5 py-1 rounded-xl bg-[#FDFBF7] border border-[#E0DCD3] text-[11px] font-bold text-[#2D3A2F] hover:bg-[#EAF1E8]"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-black text-[#2D3A2F] mb-1">
+                  {tx('Memory Title *', 'याद का शीर्षक *', 'স্মৃতিৰ শীৰ্ষক *')}
+                </label>
+                <input
+                  type="text"
+                  value={newMemoryTitle}
+                  onChange={(e) => setNewMemoryTitle(e.target.value)}
+                  placeholder="e.g. Grandkids Visiting Guwahati"
+                  className="w-full px-3.5 py-2 rounded-xl border border-[#E0DCD3] text-xs font-semibold focus:border-[#5B825B]"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block font-black text-[#2D3A2F] mb-1">
+                    {tx('People in this Memory', 'इस याद में लोग', 'এই স্মৃতিত থকা লোক')}
+                  </label>
+                  <input
+                    type="text"
+                    value={newMemoryPerson}
+                    onChange={(e) => setNewMemoryPerson(e.target.value)}
+                    placeholder="e.g. Priya, Kabir"
+                    className="w-full px-3.5 py-2 rounded-xl border border-[#E0DCD3] text-xs font-semibold focus:border-[#5B825B]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-black text-[#2D3A2F] mb-1">
+                    {tx('Category', 'श्रेणी', 'শ্ৰেণী')}
+                  </label>
+                  <select
+                    value={newMemoryCategory}
+                    onChange={(e) => setNewMemoryCategory(e.target.value as MemoryCategory)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-[#E0DCD3] text-xs font-semibold focus:border-[#5B825B]"
+                  >
+                    <option value="Family">{tx('Family', 'परिवार', 'পৰিয়াল')}</option>
+                    <option value="People">{tx('People', 'लोग', 'মানুহ')}</option>
+                    <option value="Places">{tx('Places', 'स्थान', 'ঠাই')}</option>
+                    <option value="Special Moments">{tx('Special Moments', 'खास पल', 'বিশেষ মুহূৰ্ত')}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-black text-[#2D3A2F] mb-1">
+                  {tx('Story / Heartfelt Narration *', 'कहानी / भावनात्मक विवरण *', 'কাহিনী / চমু বিৱৰণ *')}
+                </label>
+                <textarea
+                  rows={3}
+                  value={newMemoryDesc}
+                  onChange={(e) => setNewMemoryDesc(e.target.value)}
+                  placeholder="Write a loving story or description that can be read aloud or shown in Player Mode..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-[#E0DCD3] text-xs font-medium leading-relaxed focus:border-[#5B825B]"
+                  required
+                />
+              </div>
+
+              {/* Voice Reminiscence: 15-second audio snippet in caregiver/loved one's real voice */}
+              <div className="pt-1">
+                <VoiceReminiscenceRecorder
+                  defaultRecordedBy={caregiverName || 'Family Caregiver'}
+                  defaultPromptText={newMemoryVoiceSnippet?.promptText || ''}
+                  initialAudioUrl={newMemoryVoiceSnippet?.audioUrl}
+                  initialDuration={newMemoryVoiceSnippet?.duration}
+                  onSaveVoiceSnippet={(voiceData: VoiceReminiscenceData | null) => setNewMemoryVoiceSnippet(voiceData)}
+                />
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundController.stopSpeaking();
+                    setShowAddMemoryModal(false);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-gray-100 text-xs font-extrabold text-[#5A6E5D]"
+                >
+                  {tx('Cancel', 'रद्द करें', 'বাতিল')}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-[#5B825B] text-white text-xs font-black shadow-xs hover:bg-[#4d704d]"
+                >
+                  {tx('Save to Initial Memories', 'प्रारंभिक यादों में सहेजें', 'প্ৰাৰম্ভিক স্মৃতিত সংৰক্ষণ কৰক')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= PREVIEW MEMORY MODAL ================= */}
+      {previewMemory && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl animate-scaleUp">
+            <div className="relative aspect-4/3 bg-black flex items-center justify-center">
+              {previewMemory.mediaType === 'video' || previewMemory.videoUrl ? (
+                <video
+                  src={previewMemory.videoUrl || previewMemory.image}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <img
+                  src={previewMemory.image}
+                  alt={previewMemory.title}
+                  className="w-full h-full object-cover"
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => setPreviewMemory(null)}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 text-black font-bold flex items-center justify-center cursor-pointer shadow-md"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4 space-y-2">
+              <span className="text-[10px] font-black uppercase text-[#5B825B] bg-[#EAF1E8] px-2 py-0.5 rounded-full">
+                {previewMemory.category}
+              </span>
+              <h3 className="text-lg font-black text-[#2D3A2F]">{previewMemory.title}</h3>
+              {previewMemory.person && (
+                <p className="text-xs font-bold text-[#5B825B]">{previewMemory.person}</p>
+              )}
+              <p className="text-xs text-[#5A6E5D] leading-relaxed">{previewMemory.description}</p>
+            </div>
+          </div>
         </div>
       )}
     </div>

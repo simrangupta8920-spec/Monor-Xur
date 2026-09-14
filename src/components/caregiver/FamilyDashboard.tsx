@@ -9,7 +9,7 @@ import {
   FamilyCaregiverTab, CalendarEvent, Reminder, AlertItem, EmergencyContact, DDAMetric, Memory, 
   PatientProfile, MedicalProfile, MedicalConsultation, MemoryCategory, AuditLog 
 } from '../../types';
-import { MEDICAL_DISCLAIMER } from '../../data/mockData';
+import { MEDICAL_DISCLAIMER, SAMPLE_MEDIA_PRESETS } from '../../data/mockData';
 import { soundController } from '../../utils/audio';
 import { useLanguage } from '../../context/LanguageContext';
 import { CognitiveProgressView } from './CognitiveProgressView';
@@ -55,48 +55,6 @@ interface FamilyDashboardProps {
   onOpenSetup?: () => void;
   auditLogs?: AuditLog[];
 }
-
-const SAMPLE_MEDIA_PRESETS = [
-  {
-    type: 'photo' as const,
-    label: 'Family Wedding + Voice Reminiscence (Priya)',
-    url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80',
-    title: "Rohan's Wedding in Jaipur",
-    person: 'Daughter Priya & Family',
-    category: 'Special Moments' as MemoryCategory,
-    desc: 'Papa and Priya smiling happily under the floral canopy at Rohan’s wedding in Jaipur, 2019.',
-    voicePromptText: "Papa, this was Rohan's wedding in Jaipur, 2019. You danced so happily with all of us and we shared sweets!",
-    voiceDuration: 14,
-    voiceRecordedBy: 'Daughter Priya',
-  },
-  {
-    type: 'video' as const,
-    label: 'Family Celebration Video',
-    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    title: 'Grandkids Singing & Dancing',
-    person: 'Meera & Kabir',
-    category: 'Family' as MemoryCategory,
-    desc: 'Lively home video of grandchildren singing joyful songs in the living room.',
-  },
-  {
-    type: 'video' as const,
-    label: 'Garden Butterflies Video',
-    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    title: 'Morning Garden Butterflies',
-    person: 'Home Garden',
-    category: 'Places' as MemoryCategory,
-    desc: 'A calm, sunny morning recording of the garden flowers and gentle breeze.',
-  },
-  {
-    type: 'photo' as const,
-    label: 'Family Festival Photo',
-    url: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=80',
-    title: 'Diwali Gathering at Home',
-    person: 'Whole Family',
-    category: 'Special Moments' as MemoryCategory,
-    desc: 'The entire family dressed in traditional festive attire sharing sweets and smiles.',
-  },
-];
 
 export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
   currentTab,

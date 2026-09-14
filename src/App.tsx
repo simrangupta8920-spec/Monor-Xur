@@ -392,10 +392,17 @@ export function App() {
     caregiver: CaregiverAccount;
     asha?: AshaAccount;
     emergencyContact: EmergencyContact;
+    initialMemories?: Memory[];
   }) => {
     setPatientProfile(data.patient);
     setMedicalProfile(data.medical);
     setContacts([data.emergencyContact]);
+
+    let currentMemories = memories;
+    if (data.initialMemories && data.initialMemories.length > 0) {
+      currentMemories = data.initialMemories;
+      setMemories(data.initialMemories);
+    }
 
     localStorage.setItem('monor_xur_setup_completed', 'true');
     localStorage.setItem('monor_xur_patient', JSON.stringify(data.patient));
@@ -404,6 +411,7 @@ export function App() {
       patientProfile: data.patient,
       medicalProfile: data.medical,
       contacts: [data.emergencyContact],
+      memories: currentMemories,
     });
 
     if (currentUser) {
@@ -411,6 +419,16 @@ export function App() {
         await savePatientProfile(DEFAULT_PATIENT_ID, data.patient);
         await saveMedicalProfile(DEFAULT_PATIENT_ID, data.medical);
         await saveContactToDb(DEFAULT_PATIENT_ID, data.emergencyContact);
+
+        if (data.initialMemories && data.initialMemories.length > 0) {
+          for (const mem of data.initialMemories) {
+            try {
+              await addMemoryToDb(DEFAULT_PATIENT_ID, mem);
+            } catch (err) {
+              console.warn('Notice saving initial memory to Firestore:', err);
+            }
+          }
+        }
 
         await logAuditEvent(DEFAULT_PATIENT_ID, {
           action: 'consent_granted',
@@ -661,6 +679,7 @@ export function App() {
           <InitialSetupPage
             initialPatient={patientProfile.name ? patientProfile : undefined}
             initialMedical={medicalProfile.stage ? medicalProfile : undefined}
+            initialMemories={memories}
             onComplete={handleCompleteSetup}
             onCancel={() => handleSwitchRole('patient')}
             isEditing={Boolean(patientProfile.name && isSetupCompletedLocally)}
