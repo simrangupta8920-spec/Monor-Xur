@@ -887,13 +887,14 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
                     <h4 className="font-extrabold text-sm text-[#2D3A2F]">{c.name}</h4>
                     <p className="text-xs text-[#5A6E5D]">{c.relationship} • {c.phone}</p>
                   </div>
-                  <button
+                  <a
+                    href={`tel:${c.phone.replace(/[^0-9+]/g, '')}`}
                     onClick={() => onCallContact(c)}
-                    className="p-2.5 rounded-xl bg-[#5B825B] text-white hover:bg-[#4d704d]"
+                    className="p-2.5 rounded-xl bg-[#5B825B] text-white hover:bg-[#4d704d] text-inherit no-underline flex items-center justify-center cursor-pointer active:scale-95 transition-all"
                     aria-label={`Call ${c.name}`}
                   >
                     <Phone className="w-4 h-4" />
-                  </button>
+                  </a>
                 </div>
               ))}
             </div>

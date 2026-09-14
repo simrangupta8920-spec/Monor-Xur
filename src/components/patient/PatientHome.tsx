@@ -114,6 +114,8 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
   const caregiverName = caregiver?.name || emergencyContactName || 'Priya Sharma';
   const caregiverRel = caregiver?.relationship || (language === 'as' ? 'জীয়াৰী' : isHindi ? 'बेटी' : 'Daughter');
   const caregiverPhoto = caregiver?.avatar || '/images/avatars/caregiver-assam-daughter.jpg';
+  const caregiverPhone = caregiver?.phone || '+91 98765 43210';
+  const cleanPhone = caregiverPhone.replace(/[^0-9+]/g, '');
 
   const toggleSingleFocus = () => {
     soundController.playClick();
@@ -438,17 +440,12 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
 
       {/* ITEM E: HIGH-VISIBILITY CAREGIVER FACE & NAME CALL BUTTON */}
       <div className="bg-gradient-to-br from-[#FAF8F3] to-[#F2EFE8] p-1.5 rounded-3xl border-2 border-[#5B825B]/30 shadow-xs">
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={onCallFamily}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onCallFamily();
-            }
+        <a
+          href={`tel:${cleanPhone}`}
+          onClick={() => {
+            onCallFamily();
           }}
-          className="w-full p-4 rounded-2xl bg-white border border-[#E0DCD3] shadow-xs flex items-center justify-between hover:bg-[#FDFBF7] active:scale-[0.99] transition-all cursor-pointer group"
+          className="w-full p-4 rounded-2xl bg-white border border-[#E0DCD3] shadow-xs flex items-center justify-between hover:bg-[#FDFBF7] active:scale-[0.99] transition-all cursor-pointer group text-inherit no-underline"
           aria-label={tx(`Call ${caregiverName}`, `${caregiverName} को फोन करें`, `${caregiverName} লৈ ফোন কৰক`)}
         >
           <div className="flex items-center gap-3.5">
@@ -479,18 +476,20 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <SpeakButton
-              textEn={`Tap here to call your caregiver, ${caregiverName} (${caregiverRel}).`}
-              textHi={`देखभालकर्ता ${caregiverName} से बात करने के लिए यहाँ टैप करें।`}
-              textAs={`আপোনাৰ তত্ত্বাৱধায়ক ${caregiverName} (${caregiverRel}) লৈ কল কৰিবলৈ ইয়াত টিপক।`}
-              size="md"
-            />
+            <div onClick={(e) => e.stopPropagation()}>
+              <SpeakButton
+                textEn={`Tap here to call your caregiver, ${caregiverName} (${caregiverRel}).`}
+                textHi={`देखभालकर्ता ${caregiverName} से बात करने के लिए यहाँ टैप करें।`}
+                textAs={`আপোনাৰ তত্ত্বাৱধায়ক ${caregiverName} (${caregiverRel}) লৈ কল কৰিবলৈ ইয়াত টিপক।`}
+                size="md"
+              />
+            </div>
             <span className="px-4 py-2.5 rounded-xl bg-[#5B825B] text-white text-xs font-black shadow-xs group-hover:bg-[#4a6b4a] transition-colors flex items-center gap-1.5">
               <PhoneCall className="w-3.5 h-3.5" />
               <span>{t('callNow')}</span>
             </span>
           </div>
-        </div>
+        </a>
       </div>
 
       {/* Subtle Caregiver Mode / Single-Focus Switch Bar at very bottom */}

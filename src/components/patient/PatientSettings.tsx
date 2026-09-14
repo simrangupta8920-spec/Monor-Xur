@@ -466,12 +466,14 @@ export const PatientSettings: React.FC<PatientSettingsProps> = ({
                 </p>
               </div>
             </div>
-            <button
-              onClick={onCallEmergency}
-              className="px-4 py-2 rounded-2xl bg-[#C46A66] text-white font-black text-xs hover:bg-[#b05854]"
+            <a
+              href={`tel:${(primaryContact?.phone || '+91 98765 43210').replace(/[^0-9+]/g, '')}`}
+              onClick={() => onCallEmergency()}
+              className="px-4 py-2 rounded-2xl bg-[#C46A66] text-white font-black text-xs hover:bg-[#b05854] text-inherit no-underline inline-flex items-center gap-1.5"
             >
-              {t('callBtn')}
-            </button>
+              <PhoneCall className="w-3.5 h-3.5" />
+              <span>{t('callBtn')}</span>
+            </a>
           </div>
         </div>
 

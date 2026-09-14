@@ -24,6 +24,7 @@ interface MedicineRemindersProps {
   onBack: () => void;
   onCallFamily: () => void;
   caregiverName?: string;
+  caregiverPhone?: string;
   onTriggerTestAlert?: () => void;
 }
 
@@ -33,10 +34,12 @@ export const MedicineReminders: React.FC<MedicineRemindersProps> = ({
   onBack,
   onCallFamily,
   caregiverName = 'Family Caregiver',
+  caregiverPhone = '+91 98765 43210',
   onTriggerTestAlert,
 }) => {
   const { tx, language } = useLanguage();
   const [filter, setFilter] = useState<'all' | 'pending' | 'taken'>('all');
+  const cleanPhone = caregiverPhone.replace(/[^0-9+]/g, '');
 
   // Filter reminders: prioritize medicine type, or all reminders if no specific medicine tagged
   const medicineList = reminders.filter((r) => r.type === 'medicine');
@@ -368,16 +371,17 @@ export const MedicineReminders: React.FC<MedicineRemindersProps> = ({
           </div>
         </div>
 
-        <button
+        <a
+          href={`tel:${cleanPhone}`}
           onClick={() => {
             soundController.playClick();
             onCallFamily();
           }}
-          className="py-3 px-4 rounded-2xl bg-[#5B825B] hover:bg-[#4a6d4a] active:scale-95 text-white font-black text-xs shadow-md shrink-0 flex items-center gap-1.5 transition-all cursor-pointer"
+          className="py-3 px-4 rounded-2xl bg-[#5B825B] hover:bg-[#4a6d4a] active:scale-95 text-white font-black text-xs shadow-md shrink-0 flex items-center gap-1.5 transition-all cursor-pointer text-inherit no-underline"
         >
           <Phone className="w-4 h-4" />
           <span>{tx('Call Caregiver', 'कॉल करें', 'ফোন কৰক')}</span>
-        </button>
+        </a>
       </div>
     </div>
   );

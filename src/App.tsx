@@ -43,7 +43,7 @@ import {
 } from './services/offlineStorage';
 import { soundController } from './utils/audio';
 import { useSundowningState } from './hooks/useSundowningState';
-import { Phone } from 'lucide-react';
+import { Phone, PhoneCall, MessageSquare } from 'lucide-react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   DEFAULT_PATIENT_ID,
@@ -642,14 +642,30 @@ export function App() {
 
   const triggerCallFamily = () => {
     soundController.playChime(440, 0.5);
-    const activeContact = contacts[0] || (patientProfile.caregiver ? {
+    const activeContact: EmergencyContact = contacts[0] || (patientProfile.caregiver ? {
       id: 'primary-caregiver',
       name: patientProfile.caregiver.name,
       relationship: patientProfile.caregiver.relationship,
       phone: patientProfile.caregiver.phone,
-    } : null);
-    if (activeContact) {
-      setCallingContact(activeContact);
+    } : {
+      id: 'default-caregiver',
+      name: 'Priya Sharma',
+      relationship: 'Daughter / Family Caregiver',
+      phone: '+91 98765 43210',
+    });
+
+    setCallingContact(activeContact);
+
+    if (activeContact.phone) {
+      const cleanPhone = activeContact.phone.replace(/[^0-9+]/g, '');
+      if (cleanPhone) {
+        try {
+          // Native mobile & PWA telephone protocol trigger
+          window.location.href = `tel:${cleanPhone}`;
+        } catch (err) {
+          console.warn('Could not launch tel scheme:', err);
+        }
+      }
     }
   };
 
@@ -711,6 +727,7 @@ export function App() {
                 onBack={() => handleSetPatientSubView('none')}
                 onCallFamily={triggerCallFamily}
                 caregiverName={patientProfile.caregiver?.name}
+                caregiverPhone={patientProfile.caregiver?.phone}
                 onTriggerTestAlert={() => setSimulationAlertTrigger((c) => c + 1)}
               />
             )}
@@ -798,6 +815,7 @@ export function App() {
                     onBack={() => handlePatientSelectTab('home')}
                     onCallFamily={triggerCallFamily}
                     caregiverName={patientProfile.caregiver?.name}
+                    caregiverPhone={patientProfile.caregiver?.phone}
                     onTriggerTestAlert={() => setSimulationAlertTrigger((c) => c + 1)}
                   />
                 )}
@@ -887,7 +905,19 @@ export function App() {
             alerts={alerts}
             onAcknowledgeAlert={handleAcknowledgeAlert}
             contacts={contacts}
-            onCallContact={(c) => setCallingContact(c)}
+            onCallContact={(c) => {
+              setCallingContact(c);
+              if (c.phone) {
+                const cleanPhone = c.phone.replace(/[^0-9+]/g, '');
+                if (cleanPhone) {
+                  try {
+                    window.location.href = `tel:${cleanPhone}`;
+                  } catch (err) {
+                    console.warn('Native telephone launch exception:', err);
+                  }
+                }
+              }
+            }}
             ddaLogs={ddaLogs}
             onLogDDAMetric={handleLogDDAMetric}
             onNavigateToGames={() => {
@@ -948,12 +978,12 @@ export function App() {
         />
       )}
 
-      {/* Simulated Emergency Call Popup Modal */}
+      {/* Real Emergency & Caregiver Call Modal */}
       {callingContact && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-[#E0DCD3] animate-scaleUp">
             <div className="w-20 h-20 mx-auto rounded-full bg-[#EAF1E8] text-[#5B825B] flex items-center justify-center shadow-inner animate-pulse">
-              <Phone className="w-10 h-10" />
+              <PhoneCall className="w-10 h-10" />
             </div>
             <div>
               <span className="text-xs font-black uppercase text-[#5B825B] tracking-wider">
@@ -967,19 +997,42 @@ export function App() {
               </p>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] text-xs text-[#5A6E5D]">
-              One-touch emergency & family calling connects older adults immediately with their primary caregiver.
+            <div className="p-3.5 rounded-2xl bg-[#FDFBF7] border border-[#E0DCD3] text-xs text-[#5A6E5D] leading-relaxed">
+              Opening your phone dialer to call directly. Tap below to launch your phone dialer or open WhatsApp call.
             </div>
 
-            <button
-              onClick={() => {
-                soundController.playClick();
-                setCallingContact(null);
-              }}
-              className="w-full py-3.5 px-4 rounded-2xl bg-[#C46A66] text-white font-extrabold text-sm hover:bg-[#b05854] shadow-xs active:scale-95 transition-all"
-            >
-              End Call
-            </button>
+            <div className="space-y-2 pt-1">
+              <a
+                href={`tel:${callingContact.phone.replace(/[^0-9+]/g, '')}`}
+                onClick={() => soundController.playSuccess()}
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#5B825B] text-white font-black text-sm hover:bg-[#4a6b4a] shadow-xs active:scale-95 transition-all flex items-center justify-center gap-2 text-inherit no-underline"
+              >
+                <PhoneCall className="w-4 h-4" />
+                <span>Call Phone ({callingContact.phone})</span>
+              </a>
+
+              <a
+                href={`https://wa.me/${callingContact.phone.replace(/[^0-9]/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => soundController.playSuccess()}
+                className="w-full py-2.5 px-4 rounded-2xl bg-[#EAF1E8] text-[#2D3A2F] font-bold text-xs hover:bg-[#d8e6d5] border border-[#5B825B]/20 flex items-center justify-center gap-2 transition-all text-inherit no-underline"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-[#5B825B]" />
+                <span>WhatsApp Audio Call / Chat</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => {
+                  soundController.playClick();
+                  setCallingContact(null);
+                }}
+                className="w-full py-2.5 px-4 rounded-2xl bg-gray-100 text-[#5A6E5D] font-bold text-xs hover:bg-gray-200 transition-all cursor-pointer"
+              >
+                End / Close
+              </button>
+            </div>
           </div>
         </div>
       )}
